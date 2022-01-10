@@ -47,7 +47,7 @@ while true; do
   state4=$(nvram get vpn_client4_state)
   state5=$(nvram get vpn_client5_state)
 
-  # Check each connection to see if its active, and perform a PING
+  # Check each connection to see if its active, and perform a PING... borrowed heavily + credit to @Martineau for this code
   #VPN1
   if [[ $state1 -eq $connState ]]
   then
