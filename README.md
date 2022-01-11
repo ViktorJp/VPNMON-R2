@@ -1,36 +1,35 @@
 # VPNMON
 
-**Executive Summary**: VPNON 0.4 (VPNON.SH) script is a companion of the VPNMGR program by @JackYaz running on Asus Merlin FW for Asus routers, and is meant to be run with a CRU job in order to reset and randomly connect to a new VPN server each day at a different location specified within VPNMGR through NordVPN. It also downloads a list of US-based NordVPN server IP addresses, and adds them to the Skynet whitelist each time this runs, as these frequently change. Set the variable in the scripts to enable/disable this functionality.  
+**Executive Summary**: #VPNMON 0.3 (VPNMON.SH) is a simple script that accompanies my VPNON.SH script, which ultimately compliments @JackYaz's VPNMGR program to maintain a NordVPN setup on a Asus RT-AC86U router running Merlin FW. This script checks your 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it can execute the script of your choice (in this case, VPNON.SH), which will kill all VPN clients, and use VPNMGR's functionality to poll NordVPN for updated server names based on the locations you have selected in VPNMGR, and randomly picks one of the 5 VPN Clients to connect to. 
 
-I am by no means a serious script programmer. I've combed through lots of code and examples found both on the Merlin FW discussion forums and online to cobble this stuff together. You will probably find inefficient code, or possibly shaking your head with the rudimentary ways I'm pulling things off... but hey, I'm learning, and it works! ;)  Huge thanks and shoutouts to @JackYaz and @Martineau for their inspiration and gorgeous looking code, and for everyone else that has helped me along the way on the Merlin forums: https://www.snbforums.com/forums/asuswrt-merlin.42/
+I am by no means a serious script programmer. I've combed through lots of code and examples found both on the Merlin FW discussion forums and online to cobble this stuff together. You will probably find inefficient code, or possibly shaking your head with the rudimentary ways I'm pulling things off... but hey, I'm learning, and it works! ;)  Huge thanks and shoutouts to @JackYaz and @Martineau for their inspiration and gorgeous looking code, and for everyone else that has helped me along the way on the Merlin forums: https://www.snbforums.com/forums/asuswrt-merlin.42/.  Also, a huge thank you to @RMerlin, @Adamm, @L&LD and @thelonelycoder for everything you've done for the community!
 
 The Problem I was trying to solve
 ---------------------------------
-* As a VPNMGR user, I have 5 different NordVPN VPN Client configurations populated on my Asus router running Merlin FW, each with a different city.  I wanted a way for my VPN connection to reset each night, so that it would randomly select and connect to a different configuration, thus endpoint, so that I wouldn't be connected to the same city 24x7x365.
-* NordVPN has thousands of VPN endpoint servers which change frequently, depending on the distance or latency from your location scattered across the globe.  On several occations, my Asus-Merlin-based Skynet firewall would block these VPN servers, and wanted to make sure I had a way to find all the latest VPN server IPs, and add them to the Skynet whitelist.
+* As a VPNMGR user, I have 5 different NordVPN VPN Client configurations populated on my Asus router running Merlin FW, each with a different city.  There were times that I would lose connection to one of these servers, and the router would just endlessly keep trying to reconnect to no avail.  Also, sometimes the SKynet firewall would block these NordVPN endpoints, and it would again, endlessly try to connect to a blocked endpoint.  Other times, freakishly, I would have more than 1 VPN Client kick on for some reason.  This program was built as a way to check to make sure VPN is connected, that the connection is clean, and that there aren't multiple instances running.  If anything was off, it would launch a full-on assault using VPNON.SH, and reset everything back to a normal state.
 
 How is this script supposed to run?
 -----------------------------------
-Personally, I run this script 1x a day at night using a CRU job. But you can run it as much as you want... read up on CRU formatting.  Secondarily, this script is also called from my other program, VPNMON, when it detects that the VPN connection has dropped.  Here are some steps to make a nightly job happen:
-1. Copy this script over into your /jffs/scripts folder, and make sure it's called "vpnon.sh"
-2. To run this script every night at 01:00, from a command prompt, enter:
-   cru a vpnon "00 01 * * * /jffs/scripts/vpnon.sh"
-3. Make sure this script is executable, from a command prompt, enter:
-   chmod +x /jffs/scripts/vpnon.sh
+Personally, I run this script in its own SSH window from a PC that's connected directly to the Asus router, as it loops and checks the connection every 30 seconds. I suppose there's other ways to run this script, but I will leave that up to you.
+1. Copy this script over into your /jffs/scripts folder, and make sure it's called "vpnmon.sh"
+2. To run this script, open up a dedicated SSH window, and simply execute the script:
+   sh /jffs/scripts/vpnmon.sh
+3. Optionally, you cna make this script executable, from a command prompt, enter:
+   chmod +x /jffs/scripts/vpnmon.sh
 
 What this script does
 ---------------------
-1. Kills all VPN Clients, if they're running or not
-2. Updates Skynet whitelist with all US-based NordVPN endpoint IP addresses (optional) - FYI, you can easily change this for the country of your choice.
-3. Updates VPNMGR cache with recommended NordVPN endpoint information, and merges/refreshes these changes with your Merlin VPN Client configurations
-4. Uses a randomizer to pick one of 5 different VPN Clients to connect to (configurable between 1 and 5)
-5. Initiates the connection to the specified NordVPN endpoint.
+1. Checks the VPN State from NVRAM and determines if each of the 5 Clients are connected or not
+2. If a VPN Client is connected, it send a PING through to Google's DNS server to determine if the link is good (configurable)
+3. If it determines that VPN Client is down, or connection is broken, it will reset the VPN with VPNON.SH
+4. If it determines that multiple VPN Clients are running, it will reset the VPN with VPNON.SH
+5. It will loop through this process every 30 seconds (configurable)
+6. If it determines that VPNON.SH is resetting the connection, it will hang back until VPNON.SH is done.
 
 Gotchas
 -------
 * Make sure you have installed VPNMGR, and have tested refreshing its cache, and that you are able to successfully connect to NordVPN before running this script. You may find the program and installation/configuration information here: https://www.snbforums.com/threads/vpnmgr-manage-and-update-vpn-client-configurations-for-nordvpn-and-pia.64930/
-* Make sure you configure the N=5 variable in VPNON to the same number of VPN Client slots you have configured.
-* Make sure you keep your VPN Client slots sequential... don't use 1, 2, and 4... for instance.  Keep it to 1, 2, and 3.
+* Make sure you have installed VPNON.SH (Github link), and have placed it in your /jffs/scripts folder, named "vpnon.sh".
 
 Disclaimer
 ----------
