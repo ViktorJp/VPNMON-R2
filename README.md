@@ -13,9 +13,9 @@ How is this script supposed to run?
 Personally, I run this script in its own SSH window from a PC that's connected directly to the Asus router, as it loops and checks the connection every 30 seconds. I suppose there's other ways to run this script, but I will leave that up to you.
 1. Copy this script over into your /jffs/scripts folder, and make sure it's called "vpnmon.sh"
 2. To run this script, open up a dedicated SSH window, and simply execute the script:
-   sh /jffs/scripts/vpnmon.sh
+   ``sh /jffs/scripts/vpnmon.sh``
 3. Optionally, you cna make this script executable, from a command prompt, enter:
-   chmod +x /jffs/scripts/vpnmon.sh
+   ``chmod +x /jffs/scripts/vpnmon.sh``
 
 What this script does
 ---------------------
