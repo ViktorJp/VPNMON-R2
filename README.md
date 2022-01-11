@@ -14,14 +14,14 @@ Personally, I run this script in its own SSH window from a PC that's connected d
 1. Copy this script over into your /jffs/scripts folder, and make sure it's called "vpnmon.sh"
 2. To run this script, open up a dedicated SSH window, and simply execute the script:
    ``sh /jffs/scripts/vpnmon.sh``
-3. Optionally, you cna make this script executable, from a command prompt, enter:
+3. Optionally, you can make this script executable, from a command prompt, enter:
    ``chmod +x /jffs/scripts/vpnmon.sh``
 
 What this script does
 ---------------------
 1. Checks the VPN State from NVRAM and determines if each of the 5 Clients are connected or not
 2. If a VPN Client is connected, it send a PING through to Google's DNS server to determine if the link is good (configurable)
-3. If it determines that VPN Client is down, or connection is broken, it will reset the VPN with VPNON.SH
+3. If it determines that the VPN Client is down, or connection is broken, it will reset the VPN with VPNON.SH
 4. If it determines that multiple VPN Clients are running, it will reset the VPN with VPNON.SH
 5. It will loop through this process every 30 seconds (configurable)
 6. If it determines that VPNON.SH is resetting the connection, it will hang back until VPNON.SH is done.
