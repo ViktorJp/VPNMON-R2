@@ -1,0 +1,3 @@
+v0.6 - (Jan 14, 2022) Added logging capabilities.  Major events (resets/connection issues/etc) are logged to a file named "vpnmon-on.log" in the /jffs/scripts folder by default.  This capability can be disabled by changing the value to "/dev/null".  PSA: though it doesn't do a crazy amount of logging, over time it will get larger and larger and will eventually impact the total space available in /jffs.  Recommend keeping an eye on this, and wiping the "vpnmon-on.log" on occasion.  Will consider adding a more automated log purging feature in the future.  ;)
+
+v0.5 - Initial release (Jan 12, 2022)
