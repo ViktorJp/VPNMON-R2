@@ -1,6 +1,6 @@
 # VPNMON
 
-**Executive Summary**: #VPNMON 0.5 (VPNMON.SH) is a simple script that accompanies my VPNON.SH script, which ultimately compliments @JackYaz's VPNMGR program to maintain a NordVPN setup on a Asus RT-AC86U router running Merlin FW. This script checks your 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it can execute the script of your choice (in this case, VPNON.SH), which will kill all VPN clients, and use VPNMGR's functionality to poll NordVPN for updated server names based on the locations you have selected in VPNMGR, and randomly picks one of the 5 VPN Clients to connect to. 
+**Executive Summary**: #VPNMON 0.6 (VPNMON.SH) is a simple script that accompanies my VPNON.SH script, which ultimately compliments @JackYaz's VPNMGR program to maintain a NordVPN setup on a Asus RT-AC86U router running Merlin FW. This script checks your 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it can execute the script of your choice (in this case, VPNON.SH), which will kill all VPN clients, and use VPNMGR's functionality to poll NordVPN for updated server names based on the locations you have selected in VPNMGR, and randomly picks one of the 5 VPN Clients to connect to. 
 
 I am by no means a serious script programmer. I've combed through lots of code and examples found both on the Merlin FW discussion forums and online to cobble this stuff together. You will probably find inefficient code, or possibly shaking your head with the rudimentary ways I'm pulling things off... but hey, I'm learning, and it works! ;)  Huge thanks and shoutouts to @JackYaz and @Martineau for their inspiration and gorgeous looking code, and for everyone else that has helped me along the way on the Merlin forums: https://www.snbforums.com/forums/asuswrt-merlin.42/.  As always, a huge thank you and a lot of admiration goes out to @RMerlin, @Adamm, @L&LD and @thelonelycoder for everything you've done for the community
 
@@ -25,6 +25,7 @@ What this script does
 4. If it determines that multiple VPN Clients are running, it will reset the VPN with VPNON.SH (configurable)
 5. It will loop through this process every 30 seconds (configurable)
 6. If it determines that VPNON.SH is resetting the connection, it will hang back until VPNON.SH is done.
+7. Logs major events (resets/connection errors/etc) to /jffs/scripts/vpnmon-on.log (optional)
 
 Gotchas
 -------
