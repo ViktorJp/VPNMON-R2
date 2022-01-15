@@ -1,3 +1,6 @@
+v0.7 - (Jan 15, 2022) Added the avg ping time next to the "Ping is Alive" indicator, which shows avg time in ms across
+       the active VPN tunnel to the ping host specified.
+
 v0.6 - (Jan 14, 2022) Added logging capabilities.  Major events (resets/connection issues/etc) are logged to a file named 
        "vpnmon-on.log" in the /jffs/scripts folder by default.  This capability can be disabled by changing the value to 
        "/dev/null".  PSA: though it doesn't do a crazy amount of logging, over time it will get larger and larger and will
