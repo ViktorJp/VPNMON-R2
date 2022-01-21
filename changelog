@@ -1,3 +1,7 @@
+v0.8 - (Jan 20, 2022) Added a timer to show the last time that the VPN was reset, or, when vpnmon.sh was restarted last,
+       whichever happened last.  Also, added a spinner to indicate that the script is still active.  Various optimizations
+       and code clean-up.
+
 v0.7 - (Jan 15, 2022) Added the avg ping time next to the "Ping is Alive" indicator, which shows avg time in ms across
        the active VPN tunnel to the ping host specified.
 
