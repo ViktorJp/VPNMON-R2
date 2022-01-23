@@ -9,7 +9,7 @@ v0.5 - (Jan 23, 2022) Wow, where to start...
          VPNMON-R2 instead of resetting to 0d 0h 0m, etc. I built functionality that saves the exact time to a file called
          /jffs/scripts/vpnmon-rst.log, from where it reads and populates this time on screen each time a reset occurs.
        * VPNMON-R2 is now also able to perform a regularly scheduled VPN reset without the need to run VPNON.SH through a
-         CRU job.  This is completely configuarable, and now also displays your configured reset time on screen.
+         CRU job.  This is completely configurable, and now also displays your configured reset time on screen.
        * Also being displayed on screen, is the interval (in seconds) in which it loops to check the validity of your VPN
          connections.
        * Overall, spruced up the look and feel of the visual in your SSH window to show pertinent information without
