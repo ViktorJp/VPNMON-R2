@@ -6,7 +6,7 @@ I am by no means a serious script programmer. I've combed through lots of code a
 
 The Problem I was trying to solve
 ---------------------------------
-* As a VPNMGR user, I have 5 different NordVPN VPN Client configurations populated on my Asus router running Merlin FW, each with a different city.  There were times that I would lose connection to one of these servers, and the router would just endlessly keep trying to reconnect to no avail.  Also, sometimes the SKynet firewall would block these NordVPN endpoints, and it would again, endlessly try to connect to a blocked endpoint.  Other times, freakishly, I would have more than 1 VPN Client kick on for some reason.  This program was built as a way to check to make sure VPN is connected, that the connection is clean, and that there aren't multiple instances running.  If anything was off, it would launch a full-on assault using a second script, VPNON.SH, and reset everything back to a normal state.
+* As a VPNMGR user, I have 5 different NordVPN VPN Client configurations populated on my Asus router running Merlin FW, each with a different city.  There were times that I would lose connection to one of these servers, and the router would just endlessly keep trying to reconnect to no avail.  Also, sometimes the SKynet firewall would block these NordVPN endpoints, and it would again, endlessly try to connect to a blocked endpoint.  Other times, freakishly, I would have more than 1 VPN Client kick on for some reason.  This program was built as a way to check to make sure VPN is connected, that the connection is clean, and that there aren't multiple instances running.  If anything was off, it would launch a full-on assault and try to reset everything back to a normal state.
 * Above all, I wanted to make this script flexible enough for those who aren't running VPNMGR, using NordVPN or making use of the Skynet Firewall, so options have been built-in to bypass this functionality to make it usable in any VPN usage scenario.
 
 How is this script supposed to run?
@@ -45,3 +45,10 @@ Gotchas
 Disclaimer
 ----------
 Use at your own risk.  I've been using this script successfully for a long time on an Asus RT-AC86U running Merlin FW v386.3_2 and v386.4, and seems to work just fine for my needs.
+
+Links/Forums
+----------
+VPNMON-R2 - https://www.snbforums.com/threads/release-vpnmon-r2-a-script-that-monitors-your-vpn-connection.76748/
+VPNON - https://www.snbforums.com/threads/release-vpnon-a-script-to-help-reset-and-randomize-your-vpn-connections.76742/
+
+
