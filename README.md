@@ -30,7 +30,7 @@ What this script does
 8. Initiates the connection to the specified VPN endpoint.
 9. It will loop through this process every 30 seconds (configurable)
 10. If it determines that my other (optional) external script VPNON.SH is resetting the connection, it will hang back until VPNON.SH is done.
-11. Logs major events (resets/connection errors/etc) to /jffs/scripts/vpnmon-on.log (optional)
+11. Logs major events (resets/connection errors/etc) to /jffs/scripts/vpnmon-r2.log (optional)
 12. It will reset your VPN connection at a regularly scheduled time using the settings at the top of the script (optional)
 13. Includes a timer to show when the last time VPN was reset, along with a spinner to show script activity
 14. It now shows the last time a VPN reset happened indicated by "Last Reset:", an indicator when the next reset will happen, and how often the interval happens (in seconds) on the easy-to-read VPNMON-R2 interface in your SSH shell.
