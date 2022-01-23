@@ -48,7 +48,7 @@ Use at your own risk.  I've been using this script successfully for a long time 
 
 Links/Forums
 ----------
-VPNMON-R2 - https://www.snbforums.com/threads/release-vpnmon-r2-a-script-that-monitors-your-vpn-connection.76748/
-VPNON - https://www.snbforums.com/threads/release-vpnon-a-script-to-help-reset-and-randomize-your-vpn-connections.76742/
+* VPNMON-R2 - https://www.snbforums.com/threads/release-vpnmon-r2-a-script-that-monitors-your-vpn-connection.76748/
+* VPNON - https://www.snbforums.com/threads/release-vpnon-a-script-to-help-reset-and-randomize-your-vpn-connections.76742/
 
 
