@@ -41,7 +41,7 @@ Gotchas
 -------
 * If you want to make the integration with VPNMGR, please make sure you have installed VPNMGR, have populated your VPN slots with it, have tested refreshing its cache, and that you are able to successfully connect to NordVPN before running this script. You may find the program and installation/configuration information here: https://www.snbforums.com/threads/v...ent-configurations-for-nordvpn-and-pia.64930/
 * If you don't want to integrate with VPNMGR, or whitelist NordVPN IPs in your Skynet Firewall, please set/configure each of these options to 0 at the top of this script before running it.
-* Make sure you configure the N=5 variable in VPNON to the same number of VPN Client slots you have configured.
+* Make sure you configure the N=5 variable to the same number of VPN Client slots you have configured.
 * Make sure you keep your VPN Client slots sequential... don't use 1, 2, and 4... for instance. Keep it to 1, 2, and 3.
 
 Disclaimer
