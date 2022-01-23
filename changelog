@@ -1,3 +1,26 @@
+v0.5 - (Jan 23, 2022) Wow, where to start... 
+       * VPNMON.SH was heavily overhauled into VPNMON-R2.SH to incorporate my other script, VPNON.SH, so that it could act
+         standalone, without needing to call a second script. VPNON has now turned into a function within the script.
+       * Speaking of which -- I learned lots about functions ;) ... In doing so, I cleaned up some of the inefficient code,
+         namely, how it checks for each individual VPN connection. Now, it basically loops from 1 through N and calls the
+         function that checks the VPN connection without having to make so much duplication in the code itself.
+       * Speaking of functions, I turned the spinner into a function as well.  Cleaner and more optimized code is wonderful!
+       * I wanted to display the last time VPN was reset, so that it saved this point-in-time each time you restarted
+         VPNMON-R2 instead of resetting to 0d 0h 0m, etc. I built functionality that saves the exact time to a file called
+         /jffs/scripts/vpnmon-rst.log, from where it reads and populates this time on screen each time a reset occurs.
+       * VPNMON-R2 is now also able to perform a regularly scheduled VPN reset without the need to run VPNON.SH through a
+         CRU job.  This is completely configuarable, and now also displays your configured reset time on screen.
+       * Also being displayed on screen, is the interval (in seconds) in which it loops to check the validity of your VPN
+         connections.
+       * Overall, spruced up the look and feel of the visual in your SSH window to show pertinent information without
+         cluttering up the screen.  Hope you like it!
+       * Above all, I wanted to make this script flexible enough for those who aren't running VPNMGR, using NordVPN or
+         making use of the Skynet Firewall, so options have been built-in to bypass this functionality to make it usable
+         in any VPN usage scenario.
+
+-------------------------------------
+VPNMON.SH was deprecated on Jan 22, 2022)
+
 v0.8 - (Jan 20, 2022) Added a timer to show the last time that the VPN was reset, or, when vpnmon.sh was restarted last,
        whichever happened most recently.  Also, added a spinner to indicate that the script is still active.  Various 
        optimizations and code clean-up.
@@ -11,4 +34,4 @@ v0.6 - (Jan 14, 2022) Added logging capabilities.  Major events (resets/connecti
        eventually impact the total space available in /jffs.  Recommend keeping an eye on this, and wiping the 
        "vpnmon-on.log" on occasion.  Will consider adding a more automated log purging feature in the future.  ;)
        
-v0.5 - Initial release (Jan 12, 2022)
+v0.5 - Initial release of VPNMON.SH (Jan 12, 2022)
