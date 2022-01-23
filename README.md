@@ -1,4 +1,4 @@
-# VPNMON
+# VPNMON-R2
 
 **Executive Summary**: VPNMON-R2 v0.5 (VPNMON-R2.SH) is an all-in-one simple script which compliments @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, though this is not a requirement, and can function without problems in a standalone environment. This script checks your (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of commands that will kill all VPN clients, and optionally use VPNMGR's functionality to poll NordVPN/PIA/WeVPN for updated server names based on the locations you have selected in VPNMGR, optionally whitelists all US-based NordVPN servers in the Skynet Firewall, and randomly picks one of the 5 VPN Clients to connect to. Logging added to capture relevant events for later review.  As mentioned, disabling VPNMGR and Skynet functionality is completely supported should you be using other VPN options, and as such, this script would help maintain an eye on your connection, and able to randomly reset it if needed.
 
