@@ -1,11 +1,13 @@
 v0.6 - (Feb 2, 2022) 
-       * Enhanced the alerts in the logs a bit more to make them stand out when we're dealing with a connection failure, 
-         or multiple connections.  
-       * Moved the interval indicator to the top row next to the scheduled reset time
        * Added a new API lookup to display the VPN Exit Node city/location next to the active VPN connection.  This API is
          free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single interval, a location
          lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2
-         initiates a reset.
+         initiates a reset.  So, hopefuly not more than 1x or 2x/day, or 30x/60x/month, well below the cut-off.
+       * Enhanced the alert entries in the logs a bit more to make them stand out when we're dealing with a connection
+         failure, or multiple connections.
+       * Moved the interval indicator to the top row next to the scheduled reset time
+       * Some cosmetics color change enhancements to the output screen and cleaned up the code to make it look more uniform. 
+         Need to work on variable naming uniformity next, as that's *ALL* over the place still.  ;)
 
 v0.5 - (Jan 23, 2022) Wow, where to start... 
        * VPNMON.SH was heavily overhauled into VPNMON-R2.SH to incorporate my other script, VPNON.SH, so that it could act
