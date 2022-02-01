@@ -1,3 +1,12 @@
+v0.6 - (Feb 2, 2022) 
+       * Enhanced the alerts in the logs a bit more to make them stand out when we're dealing with a connection failure, 
+         or multiple connections.  
+       * Moved the interval indicator to the top row next to the scheduled reset time
+       * Added a new API lookup to display the VPN Exit Node city/location next to the active VPN connection.  This API is
+         free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single interval, a location
+         lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2
+         initiates a reset.
+
 v0.5 - (Jan 23, 2022) Wow, where to start... 
        * VPNMON.SH was heavily overhauled into VPNMON-R2.SH to incorporate my other script, VPNON.SH, so that it could act
          standalone, without needing to call a second script. VPNON has now turned into a function within the script.
@@ -21,17 +30,20 @@ v0.5 - (Jan 23, 2022) Wow, where to start...
 -------------------------------------
 VPNMON.SH was deprecated on Jan 22, 2022)
 
-v0.8 - (Jan 20, 2022) Added a timer to show the last time that the VPN was reset, or, when vpnmon.sh was restarted last,
-       whichever happened most recently.  Also, added a spinner to indicate that the script is still active.  Various 
-       optimizations and code clean-up.
+v0.8 - (Jan 20, 2022) 
+       * Added a timer to show the last time that the VPN was reset, or, when vpnmon.sh was restarted last, whichever 
+         happened most recently.  
+       * Also, added a spinner to indicate that the script is still active.  Various optimizations and code clean-up.
 
-v0.7 - (Jan 15, 2022) Added the avg ping time next to the "Ping is Alive" indicator, which shows avg time in ms across
-       the active VPN tunnel to the ping host specified.
+v0.7 - (Jan 15, 2022) 
+       * Added the avg ping time next to the "Ping is Alive" indicator, which shows avg time in ms across the active VPN
+         tunnel to the ping host specified.
 
-v0.6 - (Jan 14, 2022) Added logging capabilities.  Major events (resets/connection issues/etc) are logged to a file named 
-       "vpnmon-on.log" in the /jffs/scripts folder by default.  This capability can be disabled by changing the value to 
-       "/dev/null".  PSA: though it doesn't do a crazy amount of logging, over time it will get larger and larger and will
-       eventually impact the total space available in /jffs.  Recommend keeping an eye on this, and wiping the 
-       "vpnmon-on.log" on occasion.  Will consider adding a more automated log purging feature in the future.  ;)
+v0.6 - (Jan 14, 2022) 
+       * Added logging capabilities.  Major events (resets/connection issues/etc) are logged to a file named 
+         "vpnmon-on.log" in the /jffs/scripts folder by default.  This capability can be disabled by changing the value to 
+         "/dev/null".  PSA: though it doesn't do a crazy amount of logging, over time it will get larger and larger and will
+         eventually impact the total space available in /jffs.  Recommend keeping an eye on this, and wiping the 
+         "vpnmon-on.log" on occasion.  Will consider adding a more automated log purging feature in the future.  ;)
        
 v0.5 - Initial release of VPNMON.SH (Jan 12, 2022)
