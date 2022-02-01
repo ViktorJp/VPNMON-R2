@@ -1,4 +1,4 @@
-v0.6 - (Feb 2, 2022) 
+v0.6 - (Feb 1, 2022) 
        * Added a new API lookup to display the VPN Exit Node city/location next to the active VPN connection.  This API is
          free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single interval, a location
          lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2
