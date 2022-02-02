@@ -7,7 +7,8 @@ v0.6 - (Feb 1, 2022)
          failure, or multiple connections.
        * Moved the interval indicator to the top row next to the scheduled reset time
        * Some cosmetics color change enhancements to the output screen and cleaned up the code to make it look more uniform. 
-         Need to work on variable naming uniformity next, as that's *ALL* over the place still.  ;)
+         Need to work on variable naming uniformity next, as that's *ALL* over the place still.
+       * Replaced the spinner with a decent looking progress bar... spinner was looking long-in-the-tooth.  ;)
 
 v0.5 - (Jan 23, 2022) Wow, where to start... 
        * VPNMON.SH was heavily overhauled into VPNMON-R2.SH to incorporate my other script, VPNON.SH, so that it could act
