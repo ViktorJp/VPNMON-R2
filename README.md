@@ -53,6 +53,8 @@ What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 * This script will run just fine as long as you change the following parameters in this script...
 * Change "UpdateVPNMGR=1" to 0... this will disable the functionality to update the VPNMGR configs you may have set up to keep your NordVPN/PIA/WeVPN hosts updated to the latest hosts you have specified.
 * Change "UpdateSkynet=1" to 0... this will disable the functionality to update your Skynet firewall to whitelist all US-based NordVPN IP addresses, so that it doesn't block them in the near future. If you don't have Skynet Firewall installed, you should set this to 0.
+* Let me know if it doesn't!  Post something. ;)
+  Here: https://www.snbforums.com/threads/release-vpnmon-r2-v0-6-a-script-that-monitors-your-vpn-connection.76748/
 
 Gotchas
 -------
