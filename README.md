@@ -44,9 +44,8 @@ What this script does
 10. If it determines that my other (optional) external script VPNON.SH is resetting the connection, it will hang back until VPNON.SH is done.
 11. Logs major events (resets/connection errors/etc) to /jffs/scripts/vpnmon-r2.log (optional)
 12. It will reset your VPN connection at a regularly scheduled time using the settings at the top of the script (optional)
-13. Includes a timer to show when the last time VPN was reset, along with a progressbar to show script activity
-14. It now shows the last time a VPN reset happened indicated by "Last Reset:", an indicator when the next reset will happen, and how often the interval happens (in seconds) on the easy-to-read VPNMON-R2 interface in your SSH shell.
-15.  Added a new API lookup to display the VPN exit node city/location next to the active VPN connection.  This API is free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single refresh interval, a location lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2 initiates a reset.
+13. It now shows the last time a VPN reset happened indicated by "Last Reset:", an indicator when the next reset will happen, and how often the interval happens (in seconds) on the easy-to-read VPNMON-R2 interface in your SSH shell, along with a progressbar to show script activity
+14.  Added a new API lookup to display the VPN exit node city/location next to the active VPN connection.  This API is free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single refresh interval, a location lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2 initiates a reset.
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
