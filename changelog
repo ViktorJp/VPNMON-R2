@@ -1,5 +1,5 @@
 v0.7 - (Feb 18, 2022)
-       * Spent a lot of time dealing with a persisten hang issue, and looks to be resolved. I believe the script was running 
+       * Spent a lot of time dealing with a persistent hang issue, and looks to be resolved. I believe the script was running 
          into a race/deadlock type of situation where it would hang during successive NVRAM lookups that were happening too
          close together calling for the same values. I reduced the number of lookups being done, and works flawlessly now.
        * Added some debug commands for future debugging needs, thanks to @eibgrad for his expert help and advice on how to
