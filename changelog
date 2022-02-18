@@ -1,8 +1,9 @@
 v0.7 - (Beta)
-       * Spent a lot of time dealing with a hang issue, and hoping to have it resolved. I believe the script was running
-         into a deadlock type of situation where it would hang during successive NVRAM lookups that were happing too close
-         together. I reduced the number of lookups being done, and continuing to keep an eye on it.
-       * Added some debug commands, thanks to @eibgrad for his help and advice on how to accomplish all this.
+       * Spent a lot of time dealing with a hang issue, and looks to be resolved. I believe the script was running into
+         a race/deadlock type of situation where it would hang during successive NVRAM lookups that were happening too
+         close together calling for the same values. I reduced the number of lookups being done, and works flawlessly now.
+       * Added some debug commands for future debugging needs, thanks to @eibgrad for his expert help and advice on how to
+         accomplish all this.
        * Added a VPNMON-R2.LOG entry that shows when a city lookup is being done through the API.
 
 v0.6 - (Feb 1, 2022) 
