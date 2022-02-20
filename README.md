@@ -62,6 +62,7 @@ Gotchas
 * If you don't want to integrate with VPNMGR, or whitelist NordVPN IPs in your Skynet Firewall, please set/configure each of these options to 0 at the top of this script before running it.
 * Make sure you configure the N=5 variable to the same number of VPN Client slots you have configured.
 * Make sure you keep your VPN Client slots sequential... don't use 1, 2, and 4... for instance. Keep it to 1, 2, and 3.
+* If you're using the SuperRandom(tm) functionality, please be sure that each of your VPN slots are fully configured, as this function will only replace your "server address" IP and the "description" in NordVPN - [CITY] format. It is also important to disable the VPNMGR update -- set UpdateVPNMGR=0.
 
 Disclaimer
 ----------
