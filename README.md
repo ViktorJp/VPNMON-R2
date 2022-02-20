@@ -25,7 +25,7 @@ One particular ingenious way to run this is using the "screen" utility continuou
 1. First, make sure you install the "screen" utility (and have Entware installed):
    ``opkg install screen``
 2. The screen utility allows you to run the script in the background, detached from your current ssh session. Type:
-   ``screen -dmS vpnmon-r2 /jffs/scripts/vpnmon-r2.sh``
+   ``screen -dmS vpnmon-r2 sh /jffs/scripts/vpnmon-r2.sh``
 3. You can then reattach to the running script at any time, from any ssh session, on any client machine! Type:
    ``screen -r vpnmon-r2``
 4. Perform the detach by hitting CTRL-A + D
