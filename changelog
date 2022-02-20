@@ -1,3 +1,22 @@
+v0.8 - (Beta)
+       * Added the concept of SuperRandom(tm) NordVPN Connections!  This mode, when enabled (NordVPNSuperRandom=1) -- if you 
+         choose to be so incredibly daring and adventurous -- will fill your VPN client slots with random VPN servers across
+         the country of your choice!  Distance, load, and performance be damned!! In the US, the number of available VPN
+         servers is up to around 1920, which fluctuates.  This option will bypass VPNMGR functionality to update your VPN
+         slots with its recommendations (based on chosen city, performance and load).  Thus -- it is assumed that each of
+         your (up to 5) VPN client slots are fully configured and operational! The SuperRandom(tm) function will only
+         replace the "server address" IP and "description" (in a "NordVPN - City" format), and reiniate the connection as
+         usual after losing your connection, having multiple connections going, or after a scheduled reset.  Enjoy!
+       * The NordVPNCountry variable is now available for you to populate with the country of your choice without having to
+         mess around with the code.  These are all available country names to choose from: Albania, Argentina, Australia,
+         Austria, Belgium, Bosnia and Herzegovina, Brazil, Bulgaria, Canada, Chile, Costa Rica, Croatia, Cyprus, Czech
+         Republic, Denmark, Estonia, Finland, France, Georgia, Germany, Greece, Hong Kong, Hungary, Iceland, India,
+         Indonesia, Ireland, Israel, Italy, Japan, Latvia, Lithuania, Luxembourg, Malaysia, Mexico, Moldova, Netherlands,
+         New Zealand, North Macedonia, Norway, Poland, Portugal, Romania, Serbia, Singapore, Slovakia, Slovenia, South
+         Africa, South Korea, Spain, Sweden, Switzerland, Taiwan, Thailand, Turkey, Ukraine, United Arab Emirates, United
+         Kingdom, United States, Vietnam.
+       * Other code optimizations, error catching, and formatting fixes just to make it more pleasing to the eye. ;)
+
 v0.7 - (Feb 18, 2022)
        * Spent a lot of time dealing with a persistent hang issue, and looks to be resolved. I believe the script was running 
          into a race/deadlock type of situation where it would hang during successive NVRAM lookups that were happening too
