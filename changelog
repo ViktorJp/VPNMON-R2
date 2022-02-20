@@ -1,4 +1,4 @@
-v0.8 - (Beta)
+v0.8 - (Feb 20, 2022)
        * Added the concept of SuperRandom(tm) NordVPN Connections!  This mode, when enabled (NordVPNSuperRandom=1) -- if you 
          choose to be so incredibly daring and adventurous -- will fill your VPN client slots with random VPN servers across
          the country of your choice!  Distance, load, and performance be damned!! In the US, the number of available VPN
