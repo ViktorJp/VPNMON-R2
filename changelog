@@ -5,7 +5,7 @@ v0.8 - (Feb 20, 2022)
          servers is up to around 1920, which fluctuates.  This option will bypass VPNMGR functionality to update your VPN
          slots with its recommendations (based on chosen city, performance and load).  Thus -- it is assumed that each of
          your (up to 5) VPN client slots are fully configured and operational! The SuperRandom(tm) function will only
-         replace the "server address" IP and "description" (in a "NordVPN - City" format), and reiniate the connection as
+         replace the "server address" IP and "description" (in a "NordVPN - City" format), and reinitiate the connection as
          usual after losing your connection, having multiple connections going, or after a scheduled reset.  Enjoy!
        * The NordVPNCountry variable is now available for you to populate with the country of your choice without having to
          mess around with the code.  These are all available country names to choose from: Albania, Argentina, Australia,
