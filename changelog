@@ -1,3 +1,13 @@
+v0.9 - (Feb 23, 2022)
+       * Added a row of stats to the bottom of VPNMON-R2's interface, specifically showing the Low and High ping history for
+         the current connection, whether or not Skynet gets updated with NordVPN IPs, and how VPNMON-R2 is currently
+         configured, showing either: (a) "VPNMGR" - VPNMON-R2 is integrated with VPNMGR and using its functionality
+         periodically to update latest NordVPN/PIA/WeVPN server information into your VPN slots, (b) "NordVPN SuperRandom" - 
+         VPNMON-R2 is randomly selecting one of hundreds/thousands of NordVPN servers from within the specified country and 
+         populating your VPN slots, and (c) "Standard" - VPNMON-R2 is neither using VPNMGR or SuperRandom functionality, and
+         optionally restarting your VPN connections on a random basis based on your set schedule.  This is a clean and easy
+         way to see how VPNMON-R2 is configured, and giving you some performance stats along with it.  Enjoy!         
+
 v0.8 - (Feb 20, 2022)
        * Added the concept of SuperRandom(tm) NordVPN Connections!  This mode, when enabled (NordVPNSuperRandom=1) -- if you 
          choose to be so incredibly daring and adventurous -- will fill your VPN client slots with random VPN servers across
