@@ -1,6 +1,6 @@
 # VPNMON-R2
 
-**Executive Summary**: VPNMON-R2 v0.9 (VPNMON-R2.SH) is an all-in-one simple script which compliments @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, though this is not a requirement, and can function without problems in a standalone environment. This script checks your (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of commands that will kill all VPN clients, and optionally use VPNMGR's functionality to poll NordVPN/PIA/WeVPN for updated server names based on the locations you have selected in VPNMGR, optionally whitelists all US-based NordVPN servers in the Skynet Firewall, and randomly picks one of the 5 VPN Clients to connect to. Logging added to capture relevant events for later review.  As mentioned, disabling VPNMGR and Skynet functionality is completely supported should you be using other VPN options, and as such, this script would help maintain an eye on your connection, and able to randomly reset it if needed.
+**Executive Summary**: VPNMON-R2 v1.0 (VPNMON-R2.SH) is an all-in-one simple script which compliments @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, though this is not a requirement, and can function without problems in a standalone environment. This script checks your (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of commands that will kill all VPN clients, and optionally use VPNMGR's functionality to poll NordVPN/PIA/WeVPN for updated server names based on the locations you have selected in VPNMGR, optionally whitelists all US-based NordVPN servers in the Skynet Firewall, and randomly picks one of the 5 VPN Clients to connect to. Logging added to capture relevant events for later review.  As mentioned, disabling VPNMGR and Skynet functionality is completely supported should you be using other VPN options, and as such, this script would help maintain an eye on your connection, and able to randomly reset it if needed.
 
 I am by no means a serious script programmer. I've combed through lots of code and examples found both on the Merlin FW discussion forums and online to cobble this stuff together. You will probably find inefficient code, or possibly shaking your head with the rudimentary ways I'm pulling things off... but hey, I'm learning, and it works! ;)  Huge thanks and shoutouts to @JackYaz, @eibgrad and @Martineau for their inspiration and gorgeous looking code, and for everyone else that has helped me along the way on the Merlin forums: https://www.snbforums.com/forums/asuswrt-merlin.42/.  As always, a huge thank you and a lot of admiration goes out to @RMerlin, @Adamm, @L&LD, @SomeWhereOverTheRainBow and @thelonelycoder for everything you've done for the community
 
@@ -36,17 +36,18 @@ What this script does
 2. If a VPN Client is connected, it sends a PING through to Google's DNS server to determine if the link is good (configurable)
 3. If it determines that the VPN Client is down, or connection is broken, it will attempt to reset the VPN
 4. If it determines that multiple VPN Clients are running, it will attempt to reset the VPN
-5. Updates Skynet whitelist with all US-based NordVPN endpoint IP addresses (optional) - FYI, you can easily change this for the country of your choice.
-6. Updates VPNMGR cache with recommended NordVPN/PIA/WeVPN endpoint information (optional), and merges/refreshes these changes with your Merlin VPN Client configurations
-7. Uses a randomizer to pick one of 5 different VPN Clients to connect to (configurable between 1 and 5)
-8. Initiates the connection to the specified VPN endpoint.
-9. It will loop through this process every 30 seconds (configurable)
-10. If it determines that my other (optional) external script VPNON.SH is resetting the connection, it will hang back until VPNON.SH is done.
-11. Logs major events (resets/connection errors/etc) to /jffs/scripts/vpnmon-r2.log (optional)
-12. It will reset your VPN connection at a regularly scheduled time using the settings at the top of the script (optional)
-13. It now shows the last time a VPN reset happened indicated by "Last Reset:", an indicator when the next reset will happen, and how often the interval happens (in seconds) on the easy-to-read VPNMON-R2 interface in your SSH shell, along with a progressbar to show script activity
-14. Added a new API lookup to display the VPN exit node city/location next to the active VPN connection.  This API is free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single refresh interval, a location lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2 initiates a reset.
-15. Added the concept of SuperRandom(tm) NordVPN Connections! This is a NordVPN feature only! When enabled, it will fill your VPN client slots with random VPN servers across the country of your choice (set by the NordVPNCountry variable).  Distance, load, and performance be damned!!
+5. If it determines that the NordVPN server load is too high, it will attempt to reset the VPN
+6. Updates Skynet whitelist with all US-based NordVPN endpoint IP addresses (optional) - FYI, you can easily change this for the country of your choice.
+7. Updates VPNMGR cache with recommended NordVPN/PIA/WeVPN endpoint information (optional), and merges/refreshes these changes with your Merlin VPN Client configurations
+8. Uses a randomizer to pick one of 5 different VPN Clients to connect to (configurable between 1 and 5)
+9. Initiates the connection to the specified VPN endpoint.
+10. It will loop through this process every 30 seconds (configurable)
+11. If it determines that my other (optional) external script VPNON.SH is resetting the connection, it will hang back until VPNON.SH is done.
+12. Logs major events (resets/connection errors/etc) to /jffs/scripts/vpnmon-r2.log (optional)
+13. It will reset your VPN connection at a regularly scheduled time using the settings at the top of the script (optional)
+14. It now shows the last time a VPN reset happened indicated by "Last Reset:", an indicator when the next reset will happen, and how often the interval happens (in seconds) on the easy-to-read VPNMON-R2 interface in your SSH shell, along with a progressbar to show script activity
+15. Added a new API lookup to display the VPN exit node city/location next to the active VPN connection.  This API is free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single refresh interval, a location lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2 initiates a reset.
+16. Added the concept of SuperRandom(tm) NordVPN Connections! This is a NordVPN feature only! When enabled, it will fill your VPN client slots with random VPN servers across the country of your choice (set by the NordVPNCountry variable).  Distance, load, and performance be damned!!
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
