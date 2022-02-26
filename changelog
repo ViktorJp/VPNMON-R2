@@ -1,5 +1,5 @@
 v1.0 - (Feb 26, 2022)
-       * We're at the big v1.0! VPNMON-R2 (and VPNON) have made some big strides in these 2 short months! ;)
+       * We're at the big v1.0! VPNMON-R2 (and VPNON) have made some huge strides in these 2 short months! ;)
        * Introducting a new NordVPN Server Load stat!  In lieu of showing whether or not Skynet is getting updated on the
          stats row, it now shows the NordVPN Server Load thanks to a suggestion by @JackYaz.  This Load stat is only
          available if you enable the "UseNordVPN" variable and set it to "1", or if the "NordVPNSuperRandom" variable is set
