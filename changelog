@@ -1,3 +1,14 @@
+v1.0 - (Feb 26, 2022)
+       * We're at the big v1.0! VPNMON-R2 (and VPNON) have made some big strides in these 2 short months! ;)
+       * Introducting a new NordVPN Server Load stat!  In lieu of showing whether or not Skynet is getting updated on the
+         stats row, it now shows the NordVPN Server Load thanks to a suggestion by @JackYaz.  This Load stat is only
+         available if you enable the "UseNordVPN" variable and set it to "1", or if the "NordVPNSuperRandom" variable is set
+         to "1".  Otherwise, it will default to showing the Skynet stat based on if "UpdateSkynet" is set to "1".
+       * A great byproduct to now showing this Load stat, is that another VPN reset can occur if it exceeds a certain
+         threshhold.  Currently the "NordVPNLoadReset" is set to 50, so if the current NordVPN server you're connected to
+         exceeds a 50% load, it will reset the VPN to look for another server with a lesser load. All these items are totally
+         configurable at the top of the script.
+
 v0.9 - (Feb 23, 2022)
        * Added a row of stats to the bottom of VPNMON-R2's interface, specifically showing the Low and High ping history for
          the current connection, whether or not Skynet gets updated with NordVPN IPs, and how VPNMON-R2 is currently
