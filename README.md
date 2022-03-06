@@ -69,7 +69,7 @@ Configuration
 -------
 * Please note, there is no menu to configure VPNMON-R2.  You will need to manually edit the options at the top of the script to satisfy your particular environment. This is also, again, assuming that your VPN Client slots 1-5 are configured correctly, and that your VPN Director rules are correct. The following settings are the basics to get things working:
 
-**   I'm NOT using VPNMGR, and am using a standalone VPN provider, like PIA, WeVPN, ExpressVPN, etc.
+**I'm NOT using VPNMGR, and am using a standalone VPN provider, like PIA, WeVPN, ExpressVPN, etc.
    Set these variables:**
    
    UpdateVPNMGR=0
@@ -77,7 +77,7 @@ Configuration
    NordVPNSuperRandom=0
    UpdateSkynet=0
 
-**   I'm NOT using VPNMGR, and am using NordVPN as my standalone VPN provider, and want to use the 
+**I'm NOT using VPNMGR, and am using NordVPN as my standalone VPN provider, and want to use the 
    SuperRandom(tm) functionality.  Set these variables:**
    
    UpdateVPNMGR=0
@@ -85,16 +85,16 @@ Configuration
    NordVPNSuperRandom=1
    UpdateSkynet=1
 
-**   I'm using VPNMGR, and am using either PIA or WeVPN as my VPN provider.  Set these variables:
-**   
+**I'm using VPNMGR, and am using either PIA or WeVPN as my VPN provider.  Set these variables:**
+
    UpdateVPNMGR=1
    UseNordVPN=0
    NordVPNSuperRandom=0
    UpdateSkynet=0
 
-**   I'm using VPNMGR, and am using NordVPN as my VPN provider, and don't want to use the SuperRandom(tm) 
-   functionality, nor do I want to update the Skynet firewall.  Set these variables:
-**   
+**I'm using VPNMGR, and am using NordVPN as my VPN provider, and don't want to use the SuperRandom(tm) 
+   functionality, nor do I want to update the Skynet firewall.  Set these variables:**
+   
    UpdateVPNMGR=1
    UseNordVPN=1
    NordVPNSuperRandom=0
