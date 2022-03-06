@@ -78,7 +78,7 @@ Configuration
    UpdateSkynet=0``
 
    **I'm NOT using VPNMGR, and am using NordVPN as my standalone VPN provider, and want to use the 
-   SuperRandom(tm) functionality.  Set these variables:**
+   SuperRandom(tm) functionality and update the Skynet firewall.  Set these variables:**
    
    ``UpdateVPNMGR=0
    UseNordVPN=1
