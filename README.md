@@ -69,46 +69,45 @@ Configuration
 -------
 * Please note, there is no menu to configure VPNMON-R2.  You will need to manually edit the options at the top of the script to satisfy your particular environment. This is also, again, assuming that your VPN Client slots 1-5 are configured correctly, and that your VPN Director rules are correct. The following settings are the basics to get things working:
 
-**I'm NOT using VPNMGR, and am using a standalone VPN provider, like PIA, WeVPN, ExpressVPN, etc.
+   **I'm NOT using VPNMGR, and am using a standalone VPN provider, like PIA, WeVPN, ExpressVPN, etc.
    Set these variables:**
    
-   UpdateVPNMGR=0
+   ``UpdateVPNMGR=0
    UseNordVPN=0
    NordVPNSuperRandom=0
-   UpdateSkynet=0
+   UpdateSkynet=0``
 
-**I'm NOT using VPNMGR, and am using NordVPN as my standalone VPN provider, and want to use the 
+   **I'm NOT using VPNMGR, and am using NordVPN as my standalone VPN provider, and want to use the 
    SuperRandom(tm) functionality.  Set these variables:**
    
-   UpdateVPNMGR=0
+   ``UpdateVPNMGR=0
    UseNordVPN=1
    NordVPNSuperRandom=1
-   UpdateSkynet=1
+   UpdateSkynet=1``
 
-**I'm using VPNMGR, and am using either PIA or WeVPN as my VPN provider.  Set these variables:**
+   **I'm using VPNMGR, and am using either PIA or WeVPN as my VPN provider.  Set these variables:**
 
-   UpdateVPNMGR=1
+   ``UpdateVPNMGR=1
    UseNordVPN=0
    NordVPNSuperRandom=0
-   UpdateSkynet=0
+   UpdateSkynet=0``
 
-**I'm using VPNMGR, and am using NordVPN as my VPN provider, and don't want to use the SuperRandom(tm) 
+   **I'm using VPNMGR, and am using NordVPN as my VPN provider, and don't want to use the SuperRandom(tm) 
    functionality, nor do I want to update the Skynet firewall.  Set these variables:**
    
-   UpdateVPNMGR=1
+   ``UpdateVPNMGR=1
    UseNordVPN=1
    NordVPNSuperRandom=0
-   UpdateSkynet=0
+   UpdateSkynet=0``
 
 Please look at the top of the script for any other options you may want to configure.  For instance, if
 you don't want to monitor all 5 VPN client slots, change the N value to your desired number.  Also, if
 you don't want to have the script automatically reset your VPN connection each night, change that
 ResetOption value to 0.
 
-let N=5                     # Number of configured VPN Clients to choose from, max = 5 on Asus 86U
-ResetOption=1               # Do you want VPNMON-R2 to run a daily reset?  1=yes, 0=no
-DailyResetTime="01:00"      # Time at which you choose to randomly reset your VPN clients in 24H HH:MM format,
-                            # So, 8:05pm would notated as: 20:0`
+``let N=5                     # Number of configured VPN Clients to choose from, max = 5 on Asus 86U``
+
+``ResetOption=1               # Do you want VPNMON-R2 to run a daily reset?  1=yes, 0=no``
   
 
 Disclaimer
