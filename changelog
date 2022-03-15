@@ -1,3 +1,17 @@
+v1.1 - (Mar 15, 2022)
+       * Added an integrated configuration utility that steps you through all available configurable options to give you
+         the most compatible experience for your setup.  This tools makes the experience much more pleasing than having
+         to deal with manually editing (and understanding) the options that were available at the top of the script. The
+         configuration tool is called by using the following command: "sh vpnmon-r2.sh -config"
+       * Introduced the capability to use commandline arguments to perform various functions in the script.  Available
+         commands are (1) -h or -help -- to display a quick overview of available commands, (2) -log -- to display the
+         contents of the log file within the NANO text editor, (3) -config -- this runs the configuration utility, and
+         steps you through all available options, and writes your selections to a config file, and (4) -monitor -- this
+         runs VPNMON-R2 under normal monitoring operating conditions to keep an eye on the health of your VPN connection.
+       * Moved all working files (config, log and reset log) to its own dedicated folder named "vpnmon-r2.d" under
+         "/jffs/addons".  The main script can still be found under "/jffs/scripts/vpnmon-r2.sh"
+       * Various optimizations and small bug fixes (more like annoyances that bother my OCD).
+
 v1.0 - (Feb 26, 2022)
        * We're at the big v1.0! VPNMON-R2 (and VPNON) have made some huge strides in these 2 short months! ;)
        * Introducting a new NordVPN Server Load stat!  In lieu of showing whether or not Skynet is getting updated on the
