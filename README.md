@@ -55,7 +55,7 @@ What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 * As long as your VPN slots are configured and tested using the VPN provider of your choice, this script will run perfectly fine, and can monitor, reset and randomly start a new VPN client slot for you each day.  Please know, this script was written to compliment VPNMGR, and gives a heavy preference to NordVPN, but neither is required.
 * While stepping through the configuration utility ("vpnmon-r2.sh -config"), you can choose to disable the ability to update VPNMGR hosts, enable/disable specific NordVPN functionality, and the ability to whitelist the latest NordVPN servers in Skynet.
 * Let me know how you're using this script!  Feel free to post in the forums. ;)
-  Here: https://www.snbforums.com/threads/release-vpnmon-r2-v0-6-a-script-that-monitors-your-vpn-connection.76748/
+  Here: https://www.snbforums.com/threads/release-vpnmon-r2-a-script-that-monitors-your-vpn-connection.76748/
 
 Usage
 -------
