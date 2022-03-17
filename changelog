@@ -1,3 +1,11 @@
+v1.2 - (Mar 17, 2022)
+       * Added for the capability of VPNMON-R2 to check for a new version on a periodic basis, and will alert you within
+         the interface when a new version becomes available for download.  From v1.2 moving forward, the script will
+         provide for the capability to check and alert you for new updates.
+       * Added a new commandline argument to the list of available commands: "sh vpnmon-r2.sh -update" -- this runs the
+         script update utility which downloads and installs the latest version from the github repository.
+       * Minor optimizations and enhancements
+
 v1.1 - (Mar 15, 2022)
        * Added an integrated configuration utility that steps you through all available configurable options to give you
          the most compatible experience for your setup.  This tools makes the experience much more pleasing than having
