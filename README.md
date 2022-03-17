@@ -49,7 +49,7 @@ What this script does
 14. Added a new API lookup to display the VPN exit node city/location next to the active VPN connection.  This API is free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single refresh interval, a location lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2 initiates a reset.
 15. Added the concept of SuperRandom(tm) NordVPN Connections! This is a NordVPN feature only! When enabled, it will fill your VPN client slots with random VPN servers across the country of your choice.  Distance, load, and performance be damned!!
 16. Added an integrated configuration utility (by running "vpnmon-r2.sh -config") that steps you through all the options and saves results to a config file, without the need to manually edit and configure the script itself.
-17. Built-in a script update checker, which notifies you when a new version becomes available, and allows you to easily download an install the latest script by using the 'vpnmon-r2.sh -update' command.
+17. Added a script update checker, which notifies you when a new version becomes available, and allows you to easily download an install the latest script by using the 'vpnmon-r2.sh -update' command.
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
