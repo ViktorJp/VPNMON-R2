@@ -1,3 +1,9 @@
+v1.3 - (Mar 18, 2022)
+       * Added another row of stats!  The latest additions include near-realtime average RX and TX bandwitdh across the
+         active VPN tunnel.  Also, the current total TX and RX bytes for the VPN tunnel from when the tunnel was
+         initialized and converted to Gb.  Stats for the bandwith figures come from the vnStat utility, while the total
+         transmitted bytes are read from an OpenVPN status file that is auto generated.
+
 v1.2 - (Mar 17, 2022)
        * Added for the capability of VPNMON-R2 to check for a new version on a periodic basis, and will alert you within
          the interface when a new version becomes available for download.  From v1.2 moving forward, the script will
