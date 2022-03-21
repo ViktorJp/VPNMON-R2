@@ -1,4 +1,4 @@
-v1.3 - (Mar 18, 2022)
+v1.3 - (Mar 20, 2022)
        * Added another row of stats! The latest additions include near-realtime average RX and TX bandwitdh (in Mbps) 
          across the active VPN tunnel. Also, the current total TX and RX bytes for the VPN tunnel is displayed and 
          gradually increments from when the tunnel was initialized (in Gb). Stats for these are interpolated bandwith
