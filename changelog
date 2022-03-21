@@ -1,11 +1,11 @@
 v1.3 - (Mar 20, 2022)
        * Added another row of stats! The latest additions include near-realtime average RX and TX bandwitdh (in Mbps) 
          across the active VPN tunnel. Also, the current total TX and RX bytes for the VPN tunnel is displayed and 
-         gradually increments from when the tunnel was initialized (in Gb). Stats for these are interpolated bandwith
-         figures come from an OpenVPN status file that is auto generated when the tunnel is initiated.  Please
-         understand that these numbers are generated based on the interval time period you have configured, and may not
-         reflect actual real-world amounts. These will give you a good general indicator on what's happening across your
-         VPN. That's my disclaimer. ;)
+         gradually increments from when the tunnel was initialized (in Gb). Stats for these bandwith figures are 
+         interpreted from an OpenVPN status file that is auto generated when the tunnel is initiated.  Please understand 
+         that these numbers are generated based on the interval time period you have configured, and may not reflect
+         actual real-world amounts. These will give you a good general indicator on what's happening across your VPN.
+         That's my disclaimer. ;)
        * The ability to enable/disable these stats is available in the configuration utility (vpnmon-r2.sh -config).
        * I have really taken a liking to the new ASCII art font title for VPNMON-R2, that I have now incorporated it on 
          the top of the main UI. Version number was moved to its right.
