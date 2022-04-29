@@ -1,3 +1,19 @@
+v1.4 - (TBA)
+       * The big news here is that VPNMON-R2 is now able to integrate with YazFi! Thanks to @iTyPsIDg for the great
+         suggestion! Using the setup utility (-config switch), you can now specify which of the 3 x 2.4Ghz, 5Ghz and
+         secondary 5Ghz guest networks you want to sync with VPNMON-R2 when it randomly picks a new VPN connection
+         and updates the slot number directly in YazFi.  This should make life a lot more bearable for those running
+         multiple guest networks, and wanting to make use of the full power of randomized VPN connections!  :)
+       * The other big news is that VPNMON-R2 can now also accept 2 additional countries for a total of 3 supported
+         countries to randomly connect to! Also configurable through the setup utility (-config switch), you can
+         now specify which additional (up to) 2 countries you want to add.  When VPNMON-R2 goes through it's reset
+         function, it will randomly pick from one of the (up to) 3 countries, optionally whitelist all available 
+         NordVPN servers for that country in your Skynet firewall, and optionally make a SuperRandom(r) connection
+         to one out of all available servers in the specified country!  Yes, we have gone international!  Thanks
+         goes to @Spud for the excellent suggestion!
+       * Some more code cleanup, optimizations and expanded on the config menu to handle the new YazFi and multiple
+         country questions during setup.
+
 v1.3 - (Mar 20, 2022)
        * Added another row of stats! The latest additions include near-realtime average RX and TX bandwitdh (in Mbps) 
          across the active VPN tunnel. Also, the current total TX and RX bytes for the VPN tunnel is displayed and 
