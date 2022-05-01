@@ -1,4 +1,4 @@
-v1.4 - (TBA)
+v1.4 - (May 01, 2022)
        * The big news today is that VPNMON-R2 is now able to integrate with YazFi! Thanks to @iTyPsIDg for the great
          suggestion! Using the setup utility (-config switch), you can now specify which of the 3 x 2.4Ghz, 5Ghz and
          secondary 5Ghz guest networks you want to sync with VPNMON-R2 when it randomly picks a new VPN connection
