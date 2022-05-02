@@ -26,9 +26,9 @@ One particular ingenious way to run this script is with the "screen" utility, wh
 1. First, make sure you install the "screen" utility (and have Entware installed):
    ``opkg install screen``
 2. The screen utility allows you to run the script in the background, detached from your current ssh session on the router itself. Type:
-   ``screen -dmS vpnmonr2 sh /jffs/scripts/vpnmon-r2.sh -monitor``
+   ``screen -dmS vpnmon-r2 sh /jffs/scripts/vpnmon-r2.sh -monitor``
 3. You can then reattach to the running script at any time, from any ssh session, on any client machine! Type:
-   ``screen -r vpnmonr2``
+   ``screen -r vpnmon-r2``
 4. Perform the detach by hitting CTRL-A + D
 
 What this script does
