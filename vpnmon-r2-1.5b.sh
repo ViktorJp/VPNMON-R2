@@ -553,12 +553,12 @@ checkvpn() {
           if [ $RC -eq 0 ] && [ $IC -eq 0 ];then
             STATUS=1
             VPNCLCNT=$((VPNCLCNT+1))
-            AVGPING=$(timeout 5 ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn)
+            AVGPING=$(ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn)
 
             if [ -z "$AVGPING" ]; then AVGPING=0; fi # On that rare occasion where it's unable to get the Ping time, assign 0
 
             if [ $VPNIP == "Unassigned" ];then
-              VPNIP=$(timeout 5 nvram get vpn_client$1_addr)
+              VPNIP=$(nvram get vpn_client$1_addr)
               #VPNCITY=$(curl --silent --retry 3 --request GET --url https://ipapi.co/$VPNIP/city)
               VPNCITY=$(curl --silent --retry 3 --request GET --url https://ipapi.co/$ICANHAZIP/city)
               if [[ $VPNCITY == *"error"* ]]; then VPNCITY=$ICANHAZIP; fi # On that rare occasion the API gets rate limited
@@ -1169,11 +1169,11 @@ while true; do
     echo -e "${CYellow}$(date) -------- Last Reset: ${InvBlue}$LASTVPNRESET${CClear}"
 
   # Determine if a VPN Client is active, first by getting the VPN state from NVRAM
-    state1=$(timeout 5 nvram get vpn_client1_state)
-    state2=$(timeout 5 nvram get vpn_client2_state)
-    state3=$(timeout 5 nvram get vpn_client3_state)
-    state4=$(timeout 5 nvram get vpn_client4_state)
-    state5=$(timeout 5 nvram get vpn_client5_state)
+    state1=$(nvram get vpn_client1_state)
+    state2=$(nvram get vpn_client2_state)
+    state3=$(nvram get vpn_client3_state)
+    state4=$(nvram get vpn_client4_state)
+    state5=$(nvram get vpn_client5_state)
 
   # Display the VPN states along with scheduled reset time/interval seconds
     if [ $ResetOption -eq 1 ]
