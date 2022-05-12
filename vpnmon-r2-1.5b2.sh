@@ -613,7 +613,7 @@ checkvpn() {
             if [ $VPNIP == "Unassigned" ];then
               VPNIP=$(nvram get vpn_client$1_addr)
               VPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$ICANHAZIP/city"
-              if $VPNCITY | grep -qE '\b(*error*|Undefined)\b'; then VPNCITY="$ICANHAZIP"; else VPNCITY="$(eval $VPNCITY)"; fi
+              if $VPNCITY | grep -qE '\b(*error*|Undefined)\b'; then VPNCITY="$ICANHAZIP"; else VPNCITY="$(eval $VPNCITY)"; fi  # Huge thanks to @SomeWhereOverTheRainBow for this great grep code!
               echo -e "$(date) - VPNMON-R2 - API call made to update city to $VPNCITY" >> $LOGFILE
             fi
             echo -e "${CGreen}==VPN$1 Tunnel Active | ||${CWhite}${InvGreen} $AVGPING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$VPNCITY${CClear}"
