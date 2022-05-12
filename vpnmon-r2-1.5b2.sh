@@ -63,8 +63,6 @@ CURRCLNT=0                                          # Tracks which VPN client is
 CNT=0                                               # Counter
 AVGPING=0                                           # Average ping value
 SPIN=15                                             # 15-second Spin timer
-AddTimeWanCheck=11                                  # Add 11 seconds for WAN checks
-AddTimeVPNLoad=3                                    # Add 3 seconds for NordVPN Load Check
 state1=0                                            # Initialize the VPN connection states for VPN Clients 1-5
 state2=0
 state3=0
@@ -217,12 +215,16 @@ checkwan () {
   # Using Google's 8.8.8.8 server to test for WAN connectivity over verified SSL Handshake
   Connectivity=1
   wandownbreakertrip=0
+  WAN_ELAPSED_TIME=0
   testssl=8.8.8.8
 
   # Show that we're testing the WAN connection
   printf "${CGreen}\r[Checking WAN Connectivity]..."
 
   while [ $Connectivity == "1" ]; do
+
+    # Start a timer to see how long this takes to add to the TX/RX Calculations
+    WAN_START_TIME=$(date +%s)
 
     # Test the connection across 443 and verifying a handshake... if this fails, then the WAN connection is most likely down... or Google is down ;)
     if nc -w1 $testssl 443 && echo |openssl s_client -connect $testssl:443 2>&1 |awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }'
@@ -240,6 +242,9 @@ checkwan () {
               clear && clear
               vpnreset
           fi
+
+        WAN_END_TIME=$(date +%s)
+        WAN_ELAPSED_TIME=$(( WAN_END_TIME - WAN_START_TIME ))
 
         return
 
@@ -1279,12 +1284,17 @@ while true; do
 
     checkwan # Check the WAN connectivity to determine if we need to keep looping until WAN connection is re-established
 
+    LOAD_ELAPSED_TIME=0
+
     if [ $NordVPNSuperRandom -eq 1 ] || [ $UseNordVPN -eq 1 ]
       then
         # Get the NordVPN server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
+        LOAD_START_TIME=$(date +%s)
         printf "${CYellow}\r[Checking NordVPN Server Load]..."
         VPNLOAD=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16354" | jq '.[] | select(.station == "'"$VPNIP"'") | .load')
         printf "\r"
+        LOAD_END_TIME=$(date +%s)
+        LOAD_ELAPSED_TIME=$(( LOAD_END_TIME - LOAD_START_TIME ))
     fi
 
     if [ -z "$VPNLOAD" ]; then VPNLOAD=0; fi # On that rare occasion where it's unable to get the NordVPN load, assign 0
@@ -1316,7 +1326,7 @@ while true; do
     difftxbytes=$(awk -v new=$newtxbytes -v old=$oldtxbytes -v mb=125000 'BEGIN{printf "%.4f\n", (new-old)/mb}')
 
     # Modify the amount of time for the calculation to be the Interval + Time to check for NordVPN Load + Time to check for WAN connectivity
-    INTERVALTIMEMOD=$(($INTERVAL + $AddTimeVPNLoad + $AddTimeWanCheck))
+    INTERVALTIMEMOD=$(($INTERVAL + $LOAD_ELAPSED_TIME + $WAN_ELAPSED_TIME))
 
     # Results are further divided by the timer/interval to give Megabits/sec
     rxmbrate=$(awk -v rb=$diffrxbytes -v intv=$INTERVALTIMEMOD 'BEGIN{printf "%0.2f\n", rb/intv}')
