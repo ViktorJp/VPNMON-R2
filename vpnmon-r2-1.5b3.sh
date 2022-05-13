@@ -249,7 +249,7 @@ checkwan () {
         fi
 
           # If the WAN was down, and now it has just reset, then run a VPN Reset, and try to establish a new VPN connection
-          if [ $wandownbreakertrip == "1" ]
+          if [ $wandownbreakertrip == "2" ]
             then
               wandownbreakertrip=0
               echo -e "$(date) - VPNMON-R2 - WAN Connection Re-established -- Resetting VPN" >> $LOGFILE
@@ -267,14 +267,26 @@ checkwan () {
         # The WAN is most likely down, and keep looping through until the SSL handshake completes successfully
         Connectivity=0
         wandownbreakertrip=1
-        echo -e "$(date) - VPNMON-R2 ----------> ERROR: WAN DOWN" >> $LOGFILE
-        # clear screen
-        clear && clear
-          echo -e "${CRed}VPNMON-R2 is unable to detect a stable WAN connection. Trying to verify connection every $SPIN seconds...${CClear}\n"
-          echo ""
-          echo -e "${CRed}Please check with your ISP, or reset your modem to re-establish a connection.${CClear}\n"
-        spinner
 
+        while [ $wandownbreakertrip == "1" ]; do
+
+          # Continue to test for WAN connectivity while in this loop. If it comes back up, break out of the loop and reset VPN
+          if nc -w1 $testssl 443 && echo |openssl s_client -connect $testssl:443 2>&1 |awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }'
+            then
+              Connectivity=1
+              wandownbreakertrip=2
+            else
+              # Continue to loop and retest the WAN every 15 seconds
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: WAN DOWN" >> $LOGFILE
+              # clear screen
+              clear && clear
+                echo -e "${CRed}VPNMON-R2 is unable to detect a stable WAN connection. Trying to verify connection every $SPIN seconds...${CClear}\n"
+                echo ""
+                echo -e "${CRed}Please check with your ISP, or reset your modem to re-establish a connection.${CClear}\n"
+                spinner
+                wandownbreakertrip=1
+          fi
+        done
     fi
   done
 
