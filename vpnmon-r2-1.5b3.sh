@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v1.5b2 (VPNMON-R2.SH) is an all-in-one simple script which compliments @JackYaz's VPNMGR program to maintain a
+# VPNMON-R2 v1.5b3 (VPNMON-R2.SH) is an all-in-one simple script which compliments @JackYaz's VPNMGR program to maintain a
 # NordVPN/PIA/WeVPN setup, though this is not a requirement, and can function without problems in a standalone environment.
 # This script checks your (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a
 # host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of
