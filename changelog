@@ -1,3 +1,43 @@
+v1.5 - TBA
+       * SIGNIFICANT community testing and development has been done on the WAN up/down functionality... VPNMON-R2 is
+         now checking for 2 distinct events -- (1) where the modem is physically off/disconnected, and (2) where the
+         modem is on, but the ISP is down/disconnected. I never knew that the router/NVRAM couldn't tell the difference
+         until @Stephen Harrington and @iTyPsIDg made this observation. But the end results after testing this is that
+         it seems to be able to get past both hurdles now, and successfully re-establish a VPN connection after a
+         major event.  Sidenote: I don't think I've brought my internet down this much in the last 10 years total.
+         My family thanks you and is praying this is the gold version! LOL. Sincere thanks to everyone involved on
+         helping troubleshoot this and jumping in to pull apart this code! You all absolutely rock -- 
+         @Stephen Harrington, @SomeWhereOverTheRainBow, @dave14305, @iTyPsIDg ... thank you so much!
+       * Crunched the code through shellcheck.net... lots of small changes to formatting of calculations and regex
+         logic based on its suggestions -- thanks @SomeWhereOverTheRainBow
+       * Added a new parameter called "-uninstall" to the list in order to completely uninstall the script (not that
+         I'm encouraging you to do so, but at least you can now!) Usage: "vpnmon-r2 -uninstall" -- thanks @andywee
+       * Added a new parameter called "-screen", which will kick off VPNMON-R2 using the screen utility so we don't
+         have to type this huge commandline each time.  Usage: "vpnmon-r2.sh -screen" -- thanks @Kal1975
+       * Added the ability to hit enter on items during the config that were asking for values, and adds default values
+         for fill-in-the-blank and yes/no items -- thanks @chongnt
+       * Added live feedback during the config process to indicate what you just entered, to hopefully catch any typos
+         before getting saved into the config. I thought this would be less messy than showing a huge summary of what
+         all entries would be added to the config at the end of the setup process -- thanks @Kal1975
+       * Added a WAN connectivity check to the top of the VPN reset function. It will start off by first validating
+         whether or not there's a functional WAN connection before attempting to initiate a VPN connection.
+       * Added a WAN connectivity check during the regular loop to see if the WAN is up or down based on an SSL
+         handshake + verification to 8.8.8.8 (over the WAN connection). If this fails, VPNMON-R2 will fall back to a
+         loop, and keep rechecking until the WAN is re-established, then will re-establish the VPN -- thanks @Kal1975
+       * Changed the exit VPN city lookup to use the icanhazip.com external/public ip service to help with location
+         accuracy -- thanks @Kal1975
+       * Some excellent coding suggestions allowed me to eliminate my last [[ ]] wild card match and replace it with a
+         fancy grep statement to attempt to catch an error condition when calling the API to check the city name based
+         on the IP address -- thanks so much @SomeWhereOverTheRainBow/@iTyPsIDg
+       * Added another item to the config menu -- a delayed start-up option -- allowing you to specify how many
+         seconds you would like to delay VPNMON-R2 from running after it starts up. This was added to allow for more
+         compatibility with other potential scripts that are starting up after a router reboot. Please go through the
+         "vpnmon-r2.sh -config" to add this setting -- thanks @Stephen Harrington
+       * Fixed: If the avgping value = null, then display 0 until it fixes itself the next time around
+       * Fixed: Added some modification to the timing involved in calculating the TX/RX values over the VPN tunnel.
+         Due to the time it takes for the WAN to determine connectivity + the NordVPN Load lookup, I'm timing these
+         functions to add their results to the entire calculation, hopefully to display slightly more accurate stats.
+
 v1.4 - (May 01, 2022)
        * The big news today is that VPNMON-R2 is now able to integrate with YazFi! Thanks to @iTyPsIDg for the great
          suggestion! Using the setup utility (-config switch), you can now specify which of the 3 x 2.4Ghz, 5Ghz and
