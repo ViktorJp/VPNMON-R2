@@ -8,12 +8,16 @@ v1.5 - TBA
          My family thanks you and is praying this is the gold version! LOL. Sincere thanks to everyone involved on
          helping troubleshoot this and jumping in to pull apart this code! You all absolutely rock -- 
          @Stephen Harrington, @SomeWhereOverTheRainBow, @dave14305, @iTyPsIDg ... thank you so much!
-       * Crunched the code through shellcheck.net... lots of small changes to formatting of calculations and regex
-         logic based on its suggestions -- thanks @SomeWhereOverTheRainBow
+       * NEW: Added some extra bonus features and expanded the number of stats to include the WAN state, public-
+         facing VPN IP address, as well as ping stats across the WAN interface(s). Should be dual-WAN capable, and
+         indicate which WAN interface is active.
+       * Crunched the code through shellcheck.net... lots of small changes to formatting of calculations and logic 
+         based on its suggestions -- thanks @SomeWhereOverTheRainBow
        * Added a new parameter called "-uninstall" to the list in order to completely uninstall the script (not that
          I'm encouraging you to do so, but at least you can now!) Usage: "vpnmon-r2 -uninstall" -- thanks @andywee
        * Added a new parameter called "-screen", which will kick off VPNMON-R2 using the screen utility so we don't
-         have to type this huge commandline each time.  Usage: "vpnmon-r2.sh -screen" -- thanks @Kal1975
+         have to type this huge commandline each time.  Please note -- requires the "screen" utility to be installed.
+         Usage: "vpnmon-r2.sh -screen" -- thanks @Kal1975
        * Added the ability to hit enter on items during the config that were asking for values, and adds default values
          for fill-in-the-blank and yes/no items -- thanks @chongnt
        * Added live feedback during the config process to indicate what you just entered, to hopefully catch any typos
