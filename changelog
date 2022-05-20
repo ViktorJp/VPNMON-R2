@@ -1,3 +1,10 @@
+v1.6 - TBA
+       * ADDED: A log rotation option has been added to the -config, which allows you to specify how large you would
+         like your VPNMON-R2.log file to get before it starts trimming it down.  Default will be 1000 lines, which
+         should give you several weeks worth of data to sift through.
+       * FIXED: the VPN reset date/time counter wasn't resetting after a WAN failure, and now accurately reflects
+         when the VPN was last reset.
+
 v1.5 - (May 20, 2022)
        * SIGNIFICANT community testing and development has been done on the WAN up/down functionality... VPNMON-R2 is
          now checking for 2 distinct events -- (1) where the modem is physically off/disconnected, and (2) where the
