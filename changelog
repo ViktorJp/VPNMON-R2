@@ -3,8 +3,8 @@ v1.6 - TBA
          like your VPNMON-R2.log file to get before it starts trimming it down.  Default will be 1000 lines, which
          should give you several weeks worth of data to sift through.
        * CHANGED: Reworked the script -update function to exit to the -config menu, rather than running the script
-         using the -monitor function.  Thinking people would rather run through the -config immediately after due to
-         potentially new functionality that would need to be enabled/disabled.
+         using the -monitor function.  The thinking is people would rather run through the -config immediately after
+         due to potentially new functionality that would need to be enabled/disabled.
        * FIXED: the VPN reset date/time counter wasn't resetting after a WAN failure, and now accurately reflects
          when the VPN was last reset.
 
