@@ -1,4 +1,4 @@
-v1.5 - TBA
+v1.5 - (May 20, 2022)
        * SIGNIFICANT community testing and development has been done on the WAN up/down functionality... VPNMON-R2 is
          now checking for 2 distinct events -- (1) where the modem is physically off/disconnected, and (2) where the
          modem is on, but the ISP is down/disconnected. I never knew that the router/NVRAM couldn't tell the difference
