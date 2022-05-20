@@ -1247,9 +1247,11 @@ wancheck() {
             kill 0
           fi
           echo ""
-          echo -e "${CYellow}Would you like to start VPNMON-R2 now?${CClear}"
+          echo -e "${CYellow}Would you like to run through the VPNMON-R2 config now?${CClear}"
+          echo -e "${CYellow}NOTE: New features may have been added that require${CClear}"
+          echo -e "${CYellow}your input.${CClear}"
           if promptyn "(Yes/No): "; then
-            sh $APPPATH -monitor
+            sh $APPPATH -config
           else
             echo ""
             echo -e "${CGreen}Execute VPNMON-R2 using command 'vpnmon-r2.sh -monitor' for normal operations${CClear}"
