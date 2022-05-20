@@ -69,6 +69,7 @@ state3=0
 state4=0
 state5=0
 START=$(date +%s)                                   # Start a timer to determine intervals of VPN resets
+DelayStartup=0
 VPNIP="Unassigned"                                  # Tracking VPN IP for city location display. API gives you 1K lookups
                                                     # per day, and is optimized to only lookup city location after a reset
 vpnresettripped=0                                   # Tracking whether a VPN Reset is tripped due to a WAN outage
@@ -1314,9 +1315,12 @@ wancheck() {
     clear
     if [ -f $CFGPATH ]; then
       source $CFGPATH
-      SPIN=$DelayStartup
-      echo -e "${CGreen}Delaying VPNMON-R2 start-up for $DelayStartup seconds..."
-      spinner
+        if [ $DelayStartup != "0" ]
+          then
+            SPIN=$DelayStartup
+            echo -e "${CGreen}Delaying VPNMON-R2 start-up for $DelayStartup seconds..."
+            spinner
+        fi
     else
       echo -e "${CRed}Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -config' to complete setup${CClear}"
       echo ""
