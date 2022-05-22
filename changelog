@@ -1,4 +1,9 @@
 v1.6 - TBA
+       * SIGNIFICANT: Added capabilities for SurfShark VPN services on VPNMON-R2! This is basically a duplication of
+         the capabilities that NordVPN users got to enjoy. You can randomly connect to one of your VPN slots at a
+         scheduled time, use SurfShark SuperRandom functionality where it will pick random servers for you across
+         your country and configure those in your VPN slots, then randomly connect to one.  Also, you can choose up
+         to 3 countries to randomly draw from under SuperRandom mode. Looking for feedback from SurfShark users. :)
        * ADDED: A log rotation option has been added to the -config, which allows you to specify how large you would
          like your VPNMON-R2.log file to get before it starts trimming it down.  Default will be 1000 lines, which
          should give you several weeks worth of data to sift through.
