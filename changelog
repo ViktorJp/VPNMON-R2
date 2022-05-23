@@ -1,4 +1,4 @@
-v1.6 - TBA
+v1.6 - (May 23, 2022)
        * SIGNIFICANT: Added capabilities for SurfShark VPN services on VPNMON-R2! This is basically a duplication of
          the capabilities that NordVPN users got to enjoy. You can randomly connect to one of your VPN slots at a
          scheduled time, use SurfShark SuperRandom functionality where it will pick random servers for you across
