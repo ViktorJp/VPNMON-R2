@@ -4,6 +4,7 @@ v1.6 - (May 23, 2022)
          scheduled time, use SurfShark SuperRandom functionality where it will pick random servers for you across
          your country and configure those in your VPN slots, then randomly connect to one.  Also, you can choose up
          to 3 countries to randomly draw from under SuperRandom mode. Looking for feedback from SurfShark users. :)
+         - thanks for the suggestion @Phk!
        * ADDED: A log rotation option has been added to the -config, which allows you to specify how large you would
          like your VPNMON-R2.log file to get before it starts trimming it down.  Default will be 1000 lines, which
          should give you several weeks worth of data to sift through.
