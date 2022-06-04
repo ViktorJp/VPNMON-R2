@@ -15,6 +15,8 @@ v1.7 - TBA
          will guide the user through installing the required Entware CoreUtils Timeout utility, and prompt the
          user to go through the config menu.  You also have the option to force re-install the Entware Timeout
          utility, or go through the vpnmon-r2 uninstall process.
+       * FIXED: There was an issue with the Load calculation for Perfect Privacy.  Added corrective measures, and
+         should be showing the correct values now!
        * CHANGED: Some code cleanup and other housekeeping items
 v1.6 - (May 23, 2022)
        * SIGNIFICANT: Added capabilities for SurfShark VPN services on VPNMON-R2! This is basically a duplication of
