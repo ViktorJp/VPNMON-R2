@@ -1856,39 +1856,56 @@ wancheck() {
 
               2) # Force re-install the CoreUtils timeout package
                 clear
-                if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
-                  echo ""
-                  echo -e "${CGreen}Updating Entware Packages...${CClear}"
-                  echo ""
-                  opkg update
-                  echo ""
-                  echo -e "${CGreen}Force Re-installing Entware CoreUtils-Timeout Package...${CClear}"
-                  echo ""
-                  opkg install --force-reinstall coreutils-timeout
-                  echo ""
-                  echo -e "${CGreen}Re-install completed...${CClear}"
-                  sleep 2
-                else
-                  clear
-                  echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
-                  echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
-                  echo ""
-                  kill 0
+                echo -e "${CYellow}Force Re-installing CoreUtils-Timeout Package...${CClear}"
+                echo ""
+                echo -e "${CCyan}Would you like to optionally re-install the CoreUtils-Timeout${CClear}"
+                echo -e "${CCyan}utility? This utility requires you to have Entware already${CClear}"
+                echo -e "${CCyan}installed using the AMTM tool. If Entware is present, the ${CClear}"
+                echo -e "${CCyan}Timeout utility will be downloaded and re=installed during${CClear}"
+                echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
+                echo ""
+                echo -e "${CCyan}CoreUtils-Timeout is a utility that provides more stability${CClear}"
+                echo -e "${CCyan}for certain routers (like the RT-AC86U) which has a tendency${CClear}"
+                echo -e "${CCyan}to randomly hang scripts running on this router model.${CClear}"
+                echo ""
+                RouterModel=$(nvram get model)
+                echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
+                echo ""
+                echo -e "${CCyan}Force Re-install?${CClear}"
+                if promptyn "(Yes/No): "
+                  then
+                    if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
+                      echo ""
+                      echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
+                      echo ""
+                      opkg update
+                      echo ""
+                      echo -e "${CGreen}Force Re-installing Entware CoreUtils-Timeout Package...${CClear}"
+                      echo ""
+                      opkg install --force-reinstall coreutils-timeout
+                      echo ""
+                      echo -e "${CGreen}Re-install completed...${CClear}"
+                      sleep 2
+                    else
+                      clear
+                      echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
+                      echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
+                      echo ""
+                      kill 0
+                    fi
                 fi
               ;;
 
               3)
-                clear
                 echo ""
-                echo -e "${CGreen}Executing VPNMON-R2 Uninstall Utility...${CClear}"
-                sleep 1
+                echo -e "\n${CGreen}Executing VPNMON-R2 Uninstall Utility...${CClear}"
+                sleep 2
                 sh /jffs/scripts/vpnmon-r2.sh -uninstall
               ;;
 
               4)
-                clear
                 echo ""
-                echo -e "${CGreen}Exiting VPNMON-R2 Install Utility...${CClear}"
+                echo -e "\n${CGreen}Exiting VPNMON-R2 Install Utility...${CClear}"
                 echo ""
                 kill 0
               ;;
