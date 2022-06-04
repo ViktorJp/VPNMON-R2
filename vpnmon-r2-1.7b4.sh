@@ -2193,6 +2193,10 @@ while true; do
         PP_in=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_in"')
         PP_out=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_out"')
         PP_max=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_max"')
+        max1=$PP_in
+        if [ $PP_out -gt $PP_in ]; then max1=$PP_out; fi
+        max2=$PP_max
+        if [ $PP_in -gt $PP_max ]; then max2=$PP_in; elif [ $PP_out -gt $PP_max ]; then max2=$PP_out; fi
         VPNLOAD=$(awk -v m1=$max1 -v m2=$max2 'BEGIN{printf "%0.0f\n", 100*m1/m2}')
         printf "\r"
         LOAD_END_TIME=$(date +%s)
