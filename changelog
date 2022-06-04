@@ -6,10 +6,11 @@ v1.7 - TBA
          connect to, and optionally updates Skynet to ensure that your connection experience stays whitelisted at
          all times. Thanks for the suggestion, @Swistheater!
        * SIGNIFICANT: Broke down and added the requirement to have Entware installed in order to utilize the
-         CoreUtils Timeout function.  This is needed to cut down on (what I'm guessing is) hardware-level hangups
-         when calling for nvram values specifically on RT-AC86U routers.  When running VPNMON-R2, it will prompt you
-         if it isn't able to find the required Entware dependencies, and ask you to run the script with the -install
-         switch. The newly added -install menu will guide the user through the install of the dependencies.
+         CoreUtils Timeout function.  This is needed to cut down on (what I'm guessing is) random hardware-level
+         hangups when calling for nvram values specifically on RT-AC86U routers.  When running VPNMON-R2, it will
+         prompt you if it isn't able to find the required Entware dependencies, and ask you to run the script with
+         the -install switch. The newly added -install menu will guide the user through the install of the
+         dependencies.
        * CHANGED: Some code cleanup and other housekeeping items
 v1.6 - (May 23, 2022)
        * SIGNIFICANT: Added capabilities for SurfShark VPN services on VPNMON-R2! This is basically a duplication of
