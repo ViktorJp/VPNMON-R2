@@ -11,6 +11,10 @@ v1.7 - TBA
          prompt you if it isn't able to find the required Entware dependencies, and ask you to run the script with
          the -install switch. The newly added -install menu will guide the user through the install of the
          dependencies.
+       * ADDED: Created a new Install menu that you can access when running 'vpnmon-r2.sh -install'.  This option
+         will guide the user through installing the required Entware CoreUtils Timeout utility, and prompt the
+         user to go through the config menu.  You also have the option to force re-install the Entware Timeout
+         utility, or go through the vpnmon-r2 uninstall process.
        * CHANGED: Some code cleanup and other housekeeping items
 v1.6 - (May 23, 2022)
        * SIGNIFICANT: Added capabilities for SurfShark VPN services on VPNMON-R2! This is basically a duplication of
