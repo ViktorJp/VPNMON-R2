@@ -1,3 +1,11 @@
+v1.7 - TBA
+       * SIGNIFICANT: Added capabilities for Perfect Privacy VPN servers on VPNMON-R2.  As below with the Surfshark
+         integration, you get to enjoy all the same features that both Surfshark and NordVPN users get to have. You
+         can randomly pick to randomly reconnect one of your VPN slots at a scheduled time, use Perfect Privacy
+         SuperRandom functionality to pick one random server within your country, or from multiple countries to
+         connect to, and optionally updates Skynet to ensure that your connection experience stays whitelisted at
+         all times. Thanks for the suggestion, @Swistheater!
+         CHANGED: Some code cleanup and other housekeeping items
 v1.6 - (May 23, 2022)
        * SIGNIFICANT: Added capabilities for SurfShark VPN services on VPNMON-R2! This is basically a duplication of
          the capabilities that NordVPN users got to enjoy. You can randomly connect to one of your VPN slots at a
