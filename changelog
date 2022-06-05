@@ -5,14 +5,14 @@ v1.7 - TBA
          SuperRandom functionality to pick one random server within your country, or from multiple countries to
          connect to, and optionally updates Skynet to ensure that your connection experience stays whitelisted at
          all times. Thanks for the suggestion, @Swistheater!
-       * SIGNIFICANT: Broke down and added the requirement to have Entware installed in order to utilize the
-         CoreUtils Timeout function.  This is needed to cut down on (what I'm guessing is) random hardware-level
-         hangups when calling for nvram values specifically on RT-AC86U routers.  When running VPNMON-R2, it will
-         prompt you if it isn't able to find the required Entware dependencies, and ask you to run the script with
-         the -install switch. The newly added -install menu will guide the user through the install of the
-         dependencies.
+       * SIGNIFICANT: Added the option to leverage your Entware installion in order to utilize the CoreUtils-Timeout
+         utility. It is recommended to allow VPNMON-R2 to use this utility in order to cut down on (what I'm
+         guessing is) random hardware-level hangups when calling for nvram values specifically on RT-AC86U routers.
+         When running VPNMON-R2, it will detect whether or not you have CoreUtils-Timeout installed, and will use
+         the utility if it's present. If it's not installed, VPNMON-R2 will just operate as normal. You can install
+         this optional utility using the -install switch, and step through option 1.
        * ADDED: Created a new Install menu that you can access when running 'vpnmon-r2.sh -install'.  This option
-         will guide the user through installing the required Entware CoreUtils Timeout utility, and prompt the
+         will guide the user through installing the optional Entware CoreUtils-Timeout utility, and prompt the
          user to go through the config menu.  You also have the option to force re-install the Entware Timeout
          utility, or go through the vpnmon-r2 uninstall process.
        * FIXED: There was an issue with the Load calculation for Perfect Privacy.  Added corrective measures, and
