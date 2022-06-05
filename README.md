@@ -67,13 +67,14 @@ Usage
 -------
 VPNMON-R2 is driven with commandline parameters.  These are the available options:
 
-vpnmon-r2.sh -h (or vpnmon-r2.sh -help) -- displays a short overview of available commands
-vpnmon-r2.sh -log -- displays the contents of the VPNMON-R2 activity log in the NANO text editor
-vpnmon-r2.sh -config -- launches the configuration utility and saves your settings to a local config file
-vpnmon-r2.sh -update -- launches the script update utility to download the newest version
-vpnmon-r2.sh -uninstall -- launches the uninstall utility that removes VPNMON-R2 from your router
-vpnmon-r2.sh -screen -- launches VPNMON-R2 using the "screen" utility, and places it in -monitor mode
-vpnmon-r2.sh -monitor -- launches VPNMON-R2 in a normal operations mode, ready to monitor the health of your VPN connections
+* vpnmon-r2.sh -h (or vpnmon-r2.sh -help) -- displays a short overview of available commands
+* vpnmon-r2.sh -log -- displays the contents of the VPNMON-R2 activity log in the NANO text editor
+* vpnmon-r2.sh -config -- launches the configuration utility and saves your settings to a local config file
+* vpnmon-r2.sh -update -- launches the script update utility to download the newest version
+* vpnmon-r2.sh -install -- launches the installer utility to configure and add optional Entware components
+* vpnmon-r2.sh -uninstall -- launches the uninstall utility that removes VPNMON-R2 from your router
+* vpnmon-r2.sh -screen -- launches VPNMON-R2 using the "screen" utility, and places it in -monitor mode
+* vpnmon-r2.sh -monitor -- launches VPNMON-R2 in a normal operations mode, ready to monitor the health of your VPN connections
 
 Gotchas
 -------
