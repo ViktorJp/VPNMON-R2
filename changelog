@@ -5,7 +5,7 @@ v1.7 - (June 4, 2022)
          SuperRandom functionality to pick one random server within your country, or from multiple countries to
          connect to, and optionally updates Skynet to ensure that your connection experience stays whitelisted at
          all times. Thanks for the suggestion, @Swistheater!
-       * SIGNIFICANT: Added the option to leverage your Entware installion in order to utilize the CoreUtils-Timeout
+       * SIGNIFICANT: Added the option to leverage your Entware installation in order to utilize the CoreUtils-Timeout
          utility. It is recommended to allow VPNMON-R2 to use this utility in order to cut down on (what I'm
          guessing is) random hardware-level hangups when calling for nvram values specifically on RT-AC86U routers.
          When running VPNMON-R2, it will detect whether or not you have CoreUtils-Timeout installed, and will use
