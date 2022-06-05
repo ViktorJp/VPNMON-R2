@@ -11,7 +11,7 @@ v1.7 - (June 4, 2022)
          When running VPNMON-R2, it will detect whether or not you have CoreUtils-Timeout installed, and will use
          the utility if it's present. If it's not installed, VPNMON-R2 will just operate as normal. You can install
          this optional utility using the -install switch, and step through option 1.
-       * ADDED: Created a new Install menu that you can access when running 'vpnmon-r2.sh -install'.  This option
+       * ADDED: Created a new Install menu that you can access by running 'vpnmon-r2.sh -install'.  This option
          will guide the user through installing the optional Entware CoreUtils-Timeout utility, and prompt the
          user to go through the config menu.  You also have the option to force re-install the Entware Timeout
          utility, or go through the vpnmon-r2 uninstall process.
