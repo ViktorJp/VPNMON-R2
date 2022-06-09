@@ -1,4 +1,8 @@
-v1.7 - (June 4, 2022)
+v1.71  - (June 9, 2022)
+       * FIXED: Minor fix on the code that handled resets when VPN server loads exceeded a certain amount. The
+         code was preventing a reset, unless you were a Perfect Privacy VPN user. Fixed!
+
+v1.7   - (June 4, 2022)
        * SIGNIFICANT: Added capabilities for Perfect Privacy VPN services on VPNMON-R2.  As with the Surfshark
          integration, you get to enjoy all the same features that both Surfshark and NordVPN users get to have. You
          can randomly pick to randomly reconnect one of your VPN slots at a scheduled time, use Perfect Privacy
@@ -18,7 +22,7 @@ v1.7 - (June 4, 2022)
        * FIXED: There was an issue with the Load calculation for Perfect Privacy.  Added corrective measures, and
          should be showing the correct values now!
        * CHANGED: Some code cleanup and other housekeeping items
-v1.6 - (May 23, 2022)
+v1.6   - (May 23, 2022)
        * SIGNIFICANT: Added capabilities for SurfShark VPN services on VPNMON-R2! This is basically a duplication of
          the capabilities that NordVPN users got to enjoy. You can randomly connect to one of your VPN slots at a
          scheduled time, use SurfShark SuperRandom functionality where it will pick random servers for you across
@@ -34,7 +38,7 @@ v1.6 - (May 23, 2022)
        * FIXED: the VPN reset date/time counter wasn't resetting after a WAN failure, and now accurately reflects
          when the VPN was last reset.
 
-v1.5 - (May 20, 2022)
+v1.5   - (May 20, 2022)
        * SIGNIFICANT community testing and development has been done on the WAN up/down functionality... VPNMON-R2 is
          now checking for 2 distinct events -- (1) where the modem is physically off/disconnected, and (2) where the
          modem is on, but the ISP is down/disconnected. I never knew that the router/NVRAM couldn't tell the difference
@@ -78,7 +82,7 @@ v1.5 - (May 20, 2022)
          Due to the time it takes for the WAN to determine connectivity + the NordVPN Load lookup, I'm timing these
          functions to add their results to the entire calculation, hopefully to display slightly more accurate stats.
 
-v1.4 - (May 01, 2022)
+v1.4   - (May 01, 2022)
        * The big news today is that VPNMON-R2 is now able to integrate with YazFi! Thanks to @iTyPsIDg for the great
          suggestion! Using the setup utility (-config switch), you can now specify which of the 3 x 2.4Ghz, 5Ghz and
          secondary 5Ghz guest networks you want to sync with VPNMON-R2 when it randomly picks a new VPN connection
@@ -94,7 +98,7 @@ v1.4 - (May 01, 2022)
        * Some more code cleanup, optimizations and expanded on the config menu to handle the new YazFi and multiple
          country questions during setup.
 
-v1.3 - (Mar 20, 2022)
+v1.3   - (Mar 20, 2022)
        * Added another row of stats! The latest additions include near-realtime average RX and TX bandwitdh (in Mbps) 
          across the active VPN tunnel. Also, the current total TX and RX bytes for the VPN tunnel is displayed and 
          gradually increments from when the tunnel was initialized (in Gb). Stats for these bandwith figures are 
@@ -108,7 +112,7 @@ v1.3 - (Mar 20, 2022)
        * I have moved the new version alert to directly below the ASCII art font title, and is more discreet in a red
          font in letting you know when a new version is available.
 
-v1.2 - (Mar 17, 2022)
+v1.2   - (Mar 17, 2022)
        * Added for the capability of VPNMON-R2 to check for a new version on a periodic basis, and will alert you within
          the interface when a new version becomes available for download. From v1.2 moving forward, the script will
          provide for the capability to check and alert you for new updates.
@@ -116,7 +120,7 @@ v1.2 - (Mar 17, 2022)
          script update utility which downloads and installs the latest version from the github repository.
        * Minor optimizations and enhancements
 
-v1.1 - (Mar 15, 2022)
+v1.1   - (Mar 15, 2022)
        * Added an integrated configuration utility that steps you through all available configurable options to give you
          the most compatible experience for your setup. This tools makes the experience much more pleasing than having
          to deal with manually editing (and understanding) the options that were available at the top of the script. The
@@ -130,7 +134,7 @@ v1.1 - (Mar 15, 2022)
          "/jffs/addons". The main script can still be found under "/jffs/scripts/vpnmon-r2.sh"
        * Various optimizations and small bug fixes (more like annoyances that bother my OCD).
 
-v1.0 - (Feb 26, 2022)
+v1.0   - (Feb 26, 2022)
        * We're at the big v1.0! VPNMON-R2 (and VPNON) have made some huge strides in these 2 short months! ;)
        * Introducting a new NordVPN Server Load stat! In lieu of showing whether or not Skynet is getting updated on the
          stats row, it now shows the NordVPN Server Load thanks to a suggestion by @JackYaz. This Load stat is only
@@ -141,7 +145,7 @@ v1.0 - (Feb 26, 2022)
          exceeds a 50% load, it will reset the VPN to look for another server with a lesser load. All these items are totally
          configurable at the top of the script.
 
-v0.9 - (Feb 23, 2022)
+v0.9   - (Feb 23, 2022)
        * Added a row of stats to the bottom of VPNMON-R2's interface, specifically showing the Low and High ping history for
          the current connection, whether or not Skynet gets updated with NordVPN IPs, and how VPNMON-R2 is currently
          configured, showing either: (a) "VPNMGR" - VPNMON-R2 is integrated with VPNMGR and using its functionality
@@ -151,7 +155,7 @@ v0.9 - (Feb 23, 2022)
          optionally restarting your VPN connections on a random basis based on your set schedule. This is a clean and easy
          way to see how VPNMON-R2 is configured, and giving you some performance stats along with it. Enjoy!         
 
-v0.8 - (Feb 20, 2022)
+v0.8   - (Feb 20, 2022)
        * Added the concept of SuperRandom(tm) NordVPN Connections!  This mode, when enabled (NordVPNSuperRandom=1) -- if you 
          choose to be so incredibly daring and adventurous -- will fill your VPN client slots with random VPN servers across
          the country of your choice! Distance, load, and performance be damned!! In the US, the number of available VPN
@@ -170,7 +174,7 @@ v0.8 - (Feb 20, 2022)
          Kingdom, United States, Vietnam.
        * Other code optimizations, error catching, and formatting fixes just to make it more pleasing to the eye. ;)
 
-v0.7 - (Feb 18, 2022)
+v0.7   - (Feb 18, 2022)
        * Spent a lot of time dealing with a persistent hang issue, and looks to be resolved. I believe the script was running 
          into a race/deadlock type of situation where it would hang during successive NVRAM lookups that were happening too
          close together calling for the same values. I reduced the number of lookups being done, and works flawlessly now.
@@ -178,7 +182,7 @@ v0.7 - (Feb 18, 2022)
          accomplish all this.
        * Added a VPNMON-R2.LOG entry that shows when a city lookup is being done through the API.
 
-v0.6 - (Feb 1, 2022) 
+v0.6   - (Feb 1, 2022) 
        * Added a new API lookup to display the VPN exit nde city/location next to the active VPN connection.  This API is
          free, and guarantees at least 1000 lookups per month. In lieu of doing a lookup each single refresh interval, a 
          location lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if
@@ -193,7 +197,7 @@ v0.6 - (Feb 1, 2022)
          Need to work on variable naming uniformity next, as that's *ALL* over the place still. Give me time!
        * Replaced the spinner with a decent looking progress bar... spinner was looking long-in-the-tooth. Enjoy!  ;)
 
-v0.5 - (Jan 23, 2022) Wow, where to start... 
+v0.5   - (Jan 23, 2022) Wow, where to start... 
        * VPNMON.SH was heavily overhauled into VPNMON-R2.SH to incorporate my other script, VPNON.SH, so that it could act
          standalone, without needing to call a second script. VPNON has now turned into a function within the script.
        * Speaking of which -- I learned lots about functions ;) ... In doing so, I cleaned up some of the inefficient code,
@@ -216,20 +220,20 @@ v0.5 - (Jan 23, 2022) Wow, where to start...
 -------------------------------------
 VPNMON.SH was deprecated on Jan 22, 2022)
 
-v0.8 - (Jan 20, 2022) 
+v0.8   - (Jan 20, 2022) 
        * Added a timer to show the last time that the VPN was reset, or, when vpnmon.sh was restarted last, whichever 
          happened most recently.  
        * Also, added a spinner to indicate that the script is still active.  Various optimizations and code clean-up.
 
-v0.7 - (Jan 15, 2022) 
+v0.7   - (Jan 15, 2022) 
        * Added the avg ping time next to the "Ping is Alive" indicator, which shows avg time in ms across the active VPN
          tunnel to the ping host specified.
 
-v0.6 - (Jan 14, 2022) 
+v0.6   - (Jan 14, 2022) 
        * Added logging capabilities.  Major events (resets/connection issues/etc) are logged to a file named 
          "vpnmon-on.log" in the /jffs/scripts folder by default. This capability can be disabled by changing the value to 
          "/dev/null". PSA: though it doesn't do a crazy amount of logging, over time it will get larger and larger and will
          eventually impact the total space available in /jffs. Recommend keeping an eye on this, and wiping the 
          "vpnmon-on.log" on occasion.  Will consider adding a more automated log purging feature in the future.  ;)
        
-v0.5 - Initial release of VPNMON.SH (Jan 12, 2022)
+v0.5   - Initial release of VPNMON.SH (Jan 12, 2022)
