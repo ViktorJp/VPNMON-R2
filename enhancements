@@ -2,11 +2,11 @@ Future Enhancements (Planned)
 -----------------------------
 
 * spdMerlin integration that changes which VPN tunnel to run speed tests from when the slots change -- thanks @iTyPsIDg
-* Log purging methodology (Thinking of purging log file 1x/week or 1x/month on a certain weekday or day of the month based on user input/preference)
+* Other VPN providers that offer API solutions to easier integrate between them and vpnmon-r2
 
 * Other possible stats to display:
    - (completed) snapshot of current upload/download bandwidth amounts going over VPN pipe (if this is even available)
-
+   - (completed) Log purging methodology (Thinking of purging log file 1x/week or 1x/month on a certain weekday or day of the month based on user input/preference)
 
 Ideas or Discussion
 -------------------
