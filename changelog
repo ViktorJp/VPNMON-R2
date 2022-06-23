@@ -1,3 +1,11 @@
+v1.8   - (June 23, 2022)
+       * ADDED: A new row of VPN stats have been added to include current protocol, port, cryptography, and
+         authentication digest, just to give you more detailed info pertaining to your current VPN connection.
+       * CHANGED: Made some minor changes to the look/feel and layout of the UI, and gave it more of an old-skool
+         DOS folders kind of feel.  Please note, I will never be satisfied with the look, and will continue to
+         enhance it when I find something else that's pleasing to the eye.  Also, the progress bar will change
+         from green to yellow to red as it gets closer to its interval time.
+
 v1.71  - (June 9, 2022)
        * FIXED: Minor fix on the code that handled resets when VPN server loads exceeded a certain amount. The
          code was preventing a reset, unless you were a Perfect Privacy VPN user. Fixed!
