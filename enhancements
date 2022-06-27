@@ -3,6 +3,9 @@ Future Enhancements (Planned)
 
 * spdMerlin integration that changes which VPN tunnel to run speed tests from when the slots change -- thanks @iTyPsIDg
 * Other VPN providers that offer API solutions to easier integrate between them and vpnmon-r2
+   - (completed) surfshark VPN integration
+   - (completed) perfect privacy VPN integration 
+* Utilize the ping value going across the tunnel as a parameter to intiate a reset with - thanks @JAX1337
 
 * Other possible stats to display:
    - (completed) snapshot of current upload/download bandwidth amounts going over VPN pipe (if this is even available)
