@@ -2795,7 +2795,7 @@ while true; do
       then
         # Get the NordVPN server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
-        printf "${CYellow}\r[Checking NordVPN Server Load]..."
+        printf "${CYellow}\r [Checking NordVPN Server Load]..."
         VPNLOAD=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16354" | jq '.[] | select(.station == "'"$VPNIP"'") | .load')
         printf "\r"
         LOAD_END_TIME=$(date +%s)
@@ -2806,7 +2806,7 @@ while true; do
       then
         # Get the SurfShark server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
-        printf "${CYellow}\r[Checking SurfShark Server Load]..."
+        printf "${CYellow}\r [Checking SurfShark Server Load]..."
         VPNLOAD=$(curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.connectionName == "'"$VPNIP"'") | .load')
         printf "\r"
         LOAD_END_TIME=$(date +%s)
@@ -2817,7 +2817,7 @@ while true; do
       then
         # Get the Perfect Privacy server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
-        printf "${CYellow}\r[Checking Perfect Privacy Server Load]..."
+        printf "${CYellow}\r [Checking Perfect Privacy Server Load]..."
         PPcurl=$(curl --silent --retry 3 "https://www.perfect-privacy.com/api/traffic.json")
         PP_in=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_in"')
         PP_out=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_out"')
