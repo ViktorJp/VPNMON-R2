@@ -242,8 +242,19 @@ progressbar() {
     else
       printf "${CRed}\r [%.${barch}s%.${barsp}s]${CClear} ${CYellow}${InvBlue}${i}s / ${progr}%%\r${CClear}" "$barchars" "$barspaces"
     fi
-
   fi
+
+  # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
+  key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
+
+  if [ $key_press ]; then
+      case $key_press in
+          's') vsetup;;
+          'S') vsetup;;
+          'e') exit 0;;
+      esac
+  fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2259,6 +2270,180 @@ vuninstall () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+
+# vsetup is a function that sets up and confiures VPNMON-R2 on your router...
+vsetup () {
+  while true; do
+    clear
+    logo
+    echo -e "VPNMON-R2 v$Version Setup Utility${CClear}" # Provide main setup menu
+    echo ""
+    echo -e "${CGreen}--------------------------------------------------------------------"
+    echo -e "${CCyan}"
+    echo -e "${CCyan}1: Setup and Configure VPNMON-R2"
+    echo -e "${CCyan}2: Force Re-install Entware Dependencies"
+    echo -e "${CCyan}3: Check for latest updates"
+    echo -e "${CCyan}4: Launch VPNMON-R2 into Normal Monitoring Mode"
+    echo -e "${CCyan}5: Launch VPNMON-R2 into Normal Monitoring Mode using Screen utility"
+    echo -e "${CCyan}u: Uninstall VPNMON-R2"
+    echo -e "${CCyan}e: Exit"
+    echo ""
+    printf "Selection: "
+    read -r InstallSelection
+
+    # Execute chosen selections
+        case "$InstallSelection" in
+
+          1) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r2 -config
+            clear
+            logo
+            echo -e "${CYellow}Installing VPNMON-R2...${CClear}"
+            echo ""
+            echo -e "${CCyan}Would you like to optionally install the CoreUtils-Timeout${CClear}"
+            echo -e "${CCyan}and Screen utility? These utilities require you to have Entware${CClear}"
+            echo -e "${CCyan}already installed using the AMTM tool. If Entware is present, the ${CClear}"
+            echo -e "${CCyan}Timeout and Screen utilities will be downloaded and installed during${CClear}"
+            echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
+            echo ""
+            echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
+            echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
+            echo -e "${CCyan}hang scripts running on this router model.${CClear}"
+            echo ""
+            echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone"
+            echo -e "${CCyan}environment directly on the router itself, instead of running your"
+            echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
+            echo -e "${CCyan}provide greater stability due to it running from the router itself."
+            echo ""
+            RouterModel=$(nvram get model)
+            echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
+            echo ""
+            echo -e "${CCyan}Install?${CClear}"
+            if promptyn "(Yes/No): "
+              then
+                if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
+                  echo ""
+                  echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
+                  echo ""
+                  opkg update
+                  echo ""
+                  echo -e "${CGreen}Installing Entware CoreUtils-Timeout Package...${CClear}"
+                  echo ""
+                  opkg install coreutils-timeout
+                  echo -e "${CGreen}Installing Entware Screen Package...${CClear}"
+                  echo ""
+                  opkg install screen
+                  echo ""
+                  sleep 1
+                  echo -e "${CGreen}Executing VPNMON-R2 Configuration Utility...${CClear}"
+                  sleep 2
+                  vnconfig
+                else
+                  clear
+                  echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
+                  echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
+                  echo ""
+                  sleep 3
+                fi
+              else
+                echo ""
+                echo -e "\n${CGreen}Executing VPNMON-R2 Configuration Utility...${CClear}"
+                sleep 2
+                vconfig
+            fi
+          ;;
+
+          2) # Force re-install the CoreUtils timeout/screen package
+            clear
+            logo
+            echo -e "${CYellow}Force Re-installing CoreUtils-Timeout/Screen Packages...${CClear}"
+            echo ""
+            echo -e "${CCyan}Would you like to optionally re-install the CoreUtils-Timeout${CClear}"
+            echo -e "${CCyan}and Screen utility? These utilities require you to have Entware${CClear}"
+            echo -e "${CCyan}already installed using the AMTM tool. If Entware is present, the ${CClear}"
+            echo -e "${CCyan}Timeout and Screen utilities will be downloaded and installed during${CClear}"
+            echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
+            echo ""
+            echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
+            echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
+            echo -e "${CCyan}hang scripts running on this router model.${CClear}"
+            echo ""
+            echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone"
+            echo -e "${CCyan}environment directly on the router itself, instead of running your"
+            echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
+            echo -e "${CCyan}provide greater stability due to it running from the router itself."
+            echo ""
+            RouterModel=$(nvram get model)
+            echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
+            echo ""
+            echo -e "${CCyan}Force Re-install?${CClear}"
+            if promptyn "(Yes/No): "
+              then
+                if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
+                  echo ""
+                  echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
+                  echo ""
+                  opkg update
+                  echo ""
+                  echo -e "${CGreen}Force Re-installing Entware CoreUtils-Timeout Package...${CClear}"
+                  echo ""
+                  opkg install --force-reinstall coreutils-timeout
+                  echo -e "${CGreen}Force Re-installing Entware Screen Package...${CClear}"
+                  echo ""
+                  opkg install --force-reinstall screen
+                  echo ""
+                  echo -e "${CGreen}Re-install completed...${CClear}"
+                  sleep 2
+                else
+                  clear
+                  echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
+                  echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
+                  echo ""
+                  sleep 3
+                fi
+            fi
+          ;;
+
+          3)
+            echo ""
+            vupdate
+          ;;
+
+          4)
+            echo ""
+            echo -e "\n${CGreen}Launching VPNMON-R2 into Monitor Mode...${CClear}"
+            sleep 2
+            sh $APPPATH -monitor
+          ;;
+
+          5)
+            echo ""
+            echo -e "\n${CGreen}Launching VPNMON-R2 into Monitor Mode with Screen Utility...${CClear}"
+            sleep 2
+            sh $APPPATH -screen
+          ;;
+
+          u)
+            echo ""
+            vuninstall
+          ;;
+
+          e)
+            echo ""
+            exit 0
+          ;;
+
+          *)
+            echo ""
+            echo -e "${CRed}Invalid choice - Please enter a valid option...${CClear}"
+            echo ""
+            sleep 2
+          ;;
+
+        esac
+  done
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
 # Begin Commandline Argument Gatekeeper and Configuration Utility Functionality
 # -------------------------------------------------------------------------------------------------------------------------
 
@@ -2353,174 +2538,7 @@ vuninstall () {
   # Check to see if the install option is being called
   if [ "$1" == "-setup" ]
     then
-      while true; do
-        clear
-        logo
-        echo -e "VPNMON-R2 v$Version Setup Utility${CClear}" # Provide main setup menu
-        echo ""
-        echo -e "${CGreen}--------------------------------------------------------------------"
-        echo -e "${CCyan}"
-        echo -e "${CCyan}1: Setup and Configure VPNMON-R2"
-        echo -e "${CCyan}2: Force Re-install Entware Dependencies"
-        echo -e "${CCyan}3: Check for latest updates"
-        echo -e "${CCyan}4: Launch VPNMON-R2 into Normal Monitoring Mode"
-        echo -e "${CCyan}5: Launch VPNMON-R2 into Normal Monitoring Mode using Screen utility"
-        echo -e "${CCyan}u: Uninstall VPNMON-R2"
-        echo -e "${CCyan}e: Exit"
-        echo ""
-        printf "Selection: "
-        read -r InstallSelection
-
-        # Execute chosen selections
-        		case "$InstallSelection" in
-
-              1) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r2 -config
-                clear
-                logo
-                echo -e "${CYellow}Installing VPNMON-R2...${CClear}"
-                echo ""
-                echo -e "${CCyan}Would you like to optionally install the CoreUtils-Timeout${CClear}"
-                echo -e "${CCyan}and Screen utility? These utilities require you to have Entware${CClear}"
-                echo -e "${CCyan}already installed using the AMTM tool. If Entware is present, the ${CClear}"
-                echo -e "${CCyan}Timeout and Screen utilities will be downloaded and installed during${CClear}"
-                echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
-                echo ""
-                echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
-                echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
-                echo -e "${CCyan}hang scripts running on this router model.${CClear}"
-                echo ""
-                echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone"
-                echo -e "${CCyan}environment directly on the router itself, instead of running your"
-                echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
-                echo -e "${CCyan}provide greater stability due to it running from the router itself."
-                echo ""
-                RouterModel=$(nvram get model)
-                echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
-                echo ""
-                echo -e "${CCyan}Install?${CClear}"
-                if promptyn "(Yes/No): "
-                  then
-                    if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
-                      echo ""
-                      echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
-                      echo ""
-                      opkg update
-                      echo ""
-                      echo -e "${CGreen}Installing Entware CoreUtils-Timeout Package...${CClear}"
-                      echo ""
-                      opkg install coreutils-timeout
-                      echo -e "${CGreen}Installing Entware Screen Package...${CClear}"
-                      echo ""
-                      opkg install screen
-                      echo ""
-                      sleep 1
-                      echo -e "${CGreen}Executing VPNMON-R2 Configuration Utility...${CClear}"
-                      sleep 2
-                      vnconfig
-                    else
-                      clear
-                      echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
-                      echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
-                      echo ""
-                      sleep 3
-                    fi
-                  else
-                    echo ""
-                    echo -e "\n${CGreen}Executing VPNMON-R2 Configuration Utility...${CClear}"
-                    sleep 2
-                    vconfig
-                fi
-        			;;
-
-              2) # Force re-install the CoreUtils timeout/screen package
-                clear
-                logo
-                echo -e "${CYellow}Force Re-installing CoreUtils-Timeout/Screen Packages...${CClear}"
-                echo ""
-                echo -e "${CCyan}Would you like to optionally re-install the CoreUtils-Timeout${CClear}"
-                echo -e "${CCyan}and Screen utility? These utilities require you to have Entware${CClear}"
-                echo -e "${CCyan}already installed using the AMTM tool. If Entware is present, the ${CClear}"
-                echo -e "${CCyan}Timeout and Screen utilities will be downloaded and installed during${CClear}"
-                echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
-                echo ""
-                echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
-                echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
-                echo -e "${CCyan}hang scripts running on this router model.${CClear}"
-                echo ""
-                echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone"
-                echo -e "${CCyan}environment directly on the router itself, instead of running your"
-                echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
-                echo -e "${CCyan}provide greater stability due to it running from the router itself."
-                echo ""
-                RouterModel=$(nvram get model)
-                echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
-                echo ""
-                echo -e "${CCyan}Force Re-install?${CClear}"
-                if promptyn "(Yes/No): "
-                  then
-                    if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
-                      echo ""
-                      echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
-                      echo ""
-                      opkg update
-                      echo ""
-                      echo -e "${CGreen}Force Re-installing Entware CoreUtils-Timeout Package...${CClear}"
-                      echo ""
-                      opkg install --force-reinstall coreutils-timeout
-                      echo -e "${CGreen}Force Re-installing Entware Screen Package...${CClear}"
-                      echo ""
-                      opkg install --force-reinstall screen
-                      echo ""
-                      echo -e "${CGreen}Re-install completed...${CClear}"
-                      sleep 2
-                    else
-                      clear
-                      echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
-                      echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
-                      echo ""
-                      sleep 3
-                    fi
-                fi
-              ;;
-
-              3)
-                echo ""
-                vupdate
-              ;;
-
-              4)
-                echo ""
-                echo -e "\n${CGreen}Launching VPNMON-R2 into Monitor Mode...${CClear}"
-                sleep 2
-                sh $APPPATH -monitor
-              ;;
-
-              5)
-                echo ""
-                echo -e "\n${CGreen}Launching VPNMON-R2 into Monitor Mode with Screen Utility...${CClear}"
-                sleep 2
-                sh $APPPATH -screen
-              ;;
-
-              u)
-                echo ""
-                vuninstall
-              ;;
-
-              e)
-                echo ""
-                exit 0
-              ;;
-
-              *)
-                echo ""
-                echo -e "${CRed}Invalid choice - Please enter a valid option...${CClear}"
-                echo ""
-                sleep 2
-              ;;
-
-            esac
-      done
+      vsetup
   fi
 
   # Check to see if the uninstall option is being called
@@ -2681,10 +2699,10 @@ while true; do
 
   # Display title/version
   echo -e "${CYellow}   _    ______  _   ____  _______  _   __      ____ ___  "
-  echo -e "  | |  / / __ \/ | / /  |/  / __ \/ | / /     / __ \__ \ "
+  echo -e "  | |  / / __ \/ | / /  |/  / __ \/ | / /     / __ \__ \ ${CGreen}v$Version${CYellow}"
   echo -e "  | | / / /_/ /  |/ / /|_/ / / / /  |/ /_____/ /_/ /_/ / "
   echo -e "  | |/ / ____/ /|  / /  / / /_/ / /|  /_____/ _, _/ __/  "
-  echo -e "  |___/_/   /_/ |_/_/  /_/\____/_/ |_/     /_/ |_/____/  ${CGreen}v$Version${CClear}"
+  echo -e "  |___/_/   /_/ |_/_/  /_/\____/_/ |_/     /_/ |_/____/ ${CCyan}(S)${CGreen}etup${CClear}"
 
   # Display update notification if an update becomes available through source repository
   if [ "$UpdateNotify" != "0" ]; then
@@ -3050,7 +3068,7 @@ while true; do
     do
         preparebar 51 "|"
         progressbar $i $INTERVAL
-        sleep 1
+        #sleep 1
         i=$(($i+1))
     done
   fi
