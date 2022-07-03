@@ -1,3 +1,27 @@
+v1.9   - (TBA)
+       * ADDED: A fourth qualifier variable thanks to @JAX1337 that will reset the VPN connection if the average
+         ping across the tunnel is greater than the specified amount, in the hopes of eliminating a slow connection
+         in favor of something a little faster. Please make sure you run through the config to change the default
+         of 100ms to something you prefer.
+       * ADDED: new functionality thanks to a suggestion from @JAX1337... this option will let you be able to use
+         VPNMON-R2 to reset connections based on best speed/ping to your pre-configured VPN client slots. Going
+         through the "-config", new question 5 will let you choose whether you want it to randomly pick, or use the
+         lowest ping when choosing your VPN servers. In the process, the UI now shows average ping going to each of
+         your configured slots, and will notify you on the bottom of the UI if it has found a better server to
+         connect to. You have the option in question 5a to specify how many chances you would like your current VPN
+         connection to deal with other servers that might have a lower ping, giving your current connection a chance
+         to recover. I have found that if you have other servers configured in your vicinity, there's a chance they
+         will compete with each other, which would be causing your connection to drop and reconnect to the "now"
+         fastest server repeatedly. This configurable counter will help alleviate this behavior. ;)  
+       * CHANGED: Enhanced and simplified some of the setup process when it comes to asking questions about NordVPN,
+         SurfShark and PerfectPrivacy, and assigning variables to each. Also completely revamped the -config process
+         to either let you start from scratch with default values, or use already existing values that you have
+         modified in your current config file. Great suggestion by @iTyPsIDg to prevent you from having to
+         continually modify the same entries over and over when a new version comes out.
+       * CHANGED: reduced the amount of clutter that a reset produces on the screen, and is much less verbose, and
+         looks much cleaner. Using on-screen indicators to show what's currently happening in the script. Will
+         continue to refine these.
+
 v1.8   - (June 23, 2022)
        * ADDED: A new row of VPN stats have been added to include current protocol, port, cryptography, and
          authentication digest, just to give you more detailed info pertaining to your current VPN connection.
