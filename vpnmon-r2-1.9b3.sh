@@ -483,12 +483,14 @@ vpnresetlowestping() {
         then
           echo ""
           printf "${CGreen}\r [Updating YazFi Guest Networks]...                            "
+          sleep 1
 
           if [ ! -f $YAZFI_CONFIG_PATH ]
             then
               echo ""
               echo -e "\n${CRed}Error: YazFi config was not located or YazFi is not installed. Unable to Proceed.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: YazFi config was not located or YazFi is not installed!" >> $LOGFILE
+              sleep 3
             else
               if [ $YF24GN1 -eq 1 ]
               then
@@ -541,6 +543,7 @@ vpnresetlowestping() {
         fi
 
         printf "${CGreen}\r [VPNMON-R2 Reset Finished]                                    "
+        sleep 2
 
         # Check for any version updates from the source repository
         updatecheck
@@ -639,6 +642,7 @@ vpnreset() {
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random NordVPN Multi-Country: $NordVPNRandomCountry]         "
         echo -e "$(date) - VPNMON-R2 - Randomly selected NordVPN Country: $NordVPNRandomCountry" >> $LOGFILE
+        sleep 1
     else
       NordVPNRandomCountry=$NordVPNCountry
     fi
@@ -694,6 +698,7 @@ vpnreset() {
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random SurfShark Multi-Country: $SurfSharkRandomCountry]     "
         echo -e "$(date) - VPNMON-R2 - Randomly selected SurfShark Country: $SurfSharkRandomCountry" >> $LOGFILE
+        sleep 1
     else
       SurfSharkRandomCountry=$SurfSharkCountry
     fi
@@ -749,6 +754,7 @@ vpnreset() {
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random PerfPriv Multi-Country: $PPRandomCountry]             "
         echo -e "$(date) - VPNMON-R2 - Randomly selected Percect Privacy Country: $PPRandomCountry" >> $LOGFILE
+        sleep 1
     else
       PPRandomCountry=$PPCountry
     fi
@@ -769,6 +775,7 @@ vpnreset() {
         else
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Updating Skynet whitelist with NordVPN Server IPs]           "
+          sleep 1
 
           firewall import whitelist /jffs/scripts/NordVPN.txt "NordVPN - $NordVPNRandomCountry" >/dev/null 2>&1
 
@@ -796,6 +803,7 @@ vpnreset() {
         else
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Updating Skynet whitelist with Perfect Privacy Server IPs]   "
+          sleep 1
 
           firewall import whitelist /jffs/scripts/ppipslst.txt "Perfect Privacy VPN" >/dev/null 2>&1
 
@@ -828,6 +836,7 @@ vpnreset() {
 
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs] "
+        sleep 1
         echo ""
 
         i=0
@@ -857,11 +866,13 @@ vpnreset() {
         then
           echo -e "\n${CRed}Error: NordVPN.txt list is blank! Check NordVPN service or config's Country Name.\n${CClear}"
           echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPN.txt list is blank!" >> $LOGFILE
+          sleep 3
           return
         fi
 
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs]   "
+        sleep 1
         echo ""
 
         i=0
@@ -899,11 +910,13 @@ vpnreset() {
           then
             echo -e "\n${CRed}Error: surfshark.txt list is blank! Check SurfShark service or config's Country Name.\n${CClear}"
             echo -e "$(date) - VPNMON-R2 ----------> ERROR: surfshark.txt list is blank!" >> $LOGFILE
+            sleep 3
             return
           fi
 
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom SurfShark IPs] "
+          sleep 1
           echo ""
 
           i=0
@@ -942,11 +955,13 @@ vpnreset() {
             then
               echo -e "\n${CRed}Error: pp.txt VPN server list is blank! Check Perfect Privacy VPN service or config's Country Name.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: pp.txt Perfect Privacy VPN list is blank!" >> $LOGFILE
+              sleep 3
               return
             fi
 
             printf "${CGreen}\r                                                               "
             printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom PerfPriv IPs]  "
+            sleep 1
             echo ""
 
             i=0
@@ -996,9 +1011,9 @@ vpnreset() {
 
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Refresh VPNMGRs NordVPN/PIA/WeVPN Server Locations]          "
-      sh /jffs/scripts/service-event start vpnmgrrefreshcacheddata
+      sh /jffs/scripts/service-event start vpnmgrrefreshcacheddata >/dev/null 2>&1
       sleep 10
-      sh /jffs/scripts/service-event start vpnmgr
+      sh /jffs/scripts/service-event start vpnmgr >/dev/null 2>&1
       sleep 10
       echo -e "$(date) - VPNMON-R2 - Refreshed VPNMGR Server Locations and Hostnames" >> $LOGFILE
     fi
@@ -1008,6 +1023,7 @@ vpnreset() {
     # Pick a random VPN Client to connect to
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Randomly selecting a VPN Client between 1 and $N]            "
+      sleep 1
 
     # Generate a number between BASE and N, ie.1 and 5 to choose which VPN Client is started
       RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
@@ -1028,6 +1044,7 @@ vpnreset() {
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [VPN Client 1 ON]                                             "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN1 Client ON" >> $LOGFILE
+          sleep 1
         ;;
 
         2)
@@ -1036,6 +1053,7 @@ vpnreset() {
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [VPN Client 2 ON]                                             "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN2 Client ON" >> $LOGFILE
+          sleep 1
         ;;
 
         3)
@@ -1044,6 +1062,7 @@ vpnreset() {
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [VPN Client 3 ON]                                             "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN3 Client ON" >> $LOGFILE
+          sleep 1
         ;;
 
         4)
@@ -1052,6 +1071,7 @@ vpnreset() {
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [VPN Client 4 ON]                                             "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN4 Client ON" >> $LOGFILE
+          sleep 1
         ;;
 
         5)
@@ -1060,9 +1080,10 @@ vpnreset() {
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [VPN Client 5 ON]                                             "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN5 Client ON" >> $LOGFILE
+          sleep 1
         ;;
       esac
-      sleep 2
+      sleep 1
     else
       i=0
       while [ $i -ne $N ]
@@ -1087,7 +1108,7 @@ vpnreset() {
       done
 
       printf "${CGreen}\r                                                               "
-      printf "${CGreen}\r [Starting lowest PING VPN Client $LOWEST ON]                  "
+      printf "${CGreen}\r [Starting fastest PING VPN Client $LOWEST ON]                  "
       service start_vpnclient$LOWEST >/dev/null 2>&1
       logger -t VPN Client$LOWEST "Active" >/dev/null 2>&1
       echo -e "$(date) - VPNMON-R2 - VPN Client $LOWEST ON - Lowest PING of $N VPN slots" >> $LOGFILE
@@ -1101,12 +1122,14 @@ vpnreset() {
     then
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Updating YazFi Guest Network(s) with current VPN Slot...]    "
+      sleep 1
 
       if [ ! -f $YAZFI_CONFIG_PATH ]
         then
           echo ""
           echo -e "\n${CRed}Error: YazFi config was not located or YazFi is not installed. Unable to Proceed.\n${CClear}"
           echo -e "$(date) - VPNMON-R2 ----------> ERROR: YazFi config was not located or YazFi is not installed!" >> $LOGFILE
+          sleep 3
         else
           if [ $YF24GN1 -eq 1 ]
           then
@@ -1289,7 +1312,7 @@ wancheck() {
         echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WANCITY" >> $LOGFILE
       fi
 
-      WANCITY="Your City"
+      #WANCITY="Your City"
       echo -e "${CGreen} ==WAN$WANIF $WANIFNAME Active | ||${CWhite}${InvGreen} $WANPING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WANCITY${CClear}"
 
     else
