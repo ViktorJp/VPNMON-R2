@@ -350,10 +350,10 @@ checkwan () {
   # Show that we're testing the WAN connection
   if [ $1 == "Loop" ]
   then
-    printf "${CGreen}\r[Checking WAN Connectivity]..."
+    printf "${CGreen}\r [Checking WAN Connectivity]..."
   elif [ $1 = "Reset" ]
   then
-    printf "${CGreen}\rChecking WAN Connectivity..."
+    printf "${CGreen}\r [Checking WAN Connectivity]..."
   fi
 
   #Run main checkwan loop
@@ -420,12 +420,12 @@ checkwan () {
 
             if [ $1 == "Loop" ]
             then
-              printf "${CGreen}\r[Checking WAN Connectivity]...ACTIVE"
+              printf "${CGreen}\r [Checking WAN Connectivity]...ACTIVE"
               sleep 1
               printf "\33[2K\r"
             elif [ $1 = "Reset" ]
             then
-              printf "${CGreen}\rChecking WAN Connectivity...ACTIVE"
+              printf "${CGreen}\r [Checking WAN Connectivity]...ACTIVE"
               sleep 1
               echo -e "\n"
             fi
@@ -568,7 +568,7 @@ vpnresetlowestping() {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# VPNReset is a script based on my VPNON.SH script to kill connections and reconnect to a clean VPN state
+# VPNReset is a function based on my VPNON.SH script to kill connections and reconnect to a clean VPN state
 vpnreset() {
 
   # Start the VPN reset process
@@ -589,7 +589,7 @@ vpnreset() {
 
   # Check the WAN state before continuing
     printf "${CGreen}\r                                                               "
-    checkwan Loop
+    checkwan Reset
 
   # Determine if multiple NordVPN countries need to be considered, and pick a random one
     if [ $NordVPNMultipleCountries -eq 1 ]
@@ -640,7 +640,7 @@ vpnreset() {
         esac
         echo ""
         printf "${CGreen}\r                                                               "
-        printf "${CGreen}\r [Random NordVPN Multi-Country: $NordVPNRandomCountry]         "
+        printf "${CGreen}\r [Random NordVPN Multi-Country selected: $NordVPNRandomCountry]"
         echo -e "$(date) - VPNMON-R2 - Randomly selected NordVPN Country: $NordVPNRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -696,7 +696,7 @@ vpnreset() {
         esac
         echo ""
         printf "${CGreen}\r                                                               "
-        printf "${CGreen}\r [Random SurfShark Multi-Country: $SurfSharkRandomCountry]     "
+        printf "${CGreen}\r [Random SurfShark Multi-Country selected: $SurfSharkRandomCountry]"
         echo -e "$(date) - VPNMON-R2 - Randomly selected SurfShark Country: $SurfSharkRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -752,7 +752,7 @@ vpnreset() {
         esac
         echo ""
         printf "${CGreen}\r                                                               "
-        printf "${CGreen}\r [Random PerfPriv Multi-Country: $PPRandomCountry]             "
+        printf "${CGreen}\r [Random PerfPriv Multi-Country selected: $PPRandomCountry]    "
         echo -e "$(date) - VPNMON-R2 - Randomly selected Percect Privacy Country: $PPRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -850,7 +850,7 @@ vpnreset() {
             RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
             nvram set vpn_client"$i"_addr="$RNDVPNIP"
             nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-            echo -e "${CGreen}VPN Slot $i - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+            echo -e "${CGreen}  VPN Slot $i - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
             sleep 1
         done
         echo ""
@@ -886,7 +886,7 @@ vpnreset() {
             RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
             nvram set vpn_client"$i"_addr="$RNDVPNIP"
             nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-            echo -e "${CGreen}VPN Slot $i - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+            echo -e "${CGreen}  VPN Slot $i - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
             sleep 1
         done
         echo ""
@@ -931,7 +931,7 @@ vpnreset() {
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
               nvram set vpn_client"$i"_desc="SurfShark - $RNDVPNCITY"
-              echo -e "${CGreen}VPN Slot $i - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
+              echo -e "${CGreen}  VPN Slot $i - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
               sleep 1
           done
             echo ""
@@ -976,7 +976,7 @@ vpnreset() {
                 RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
                 nvram set vpn_client"$i"_addr="$RNDVPNHOST"
                 nvram set vpn_client"$i"_desc="Perfect Privacy - $RNDVPNCITY"
-                echo -e "${CGreen}VPN Slot $i - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY\n${CClear}"
+                echo -e "${CGreen}  VPN Slot $i - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY\n${CClear}"
                 sleep 1
             done
               echo ""
@@ -1120,6 +1120,7 @@ vpnreset() {
     # Optionally sync active VPN Slot with YazFi guest network(s)
     if [ $SyncYazFi -eq 1 ]
     then
+      echo ""
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Updating YazFi Guest Network(s) with current VPN Slot...]    "
       sleep 1
@@ -1209,7 +1210,7 @@ vpnreset() {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# checkvpn is a script that checks each connection to see if its active, and performs a ping... borrowed
+# checkvpn is a function that checks each connection to see if its active, and performs a ping... borrowed
 # heavily and much credit to @Martineau for this code from his VPN-Failover script. This piece right here
 # is really how the whole VPNMON project got its start! :)
 
@@ -1284,7 +1285,7 @@ checkvpn() {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# checkwan is a script that checks each wan connection to see if its active, and performs a ping and a city lookup...
+# checkwan is a function that checks each wan connection to see if its active, and performs a ping and a city lookup...
 wancheck() {
 
   WANIF=$1
@@ -1322,7 +1323,7 @@ wancheck() {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# vconfig is a script that steps you through the configuration items for a new or existing setup of VPNMON-R2...
+# vconfig is a function that steps you through the configuration items for a new or existing setup of VPNMON-R2...
 vconfig () {
   clear
   if [ -f $CFGPATH ] #Making sure file exists before proceeding
@@ -2180,7 +2181,7 @@ vconfig () {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# vupdate is a script that provides a UI to check for script updates and allows you to install the latest version...
+# vupdate is a function that provides a UI to check for script updates and allows you to install the latest version...
 vupdate () {
   updatecheck # Check for the latest version from source repository
   clear
@@ -2225,7 +2226,7 @@ vupdate () {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# vuninstall is a script that uninstalls and removes all traces of VPNMON-R2 from your router...
+# vuninstall is a function that uninstalls and removes all traces of VPNMON-R2 from your router...
 vuninstall () {
   clear
   logo
@@ -2527,7 +2528,7 @@ vuninstall () {
   if [ "$1" == "-uninstall" ]
     then
       vuninstall
-      kill 0
+      exit 0
   fi
 
   # Check to see if the screen option is being called and run operations normally using the screen utility
@@ -2540,8 +2541,9 @@ vuninstall () {
       echo -e "${CGreen}To exit the SCREEN session, type: CTRL-A + D${CClear}"
       echo ""
       screen -dmS "vpnmon-r2" $APPPATH -monitor
-      sleep 1
-      kill 0
+      sleep 2
+      read -rsp $'Press any key to continue...\n' -n1 key
+      exit 0
   fi
 
   # Check to see if the monitor option is being called and run operations normally
@@ -2921,7 +2923,6 @@ while true; do
 
       SKIPPROGRESS=1
 
-      echo -e "\n${CCyan}Resuming VPNMON-R2 in T minus $INTERVAL${CClear}\n"
       echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
       echo -e "$(date +%s)" > $RSTFILE
       START=$(cat $RSTFILE)
@@ -2960,17 +2961,17 @@ while true; do
 
       if [ $UseNordVPN -eq 1 ];then
         echo -e "\n${CRed}NordVPN Server Load is higher than $NordVPNLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: NordVPN Server Load is higher than $NordVPNLoadReset% - Executing VPN Reset" >> $LOGFILE
+        echo -e "$(date) - VPNMON-R2 ----------> WARNING: NordVPN Server Load > $NordVPNLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
       if [ $UseSurfShark -eq 1 ];then
         echo -e "\n${CRed}SurfShark Server Load is higher than $SurfSharkLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: SurfShark Server Load is higher than $SurfSharkLoadReset% - Executing VPN Reset" >> $LOGFILE
+        echo -e "$(date) - VPNMON-R2 ----------> WARNING: SurfShark Server Load > $SurfSharkLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
       if [ $UsePP -eq 1 ];then
         echo -e "\n${CRed}Perfect Privacy Server Load is higher than $PPLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: Perfect Privacy Server Load is higher than $PPLoadReset% - Executing VPN Reset" >> $LOGFILE
+        echo -e "$(date) - VPNMON-R2 ----------> WARNING: Perfect Privacy Server Load > $PPLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
       vpnreset
@@ -2992,7 +2993,7 @@ while true; do
   # If the AVGPING average ping across the tunnel is greater than the set variable, reset the VPN and hopefully land on a server with lesser ping times
   if [ ${AVGPING%.*} -gt $MINPING ]; then
     echo -e "\n${CRed}Average PING across VPN tunnel is higher than $MINPING ms, VPNMON-R2 is executing VPN Reset${CClear}\n"
-    echo -e "$(date) - VPNMON-R2 ----------> WARNING: Average PING across VPN tunnel is higher than $MINPING ms - Executing VPN Reset" >> $LOGFILE
+    echo -e "$(date) - VPNMON-R2 ----------> WARNING: AVG PING across VPN tunnel > $MINPING ms - Executing VPN Reset" >> $LOGFILE
 
     vpnreset
 
@@ -3018,9 +3019,8 @@ while true; do
 
       if [ $LOWPINGCOUNT -le $PINGCHANCES ]; then
         echo -e "${CRed} WARNING:${CYellow} Switching to faster ${InvBlue}VPN Client $LOWEST${CClear}${CYellow} after $(($PINGCHANCES-$LOWPINGCOUNT)) more chances"
-
       else
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: Average PING on VPN Client$LOWEST is lower than current connection - Executing VPN Reset" >> $LOGFILE
+        echo -e "$(date) - VPNMON-R2 ----------> WARNING: Switching to faster VPN Client$LOWEST - Executing VPN Reset" >> $LOGFILE
 
         vpnresetlowestping
 
