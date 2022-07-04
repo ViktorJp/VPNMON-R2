@@ -1,3 +1,7 @@
+v1.91  - TBA
+       * FIXED: Minor wording changes, small bug fixes from some stuff I've noticed while running it to help with
+         further increasing stability.
+       
 v1.9   - (July 3, 2022)
        * ADDED: A fourth qualifier variable thanks to @JAX1337 that will reset the VPN connection if the average
          ping across the tunnel is greater than the specified amount, in the hopes of eliminating a slow connection
