@@ -13,6 +13,11 @@ v1.9   - (TBA)
          to recover. I have found that if you have other servers configured in your vicinity, there's a chance they
          will compete with each other, which would be causing your connection to drop and reconnect to the "now"
          fastest server repeatedly. This configurable counter will help alleviate this behavior. ;)  
+       * ADDED: the capability to use a keypress from the main UI to get into the -setup menu using (S), or forcing
+         a reset with the {R} key, and of course being able to gracefully exit using the (E) key.  Please note, you
+         can press these keys at any time, but they won't get picked up until the main progress bar starts its
+         interval count. These keypress options are indicated at the top right of the UI at all times. Sounds like
+         an opportunity to build in some Easter Eggs now.  :)
        * CHANGED: Enhanced and simplified some of the setup process when it comes to asking questions about NordVPN,
          SurfShark and PerfectPrivacy, and assigning variables to each. Also completely revamped the -config process
          to either let you start from scratch with default values, or use already existing values that you have
