@@ -1,4 +1,4 @@
-v1.9   - (TBA)
+v1.9   - (July 3, 2022)
        * ADDED: A fourth qualifier variable thanks to @JAX1337 that will reset the VPN connection if the average
          ping across the tunnel is greater than the specified amount, in the hopes of eliminating a slow connection
          in favor of something a little faster. Please make sure you run through the config to change the default
