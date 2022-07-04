@@ -45,7 +45,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 Version="1.9"                                       # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
-Beta=1                                              # Beta Testmode on/off
+Beta=0                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VPNON-Lock.txt"             # Predefined lockfile that VPNON.sh creates when it resets the VPN so
                                                     # that VPNMON-R2 does not interfere during a reset
 RSTFILE="/jffs/addons/vpnmon-r2.d/vpnmon-rst.log"   # Logfile containing the last date/time a VPN reset was performed. Else,
@@ -1326,7 +1326,7 @@ wancheck() {
         echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WANCITY" >> $LOGFILE
       fi
 
-      WANCITY="Your City"
+      #WANCITY="Your City"
       echo -e "${CGreen} ==WAN$WANIF $WANIFNAME Active | ||${CWhite}${InvGreen} $WANPING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WANCITY${CClear}"
 
     else
