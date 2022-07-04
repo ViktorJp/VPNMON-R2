@@ -66,6 +66,7 @@ AVGPING=0                                           # Average ping value
 MINPING=100                                         # Minimum ping value in ms before a reset takes place
 USELOWESTSLOT=1                                     # Option to select either random VPN slot connections, or using the one
                                                     # with the lowest PING
+FORCEDRESET=0                                       # Variable tracks whether a forced reset is initiated through the UI
 LOWPINGCOUNT=0                                      # Counter for the number of tries before switching to lower ping server
 PINGCHANCES=5                                       # Number of chances your current connection gets before reconnecting to
                                                     # faster server
@@ -251,6 +252,8 @@ progressbar() {
       case $key_press in
           's') vsetup;;
           'S') vsetup;;
+          'r') FORCEDRESET=1;;
+          'R') FORCEDRESET=1;;
           'e') exit 0;;
       esac
   fi
@@ -2700,9 +2703,9 @@ while true; do
   # Display title/version
   echo -e "${CYellow}   _    ______  _   ____  _______  _   __      ____ ___  "
   echo -e "  | |  / / __ \/ | / /  |/  / __ \/ | / /     / __ \__ \ ${CGreen}v$Version${CYellow}"
-  echo -e "  | | / / /_/ /  |/ / /|_/ / / / /  |/ /_____/ /_/ /_/ / "
-  echo -e "  | |/ / ____/ /|  / /  / / /_/ / /|  /_____/ _, _/ __/  "
-  echo -e "  |___/_/   /_/ |_/_/  /_/\____/_/ |_/     /_/ |_/____/ ${CCyan}(S)${CGreen}etup${CClear}"
+  echo -e "  | | / / /_/ /  |/ / /|_/ / / / /  |/ /_____/ /_/ /_/ /${CRed}(S)${CGreen}etup${CYellow}"
+  echo -e "  | |/ / ____/ /|  / /  / / /_/ / /|  /_____/ _, _/ __/ ${CRed}(R)${CGreen}eset${CYellow}"
+  echo -e "  |___/_/   /_/ |_/_/  /_/\____/_/ |_/     /_/ |_/____/ ${CRed}(E)${CGreen}xit${CClear}"
 
   # Display update notification if an update becomes available through source repository
   if [ "$UpdateNotify" != "0" ]; then
@@ -3058,6 +3061,28 @@ while true; do
     else
       LOWPINGCOUNT=0
     fi
+  fi
+
+  # If a force reset command has been received by the UI, then go through a regular reset
+  if [ $FORCEDRESET == "1" ]; then
+    echo -e "\n${CRed}Forced reset captured through UI, VPNMON-R2 is executing VPN Reset${CClear}\n"
+    echo -e "$(date) - VPNMON-R2 ----------> WARNING: Forced reset captured through UI - Executing VPN Reset" >> $LOGFILE
+
+        vpnreset
+
+        SKIPPROGRESS=1
+        FORCEDRESET=0
+
+        echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+        echo -e "$(date +%s)" > $RSTFILE
+        START=$(cat $RSTFILE)
+        PINGLOW=0 # Reset ping time history variables
+        PINGHIGH=0
+        ICANHAZIP=""
+        oldrxbytes=0 # Reset Stats
+        oldtxbytes=0
+        newrxbytes=0
+        newtxbytes=0
   fi
 
   # Provide a progressbar to show script activity
