@@ -45,7 +45,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 Version="1.9"                                       # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
-Beta=0                                              # Beta Testmode on/off
+Beta=1                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VPNON-Lock.txt"             # Predefined lockfile that VPNON.sh creates when it resets the VPN so
                                                     # that VPNMON-R2 does not interfere during a reset
 RSTFILE="/jffs/addons/vpnmon-r2.d/vpnmon-rst.log"   # Logfile containing the last date/time a VPN reset was performed. Else,
@@ -252,8 +252,8 @@ progressbar() {
       case $key_press in
           's') vsetup;;
           'S') vsetup;;
-          'r') FORCEDRESET=1;;
-          'R') FORCEDRESET=1;;
+          'r') echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
+          'R') echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
           'e') exit 0;;
       esac
   fi
@@ -471,7 +471,7 @@ vpnresetlowestping() {
 
     # Kill all current VPN client sessions
       echo ""
-      printf "${CGreen}\r [Killing all VPN Client Connections]...                       "
+      printf "${CGreen}\r [Killing all VPN Client Connections]                          "
       service stop_vpnclient1 >/dev/null 2>&1
       service stop_vpnclient2 >/dev/null 2>&1
       service stop_vpnclient3 >/dev/null 2>&1
@@ -487,7 +487,7 @@ vpnresetlowestping() {
       # Reset VPN connection to one with lowest PING
         service start_vpnclient$LOWEST >/dev/null 2>&1
         logger -t VPN Client$LOWEST "Active" >/dev/null 2>&1
-        printf "${CGreen}\r [VPN Client $LOWEST ON]...                                    "
+        printf "${CGreen}\r [VPN Client $LOWEST ON]                                       "
         sleep 2
         echo -e "$(date) - VPNMON-R2 - VPN$LOWEST Client ON - Lowest PING of $N VPN slots" >> $LOGFILE
 
@@ -495,7 +495,7 @@ vpnresetlowestping() {
         if [ $SyncYazFi -eq 1 ]
         then
           echo ""
-          printf "${CGreen}\r [Updating YazFi Guest Networks]...                            "
+          printf "${CGreen}\r [Updating YazFi Guest Networks]                               "
           sleep 1
 
           if [ ! -f $YAZFI_CONFIG_PATH ]
@@ -1326,7 +1326,7 @@ wancheck() {
         echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WANCITY" >> $LOGFILE
       fi
 
-      #WANCITY="Your City"
+      WANCITY="Your City"
       echo -e "${CGreen} ==WAN$WANIF $WANIFNAME Active | ||${CWhite}${InvGreen} $WANPING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WANCITY${CClear}"
 
     else
@@ -2936,7 +2936,7 @@ while true; do
 
   # If STATUS remains 0 then we've lost our connection, reset the VPN
   if [ $STATUS -eq 0 ]; then
-      echo -e "\n${CRed}Connection has failed, VPNMON-R2 is executing VPN Reset${CClear}\n"
+      echo -e "\n${CRed} Connection has failed, VPNMON-R2 is executing VPN Reset${CClear}\n"
       echo -e "$(date) - VPNMON-R2 ----------> ERROR: Connection failed - Executing VPN Reset" >> $LOGFILE
 
       vpnreset
@@ -2957,7 +2957,7 @@ while true; do
 
   # If VPNCLCNT is greater than 1 there are multiple connections running, reset the VPN
   if [ $VPNCLCNT -gt 1 ]; then
-      echo -e "\n${CRed}Multiple VPN Client Connections detected, VPNMON-R2 is executing VPN Reset${CClear}\n"
+      echo -e "\n${CRed} Multiple VPN Client Connections detected, VPNMON-R2 is executing VPN Reset${CClear}\n"
       echo -e "$(date) - VPNMON-R2 ----------> ERROR: Multiple VPN Client Connections detected - Executing VPN Reset" >> $LOGFILE
 
       vpnreset
@@ -2980,17 +2980,17 @@ while true; do
   if [ $NordVPNLoadReset -le $VPNLOAD ] || [ $SurfSharkLoadReset -le $VPNLOAD ] || [ $PPLoadReset -le $VPNLOAD ]; then
 
       if [ $UseNordVPN -eq 1 ];then
-        echo -e "\n${CRed}NordVPN Server Load is higher than $NordVPNLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
+        echo -e "\n${CRed} NordVPN Server Load is higher than $NordVPNLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
         echo -e "$(date) - VPNMON-R2 ----------> WARNING: NordVPN Server Load > $NordVPNLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
       if [ $UseSurfShark -eq 1 ];then
-        echo -e "\n${CRed}SurfShark Server Load is higher than $SurfSharkLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
+        echo -e "\n${CRed} SurfShark Server Load is higher than $SurfSharkLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
         echo -e "$(date) - VPNMON-R2 ----------> WARNING: SurfShark Server Load > $SurfSharkLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
       if [ $UsePP -eq 1 ];then
-        echo -e "\n${CRed}Perfect Privacy Server Load is higher than $PPLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
+        echo -e "\n${CRed} Perfect Privacy Server Load is higher than $PPLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
         echo -e "$(date) - VPNMON-R2 ----------> WARNING: Perfect Privacy Server Load > $PPLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
@@ -3012,7 +3012,7 @@ while true; do
 
   # If the AVGPING average ping across the tunnel is greater than the set variable, reset the VPN and hopefully land on a server with lesser ping times
   if [ ${AVGPING%.*} -gt $MINPING ]; then
-    echo -e "\n${CRed}Average PING across VPN tunnel is higher than $MINPING ms, VPNMON-R2 is executing VPN Reset${CClear}\n"
+    echo -e "\n${CRed} Average PING across VPN tunnel is higher than $MINPING ms, VPNMON-R2 is executing VPN Reset${CClear}\n"
     echo -e "$(date) - VPNMON-R2 ----------> WARNING: AVG PING across VPN tunnel > $MINPING ms - Executing VPN Reset" >> $LOGFILE
 
     vpnreset
@@ -3065,7 +3065,7 @@ while true; do
 
   # If a force reset command has been received by the UI, then go through a regular reset
   if [ $FORCEDRESET == "1" ]; then
-    echo -e "\n${CRed}Forced reset captured through UI, VPNMON-R2 is executing VPN Reset${CClear}\n"
+    echo -e "\n${CRed} Forced reset captured through UI, VPNMON-R2 is executing VPN Reset${CClear}\n"
     echo -e "$(date) - VPNMON-R2 ----------> WARNING: Forced reset captured through UI - Executing VPN Reset" >> $LOGFILE
 
         vpnreset
