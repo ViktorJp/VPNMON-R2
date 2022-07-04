@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v1.9 (VPNMON-R2.SH) is an all-in-one shell script which compliments @JackYaz's VPNMGR program to maintain a
+# VPNMON-R2 v1.91 (VPNMON-R2.SH) is an all-in-one shell script which compliments @JackYaz's VPNMGR program to maintain a
 # NordVPN/PIA/WeVPN setup, though this is not a requirement, and can function without problems in a standalone environment.
 # This script checks your (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a
 # host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="1.9"                                       # Current version of VPNMON-R2
+Version="1.91"                                      # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VPNON-Lock.txt"             # Predefined lockfile that VPNON.sh creates when it resets the VPN so
@@ -487,7 +487,7 @@ vpnresetlowestping() {
       # Reset VPN connection to one with lowest PING
         service start_vpnclient$LOWEST >/dev/null 2>&1
         logger -t VPN Client$LOWEST "Active" >/dev/null 2>&1
-        printf "${CGreen}\r [VPN Client $LOWEST ON]                                       "
+        printf "${CGreen}\r [VPN$LOWEST Client ON]                                       "
         sleep 2
         echo -e "$(date) - VPNMON-R2 - VPN$LOWEST Client ON - Lowest PING of $N VPN slots" >> $LOGFILE
 
@@ -501,7 +501,7 @@ vpnresetlowestping() {
           if [ ! -f $YAZFI_CONFIG_PATH ]
             then
               echo ""
-              echo -e "\n${CRed}Error: YazFi config was not located or YazFi is not installed. Unable to Proceed.\n${CClear}"
+              echo -e "\n${CRed} Error: YazFi config was not located or YazFi is not installed. Unable to Proceed.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: YazFi config was not located or YazFi is not installed!" >> $LOGFILE
               sleep 3
             else
@@ -551,11 +551,13 @@ vpnresetlowestping() {
               fi
 
               #Apply settings to YazFi and get it to acknowledge changes for Guest Network Clients
-              sh /jffs/scripts/YazFi runnow >/dev/null 2>&1
+              ResetYazFi=$($timeoutcmd$timeoutlng sh /jffs/scripts/YazFi runnow >/dev/null 2>&1)
+              echo -e "$(date) - VPNMON-R2 - Successfully updated YazFi guest network(s) with the current VPN slot." >> $LOGFILE
           fi
         fi
 
         printf "${CGreen}\r [VPNMON-R2 Reset Finished]                                    "
+        echo -e "$(date) - VPNMON-R2 - VPN Reset Finished" >> $LOGFILE
         sleep 2
 
         # Check for any version updates from the source repository
@@ -863,7 +865,7 @@ vpnreset() {
             RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
             nvram set vpn_client"$i"_addr="$RNDVPNIP"
             nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-            echo -e "${CGreen}  VPN Slot $i - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+            echo -e "${CGreen}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
             sleep 1
         done
         echo ""
@@ -899,7 +901,7 @@ vpnreset() {
             RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
             nvram set vpn_client"$i"_addr="$RNDVPNIP"
             nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-            echo -e "${CGreen}  VPN Slot $i - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+            echo -e "${CGreen}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
             sleep 1
         done
         echo ""
@@ -944,7 +946,7 @@ vpnreset() {
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
               nvram set vpn_client"$i"_desc="SurfShark - $RNDVPNCITY"
-              echo -e "${CGreen}  VPN Slot $i - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
+              echo -e "${CGreen}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
               sleep 1
           done
             echo ""
@@ -989,7 +991,7 @@ vpnreset() {
                 RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
                 nvram set vpn_client"$i"_addr="$RNDVPNHOST"
                 nvram set vpn_client"$i"_desc="Perfect Privacy - $RNDVPNCITY"
-                echo -e "${CGreen}  VPN Slot $i - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY\n${CClear}"
+                echo -e "${CGreen}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY\n${CClear}"
                 sleep 1
             done
               echo ""
@@ -1055,7 +1057,7 @@ vpnreset() {
           service start_vpnclient1 >/dev/null 2>&1
           logger -t VPN Client1 "Active"
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN Client 1 ON]                                             "
+          printf "${CGreen}\r [VPN1 Client ON]                                              "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN1 Client ON" >> $LOGFILE
           sleep 1
         ;;
@@ -1064,7 +1066,7 @@ vpnreset() {
           service start_vpnclient2 >/dev/null 2>&1
           logger -t VPN Client2 "Active"
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN Client 2 ON]                                             "
+          printf "${CGreen}\r [VPN2 Client ON]                                              "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN2 Client ON" >> $LOGFILE
           sleep 1
         ;;
@@ -1073,7 +1075,7 @@ vpnreset() {
           service start_vpnclient3 >/dev/null 2>&1
           logger -t VPN Client3 "Active"
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN Client 3 ON]                                             "
+          printf "${CGreen}\r [VPN3 Client ON]                                              "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN3 Client ON" >> $LOGFILE
           sleep 1
         ;;
@@ -1082,7 +1084,7 @@ vpnreset() {
           service start_vpnclient4 >/dev/null 2>&1
           logger -t VPN Client4 "Active"
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN Client 4 ON]                                             "
+          printf "${CGreen}\r [VPN4 Client ON]                                              "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN4 Client ON" >> $LOGFILE
           sleep 1
         ;;
@@ -1091,7 +1093,7 @@ vpnreset() {
           service start_vpnclient5 >/dev/null 2>&1
           logger -t VPN Client5 "Active"
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN Client 5 ON]                                             "
+          printf "${CGreen}\r [VPN5 Client ON]                                              "
           echo -e "$(date) - VPNMON-R2 - Randomly selected VPN5 Client ON" >> $LOGFILE
           sleep 1
         ;;
@@ -1105,7 +1107,7 @@ vpnreset() {
           OFFLINEVPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client"$i"_addr)
           DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
           testping=${DISCHOSTPING%.*}
-          if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=0; fi # On that rare occasion where it's unable to get the Ping time, assign 0
+          if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
           if [ $i -eq 1 ]; then
             LOWEST=$i
@@ -1115,16 +1117,16 @@ vpnreset() {
             LOWESTPING=${testping%.*}
           fi
 
-          if [ $LOWESTPING -eq 0 ]; then
+          if [ $LOWESTPING -eq 1 ]; then
             LOWEST=$CURRCLNT
           fi
       done
 
       printf "${CGreen}\r                                                               "
-      printf "${CGreen}\r [Starting fastest PING VPN Client $LOWEST ON]                  "
+      printf "${CGreen}\r [Starting fastest PING VPN$LOWEST Client ON]                  "
       service start_vpnclient$LOWEST >/dev/null 2>&1
       logger -t VPN Client$LOWEST "Active" >/dev/null 2>&1
-      echo -e "$(date) - VPNMON-R2 - VPN Client $LOWEST ON - Lowest PING of $N VPN slots" >> $LOGFILE
+      echo -e "$(date) - VPNMON-R2 - VPN$LOWEST Client ON - Lowest PING of $N VPN slots" >> $LOGFILE
       option=$LOWEST
       CURRCLNT=$LOWEST
       sleep 2
@@ -1191,7 +1193,7 @@ vpnreset() {
           fi
 
           #Apply settings to YazFi and get it to acknowledge changes for Guest Network Clients
-          sh /jffs/scripts/YazFi runnow >/dev/null 2>&1
+          ResetYazFi=$($timeoutcmd$timeoutlng sh /jffs/scripts/YazFi runnow >/dev/null 2>&1)
           echo -e "$(date) - VPNMON-R2 - Successfully updated YazFi guest network(s) with the current VPN slot." >> $LOGFILE
         fi
     fi
@@ -1246,7 +1248,7 @@ checkvpn() {
         VPNCLCNT=$((VPNCLCNT+1))
         AVGPING=$(ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
 
-        if [ -z "$AVGPING" ]; then AVGPING=0; fi # On that rare occasion where it's unable to get the Ping time, assign 0
+        if [ -z "$AVGPING" ]; then AVGPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
         if [ $VPNIP == "Unassigned" ];then # The first time through, use API lookup to get exit VPN city and display
           VPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
@@ -1276,7 +1278,7 @@ checkvpn() {
     OFFLINEVPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
     DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
     testping=${DISCHOSTPING%.*}
-    if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=0; fi # On that rare occasion where it's unable to get the Ping time, assign 0
+    if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
     echo -e "${CClear} - VPN$1 Disconnected  | || $DISCHOSTPING ms || | "
 
@@ -1290,7 +1292,7 @@ checkvpn() {
       LOWESTPING=${testping%.*}
   fi
 
-  if [ $LOWESTPING -eq 0 ]; then
+  if [ $LOWESTPING -eq 1 ]; then
     LOWEST=$CURRCLNT
   fi
 
@@ -1316,7 +1318,7 @@ wancheck() {
       # Ping through the WAN interface
       WANPING=$(ping -I $WANIFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn)
 
-      if [ -z "$WANPING" ]; then WANPING=0; fi # On that rare occasion where it's unable to get the Ping time, assign 0
+      if [ -z "$WANPING" ]; then WANPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
       # Get the public IP of the WAN, determine the city from it, and display it on screen
       if [ $WANIP == "Unassigned" ];then
@@ -1943,7 +1945,7 @@ vconfig () {
       echo -e "${CCyan}13. Would you like to sync the active VPN slot with YazFi?"
       echo -e "${CYellow}(No=0, Yes=1) (Default = $SyncYazFi)${CClear}"
       while true; do
-        read -p "Trim Logs? (0/1): " SyncYazFi1
+        read -p "Sync YazFi? (0/1): " SyncYazFi1
           case $SyncYazFi1 in
             [0] ) echo -e "${CGreen}Using value: 0 (No)${CClear}";SyncYazFi=0;break ;;
             [1] ) echo -e "${CGreen}Using value: 1 (Yes)${CClear}";SyncYazFi=1;break ;;
@@ -2702,10 +2704,10 @@ while true; do
 
   # Display title/version
   echo -e "${CYellow}   _    ______  _   ____  _______  _   __      ____ ___  "
-  echo -e "  | |  / / __ \/ | / /  |/  / __ \/ | / /     / __ \__ \ ${CGreen}v$Version${CYellow}"
-  echo -e "  | | / / /_/ /  |/ / /|_/ / / / /  |/ /_____/ /_/ /_/ /${CRed}(S)${CGreen}etup${CYellow}"
-  echo -e "  | |/ / ____/ /|  / /  / / /_/ / /|  /_____/ _, _/ __/ ${CRed}(R)${CGreen}eset${CYellow}"
-  echo -e "  |___/_/   /_/ |_/_/  /_/\____/_/ |_/     /_/ |_/____/ ${CRed}(E)${CGreen}xit${CClear}"
+  echo -e "  | |  / / __ \/ | / /  |/  / __ \/ | / /     / __ \__ \  ${CGreen}v$Version${CYellow}"
+  echo -e "  | | / / /_/ /  |/ / /|_/ / / / /  |/ /_____/ /_/ /_/ / ${CRed}(S)${CGreen}etup${CYellow}"
+  echo -e "  | |/ / ____/ /|  / /  / / /_/ / /|  /_____/ _, _/ __/  ${CRed}(R)${CGreen}eset${CYellow}"
+  echo -e "  |___/_/   /_/ |_/_/  /_/\____/_/ |_/     /_/ |_/____/  ${CRed}(E)${CGreen}xit${CClear}"
 
   # Display update notification if an update becomes available through source repository
   if [ "$UpdateNotify" != "0" ]; then
@@ -3038,9 +3040,9 @@ while true; do
       LOWPINGCOUNT=$(($LOWPINGCOUNT+1))
 
       if [ $LOWPINGCOUNT -le $PINGCHANCES ]; then
-        echo -e "${CRed} WARNING:${CYellow} Switching to faster ${InvBlue}VPN Client $LOWEST${CClear}${CYellow} after $(($PINGCHANCES-$LOWPINGCOUNT)) more chances"
+        echo -e "${CRed} WARNING:${CYellow} Switching to faster ${InvBlue}VPN$LOWEST Client${CClear}${CYellow} after $(($PINGCHANCES-$LOWPINGCOUNT)) more chances"
       else
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: Switching to faster VPN Client$LOWEST - Executing VPN Reset" >> $LOGFILE
+        echo -e "$(date) - VPNMON-R2 ----------> WARNING: Switching to faster VPN$LOWEST Client - Executing VPN Reset" >> $LOGFILE
 
         vpnresetlowestping
 
