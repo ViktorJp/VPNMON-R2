@@ -1,6 +1,6 @@
 # VPNMON-R2
 
-**Executive Summary**: VPNMON-R2 v1.8 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy VPN services.  It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to function perfectly in a standalone environment with your own personal VPN service. This script will check the health of (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of commands that will kill all VPN clients, will optionally whitelist all NordVPN/PerfectPrivacy VPN servers in the Skynet Firewall, and randomly picks one of your (up to) 5 VPN Clients to connect to. One of VPNMON-R2's unique features is called "SuperRandom", where it will randomly assign VPN endpoints for a random county (or your choice) to your VPN slots, and randomly connect to one of these. It will now also test your WAN connection, and put itself into standby until the WAN is restored before reconnecting your VPN connections.
+**Executive Summary**: VPNMON-R2 v1.9 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy VPN services.  It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to function perfectly in a standalone environment with your own personal VPN service. This script will check the health of (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of commands that will kill all VPN clients, will optionally whitelist all NordVPN/PerfectPrivacy VPN servers in the Skynet Firewall, and randomly picks one of your (up to) 5 VPN Clients to connect to. One of VPNMON-R2's unique features is called "SuperRandom", where it will randomly assign VPN endpoints for a random county (or your choice) to your VPN slots, and randomly connect to one of these. It will now also test your WAN connection, and put itself into standby until the WAN is restored before reconnecting your VPN connections.
 
 I am by no means a serious script programmer. I've combed through lots of code and examples found both on the Merlin FW discussion forums and online to cobble this stuff together. You will probably find inefficient code, or possibly shaking your head with the rudimentary ways I'm pulling things off... but hey, I'm learning, it's fun, and it works! ;)  Huge thanks and shoutouts to @JackYaz, @eibgrad and @Martineau for their inspiration and gorgeous looking code, and for everyone else that has helped me along the way on the Merlin forums: https://www.snbforums.com/forums/asuswrt-merlin.42/.  As always, a huge thank you and a lot of admiration also goes out to @RMerlin, @Adamm, @L&LD, @SomeWhereOverTheRainBow and @thelonelycoder for everything you've done for the community
 
@@ -15,9 +15,9 @@ How is this script supposed to run?
 -----------------------------------
 Personally, I run this script in its own SSH window from a PC that's connected directly to the Asus router, as it loops and checks the connection every 60 seconds. Installation instructions:
 1. Download and install from your favorite SSH tools, copy & paste this command:
-   ``curl --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-1.8.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"``
+   ``curl --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-1.9.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"``
 2. To initially configure this script, open up a dedicated SSH window, and simply execute the script
-   ``sh /jffs/scripts/vpnmon-r2.sh -config``
+   ``sh /jffs/scripts/vpnmon-r2.sh -setup``
 3. Once you've successfully configured the various options, you can run the script using this command:
    ``sh /jffs/scripts/vpnmon-r2.sh -monitor``
    
@@ -55,6 +55,7 @@ What this script does
 20. Happy to report that VPNMON-R2 now integrates beautifully with YazFi - the premier expanded guest network utility for Merlin firmware!  For those running multiple guest networks, VPNMON-R2 can now automatically update your guest network slots with the latest VPN slot that VPNMON-R2 just made a connection to, then performs the necessary steps to make YazFi acknowledge the change to ensure your guest client devices continue to work without interruption!
 21. Added capabilities to check if your modem goes down, or your ISP stops working, then falls back and waits until your WAN comes back up in order to re-establish a VPN connection.
 22. VPNMON-R2 is now SurfShark and Perfect Privacy VPN compatible.  You will be able to enjoy many of the same features that NordVPN users have, such as SuperRandom functionality that will populate your VPN slots with random servers in your selected country, multi-country capable where SuperRandom will pick one of up to 3 of your selected countries, randomly fill your slots with servers from that country and connect to a random one, keeping an eye on the SurfShark server load, and reconnect to another server if it exceeds your set threshold... and of course, showing all the same stats we've all gotten so accustomed to.
+23. Added capabilities to switch connections based on ping ms across the tunnel, or automatically reconnecting to your fastest VPN server configured in your slots.
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
@@ -71,7 +72,7 @@ VPNMON-R2 is driven with commandline parameters.  These are the available option
 * vpnmon-r2.sh -log -- displays the contents of the VPNMON-R2 activity log in the NANO text editor
 * vpnmon-r2.sh -config -- launches the configuration utility and saves your settings to a local config file
 * vpnmon-r2.sh -update -- launches the script update utility to download the newest version
-* vpnmon-r2.sh -install -- launches the installer utility to configure and add optional Entware components
+* vpnmon-r2.sh -setup -- launches the setup menu to configure and add optional Entware components
 * vpnmon-r2.sh -uninstall -- launches the uninstall utility that removes VPNMON-R2 from your router
 * vpnmon-r2.sh -screen -- launches VPNMON-R2 using the "screen" utility, and places it in -monitor mode
 * vpnmon-r2.sh -monitor -- launches VPNMON-R2 in a normal operations mode, ready to monitor the health of your VPN connections
