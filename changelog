@@ -1,3 +1,10 @@
+v1.92  - (July 5, 2022)
+       * FIXED: A bug in the setup menu (thanks @kuki68ster), and now checks for the existence of the timeout and
+         screen utilities - if they exist, then it just continues on to the configuration menu, bypassing the need
+         to answer whether you want to install these two utilities.
+       * CHANGED: Resets the terminal colors on exit to play more friendly with other scripts.
+       * ADDED: An easter-egg. Let me know if you find it, and if it gave you a chuckle.  ;)
+
 v1.91  - (July 4, 2022)
        * FIXED: Minor wording changes, small bug fixes from some stuff I've noticed while running it to help with
          further increasing stability.
