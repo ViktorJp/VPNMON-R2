@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v1.91 (VPNMON-R2.SH) is an all-in-one shell script which compliments @JackYaz's VPNMGR program to maintain a
+# VPNMON-R2 v1.92 (VPNMON-R2.SH) is an all-in-one shell script which compliments @JackYaz's VPNMGR program to maintain a
 # NordVPN/PIA/WeVPN setup, though this is not a requirement, and can function without problems in a standalone environment.
 # This script checks your (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a
 # host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="1.91"                                      # Current version of VPNMON-R2
+Version="1.92"                                      # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VPNON-Lock.txt"             # Predefined lockfile that VPNON.sh creates when it resets the VPN so
@@ -131,10 +131,13 @@ PPLoadReset=50
 
 # Color variables
 CBlack="\e[1;30m"
+InvBlack="\e[1;40m"
 CRed="\e[1;31m"
 InvRed="\e[1;41m"
 CGreen="\e[1;32m"
 InvGreen="\e[1;42m"
+InvDkGray="\e[1;100m"
+InvLtGray="\e[1;47m"
 CYellow="\e[1;33m"
 InvYellow="\e[1;43m"
 CBlue="\e[1;34m"
@@ -143,6 +146,7 @@ CMagenta="\e[1;35m"
 CCyan="\e[1;36m"
 InvCyan="\e[1;46m"
 CWhite="\e[1;37m"
+InvWhite="\e[1;107m"
 CClear="\e[0m"
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -254,10 +258,63 @@ progressbar() {
           'S') vsetup;;
           'r') echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
           'R') echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
-          'e') exit 0;;
+          'b') (bossmode);;
+          'B') (bossmode);;
+          'e') echo -e "${CClear}"; exit 0;;
       esac
   fi
 
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+# bossmode is a function that immediately switches your screen to a word processing screen in case your boss comes around
+# the corner, so it looks like you're actually doing work instead of staring at the VPNMON-R2 UI. ;)  Please note: VPNMON-R2
+# is in a paused state when you enter Boss-Mode until you exit with an 'e'
+bossmode() {
+  clear
+  echo -e "${InvCyan}                                    ${CRed}WordStar ${CBlack}C:\ASUS\MERLINFW.WS          [1]  |${CClear}"
+  echo -e "${InvGreen}                 ${CBlack}<B><K>249       Insert   P1   L4   V10.00\"  C13  H1.25\"       +${CClear}"
+  echo -e "${InvDkGray} ${InvCyan}${CBlack}MS Body Copy            ${InvDkGray} ${InvCyan}COURIER PC 12     ${InvDkGray} ${InvCyan} B ${InvDkGray} ${InvCyan} I ${InvDkGray} ${InvCyan} U ${InvDkGray} ${InvCyan}<*>${InvDkGray} ${InvWhite} L ${InvDkGray} ${InvCyan} C ${InvDkGray} ${InvCyan} R ${InvDkGray} ${InvCyan} J ${InvDkGray} ${InvCyan}|1${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CWhite}                                                                               |${CClear}"
+  echo -e "${InvBlack}${CWhite}                A S U S W R T - M E R L I N   P R O J E C T                    ${InvLtGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}                      by${CWhite} Eric Sauvageau ${CCyan} aka ${CWhite} Merlin                           ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}                                                                               ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}            ${CCyan}\"A brief stroll through the history of the project...\"             ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CWhite}                                                                               |${CClear}"
+  echo -e "${InvBlack}${CWhite}==============================================================================W ${CClear}"
+  echo -e "${InvBlack}${CCyan}     -About-                                                                   ${CWhite}|${CClear}"
+  echo -e "${InvBlack}${CCyan}     Asuswrt-Merlin is an alternative, customized version of that firmware.    ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}Developed by Eric Sauvageau, its primary goals are to enhance the existing     ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}firmware without bringing any radical changes, and to fix some of the known    ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}issues and limitations, while maintaining the same level of performance as the ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}original firmware. This means Asuswrt-Merlin retains full support for NAT      ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}acceleration (sometimes referred to as \"hardware acceleration\"), enhanced      ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}NTFS performance (through the proprietary #drivers used by Asus from either    ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}Paragon or Tuxera), and the Asus exclusive features such as AiCloud or the     ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}Trend Micro-powered AiProtection.  New feature addition is very low on the     ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}list of priorities for for this project.                                       ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}                                                                               ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}     -AddOns-                                                                  ${InvDkGray} ${CClear}"
+  echo -e "${InvGreen}${CBlack}Asuswrt-Merlin has a rich ecosystem that consists of third party developed add-${InvDkGray} ${CClear}"
+  echo -e "${InvGreen}${CBlack}ons, which can enhance the router with features like ad blocking or connection ${InvDkGray} ${CClear}"
+  echo -e "${InvGreen}${CBlack}monitoring.${InvBlack}${CCyan} You find more info in the AddOns support forum at SNBForums.       ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}                                                                               ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}     -Features-                                                                ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}With a few rare exceptions, Asuswrt-Merlin retains the features from the       ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}original stock Asus firmware. In addition, the following features have been    ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}added or enhanced:                                                             ${CWhite}|${CClear}"
+
+  while true; do
+    key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
+
+    if [ $key_press ]; then
+        case $key_press in
+            'e') echo -e "${InvBlack}${CCyan}The boss is gone!  Stealthily returning to VPNMON-R2..."; echo -e "${CClear}"; exit 0;;
+            'E') echo -e "${InvBlack}${CCyan}The boss is gone!  Stealthily returning to VPNMON-R2..."; echo -e "${CClear}"; exit 0;;
+        esac
+    fi
+  done
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2276,6 +2333,17 @@ vuninstall () {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
+# vlogs is a function that calls the nano text editor to view the VPNMON-R2 log file
+vlogs() {
+
+nano $LOGFILE
+echo -e "${CClear}"
+exit 0
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
 # vsetup is a function that sets up and confiures VPNMON-R2 on your router...
 vsetup () {
   while true; do
@@ -2290,6 +2358,7 @@ vsetup () {
     echo -e "${CCyan}3: Check for latest updates"
     echo -e "${CCyan}4: Launch VPNMON-R2 into Normal Monitoring Mode"
     echo -e "${CCyan}5: Launch VPNMON-R2 into Normal Monitoring Mode using Screen utility"
+    echo -e "${CCyan}6: View the VPNMON-R2 logs"
     echo -e "${CCyan}u: Uninstall VPNMON-R2"
     echo -e "${CCyan}e: Exit"
     echo ""
@@ -2301,61 +2370,66 @@ vsetup () {
 
           1) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r2 -config
             clear
-            logo
-            echo -e "${CYellow}Installing VPNMON-R2...${CClear}"
-            echo ""
-            echo -e "${CCyan}Would you like to optionally install the CoreUtils-Timeout${CClear}"
-            echo -e "${CCyan}and Screen utility? These utilities require you to have Entware${CClear}"
-            echo -e "${CCyan}already installed using the AMTM tool. If Entware is present, the ${CClear}"
-            echo -e "${CCyan}Timeout and Screen utilities will be downloaded and installed during${CClear}"
-            echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
-            echo ""
-            echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
-            echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
-            echo -e "${CCyan}hang scripts running on this router model.${CClear}"
-            echo ""
-            echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone"
-            echo -e "${CCyan}environment directly on the router itself, instead of running your"
-            echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
-            echo -e "${CCyan}provide greater stability due to it running from the router itself."
-            echo ""
-            RouterModel=$(nvram get model)
-            echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
-            echo ""
-            echo -e "${CCyan}Install?${CClear}"
-            if promptyn "(Yes/No): "
-              then
-                if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
-                  echo ""
-                  echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
-                  echo ""
-                  opkg update
-                  echo ""
-                  echo -e "${CGreen}Installing Entware CoreUtils-Timeout Package...${CClear}"
-                  echo ""
-                  opkg install coreutils-timeout
-                  echo -e "${CGreen}Installing Entware Screen Package...${CClear}"
-                  echo ""
-                  opkg install screen
-                  echo ""
-                  sleep 1
-                  echo -e "${CGreen}Executing VPNMON-R2 Configuration Utility...${CClear}"
-                  sleep 2
-                  vnconfig
+            if [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ]; then
+              vconfig
+            else
+              logo
+              echo -e "${CYellow}Installing VPNMON-R2...${CClear}"
+              echo ""
+              echo -e "${CCyan}Would you like to optionally install the CoreUtils-Timeout${CClear}"
+              echo -e "${CCyan}and Screen utility? These utilities require you to have Entware${CClear}"
+              echo -e "${CCyan}already installed using the AMTM tool. If Entware is present, the ${CClear}"
+              echo -e "${CCyan}Timeout and Screen utilities will be downloaded and installed during${CClear}"
+              echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
+              echo ""
+              echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
+              echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
+              echo -e "${CCyan}hang scripts running on this router model.${CClear}"
+              echo ""
+              echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone"
+              echo -e "${CCyan}environment directly on the router itself, instead of running your"
+              echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
+              echo -e "${CCyan}provide greater stability due to it running from the router itself."
+              echo ""
+              RouterModel=$(nvram get model)
+              echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
+              echo ""
+              echo -e "${CCyan}Install?${CClear}"
+              if promptyn "(Yes/No): "
+                then
+                  if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
+                    echo ""
+                    echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
+                    echo ""
+                    opkg update
+                    echo ""
+                    echo -e "${CGreen}Installing Entware CoreUtils-Timeout Package...${CClear}"
+                    echo ""
+                    opkg install coreutils-timeout
+                    echo -e "${CGreen}Installing Entware Screen Package...${CClear}"
+                    echo ""
+                    opkg install screen
+                    echo ""
+                    sleep 1
+                    echo -e "${CGreen}Executing VPNMON-R2 Configuration Utility...${CClear}"
+                    sleep 2
+                    vconfig
+                  else
+                    clear
+                    echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
+                    echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
+                    echo ""
+                    sleep 3
+                  fi
                 else
-                  clear
-                  echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
-                  echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
                   echo ""
-                  sleep 3
-                fi
-              else
-                echo ""
-                echo -e "\n${CGreen}Executing VPNMON-R2 Configuration Utility...${CClear}"
-                sleep 2
-                vconfig
+                  echo -e "\n${CGreen}Executing VPNMON-R2 Configuration Utility...${CClear}"
+                  sleep 2
+                  vconfig
+              fi
             fi
           ;;
+
 
           2) # Force re-install the CoreUtils timeout/screen package
             clear
@@ -2427,13 +2501,18 @@ vsetup () {
             sh $APPPATH -screen
           ;;
 
+          6)
+            echo ""
+            (vlogs)
+          ;;
+
           u)
             echo ""
             vuninstall
           ;;
 
           e)
-            echo ""
+            echo -e "${CClear}"
             exit 0
           ;;
 
@@ -2473,6 +2552,7 @@ vsetup () {
       echo "Exiting due to missing commandline options!"
       echo "(run 'vpnmon-r2.sh -h' for help)"
       echo ""
+      echo -e "${CClear}"
       exit 0
   fi
 
@@ -2488,6 +2568,7 @@ vsetup () {
       echo "Exiting due to invalid commandline options!"
       echo "(run 'vpnmon-r2.sh -h' for help)"
       echo ""
+      echo -e "${CClear}"
       exit 0
   fi
 
@@ -2516,20 +2597,21 @@ vsetup () {
     echo " -screen (normal VPN monitoring using the screen utility)"
     echo " -monitor (normal VPN monitoring operations)"
     echo ""
+    echo -e "${CClear}"
     exit 0
   fi
 
   # Check to see if the log option is being called, and display through nano
   if [ "$1" == "-log" ]
     then
-      nano $LOGFILE
-      exit 0
+      vlogs
   fi
 
   # Check to see if the configuration option is being called, and run through setup utility
   if [ "$1" == "-config" ]
     then
       vconfig
+      echo -e "${CClear}"
       exit 0
   fi
 
@@ -2537,6 +2619,7 @@ vsetup () {
   if [ "$1" == "-update" ]
     then
       vupdate
+      echo -e "${CClear}"
       exit 0
   fi
 
@@ -2550,6 +2633,7 @@ vsetup () {
   if [ "$1" == "-uninstall" ]
     then
       vuninstall
+      echo -e "${CClear}"
       exit 0
   fi
 
@@ -2565,6 +2649,7 @@ vsetup () {
       screen -dmS "vpnmon-r2" $APPPATH -monitor
       sleep 2
       read -rsp $'Press any key to continue...\n' -n1 key
+      echo -e "${CClear}"
       exit 0
   fi
 
@@ -2665,24 +2750,13 @@ while true; do
       if [ $currentepoch -gt $ConvDailyResetTimeEpoch ] && [ $currentepoch -lt $variance ]
         then
           echo -e "\n\n${CCyan}VPNMON-R2 is executing a scheduled VPN Reset${CClear}\n"
-          echo -e "$(date) - VPNMON-R2 - Executing scheduled VPN Reset" >> $LOGFILE
+          echo -e "$(date) - VPNMON-R2 ----------> INFO: Executing scheduled VPN Reset" >> $LOGFILE
 
           vpnreset
 
-          echo -e "\n${CCyan}Resuming VPNMON-R2 in T minus $INTERVAL${CClear}\n"
           echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
           echo -e "$(date +%s)" > $RSTFILE
           START=$(cat $RSTFILE)
-
-          # Provide a progressbar to show script activity
-          i=0
-          while [ $i -le $INTERVAL ]
-          do
-              preparebar 51 "|"
-              progressbar $i $INTERVAL
-              sleep 1
-              i=$(($i+1))
-          done
 
           PINGLOW=0 # Reset ping time history variables
           PINGHIGH=0
@@ -3123,7 +3197,7 @@ while true; do
   state5=0
 
 done
-
+echo -e "${CClear}"
 exit 0
 
 #} #2>&1 | tee $LOG | logger -t $(basename $0)[$$]  # uncomment/comment to enable/disable debug mode
