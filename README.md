@@ -60,8 +60,8 @@ What this script does
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
-* As long as your VPN slots are configured and tested using the VPN provider of your choice, this script will run perfectly fine, and can monitor, reset and randomly start a new VPN client slot for you each day.  Please know, this script was written to compliment VPNMGR, and gives a heavy preference to NordVPN, but neither is required.
-* While stepping through the configuration utility ("vpnmon-r2.sh -config"), you can choose to disable the ability to update VPNMGR hosts, enable/disable specific NordVPN functionality, and the ability to whitelist the latest NordVPN servers in Skynet.
+* As long as your VPN slots are configured and tested using the VPN provider of your choice, this script will run perfectly fine, and can monitor, reset and randomly start a new VPN client slot for you each day.  Please know, this script was written to compliment VPNMGR, and gives a heavy preference to NordVPN, Surfshark and Perfect Privacy, but none of which is required.
+* While stepping through the configuration utility ("vpnmon-r2.sh -config"), you can choose to disable the ability to update VPNMGR hosts, enable/disable specific NordVPN/SurfShark/Perfect Privacy functionality, and the ability to whitelist the latest NordVPN/Perfect Privacy servers in Skynet.
 * Let me know how you're using this script!  Feel free to post in the forums. ;)
   Here: https://www.snbforums.com/threads/release-vpnmon-r2-a-script-that-monitors-your-vpn-connection.76748/
 
@@ -81,7 +81,6 @@ VPNMON-R2 is driven with commandline parameters.  These are the available option
 Gotchas
 -------
 * If you want to make the integration with VPNMGR, please make sure you have installed VPNMGR, have populated your VPN slots with it, have tested refreshing its cache, and that you are able to successfully connect to your VPN provider before running this script. You may find the program and installation/configuration information here: https://www.snbforums.com/threads/v...ent-configurations-for-nordvpn-and-pia.64930/
-* If you don't want to integrate with VPNMGR, or whitelist NordVPN IPs in your Skynet Firewall, etc... please choose to disable this functionality in the configuration utility ("vpnmon-r2.sh -config")
 * Make sure you keep your VPN Client slots sequential... don't use 1, 2, and 4... for instance. Keep it to 1, 2, and 3.
 * If you're using the NordVPN SuperRandom(tm) functionality, please be sure that each of your VPN slots are fully configured, as this function will only replace your "server address" IP and the "description" in NordVPN - [CITY] format. It is also important to disable the VPNMGR update so they don't conflict.
 
