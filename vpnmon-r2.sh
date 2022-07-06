@@ -278,7 +278,7 @@ bossmode() {
   echo -e "${InvDkGray} ${InvCyan}${CBlack}MS Body Copy            ${InvDkGray} ${InvCyan}COURIER PC 12     ${InvDkGray} ${InvCyan} B ${InvDkGray} ${InvCyan} I ${InvDkGray} ${InvCyan} U ${InvDkGray} ${InvCyan}<*>${InvDkGray} ${InvWhite} L ${InvDkGray} ${InvCyan} C ${InvDkGray} ${InvCyan} R ${InvDkGray} ${InvCyan} J ${InvDkGray} ${InvCyan}|1${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CWhite}                                                                               |${CClear}"
   echo -e "${InvBlack}${CWhite}                A S U S W R T - M E R L I N   P R O J E C T                    ${InvLtGray} ${CClear}"
-  echo -e "${InvBlack}${CCyan}                      by${CWhite} Eric Sauvageau ${CCyan} aka ${CWhite} Merlin                           ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}                      by${CWhite} Eric Sauvageau ${CCyan} aka ${CWhite} RMerlin                           ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}                                                                               ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}            ${CCyan}\"A brief stroll through the history of the project...\"             ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CWhite}                                                                               |${CClear}"
@@ -386,9 +386,6 @@ get_wan_setting() {
 # Updatecheck is a function that downloads the latest update version file, and compares it with what's currently installed
 updatecheck () {
 
-  # Check if Dev/Beta Mode is enabled and exit
-  if [ $Beta == "1" ]; then UpdateNotify=0; return; fi
-
   # Download the latest version file from the source repository
   curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/version.txt" -o "/jffs/addons/vpnmon-r2.d/version.txt"
 
@@ -398,7 +395,9 @@ updatecheck () {
       DLVersion=$(cat $DLVERPATH)
 
       # Compare the new version with the old version and log it
-      if [ "$DLVersion" != "$Version" ]; then
+      if [ $Beta == "1" ]; then   # Check if Dev/Beta Mode is enabled and disable notification message
+        UpdateNotify=0
+      elif [ "$DLVersion" != "$Version" ]; then
         UpdateNotify="Update available: v$Version -> v$DLVersion"
         echo -e "$(date) - VPNMON-R2 - A new update (v$DLVersion) is available to download" >> $LOGFILE
       else
