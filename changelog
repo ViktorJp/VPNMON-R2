@@ -1,3 +1,11 @@
+v1.93  - (July 6, 2022)
+       * MAJOR: Very happy to announce that VPNMON-R2 is now being included in AMTM! Many thanks to @thelonelycoder
+         for his consideration and help getting this included!
+       * FIXED: Fixed the logic to dispay the proper router model using some of @thelonelycoder's code which should
+         report back the right info from NVRAM.
+       * CHANGED: As such, did a few more cleanup items to make menu choices less ambiguous, and creating proper
+         exits for items that require an exit vs. going back to a menu.
+
 v1.92  - (July 5, 2022)
        * FIXED: A bug in the setup menu (thanks @kuki68ster), and now checks for the existence of the timeout and
          screen utilities - if they exist, then it just continues on to the configuration menu, bypassing the need
