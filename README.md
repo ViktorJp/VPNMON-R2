@@ -14,7 +14,7 @@ The Problem I was trying to solve
 How is this script supposed to run?
 -----------------------------------
 Personally, I run this script in its own SSH window from a PC that's connected directly to the Asus router, as it loops and checks the connection every 60 seconds. Installation instructions:
-1. Download and install from your favorite SSH tools, copy & paste this command:
+1. Download and install directly from AMTM, or using your favorite SSH tools, copy & paste this command:
    ``curl --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-1.93.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"``
 2. To initially configure this script, open up a dedicated SSH window, and simply execute the script
    ``sh /jffs/scripts/vpnmon-r2.sh -setup``
