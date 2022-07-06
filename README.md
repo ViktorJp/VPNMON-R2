@@ -21,7 +21,7 @@ Personally, I run this script in its own SSH window from a PC that's connected d
 3. Once you've successfully configured the various options, you can run the script using this command:
    ``sh /jffs/scripts/vpnmon-r2.sh -monitor``
    
-One particular ingenious way to run this script is with the "screen" utility, which runs continuously from the router itself, instead of an attached session as suggested by @eibgrad. During the 'vpnmon-r2.sh -setup' process, you will be prompted whether or not you want to install the "screen" utility. Here are the manual instructions:
+One particular ingenious way to run this is using the "screen" utility continuously from the router itself, instead of an attached session. (FYI, during the 'vpnmon-r2.sh -setup' process, you will be prompted whether or not you want to install the "screen" utility)
 
 1. First, make sure you install the "screen" utility (and have Entware installed):
    ``opkg install screen``
@@ -55,7 +55,7 @@ What this script does
 20. Happy to report that VPNMON-R2 now integrates beautifully with YazFi - the premier expanded guest network utility for Merlin firmware!  For those running multiple guest networks, VPNMON-R2 can now automatically update your guest network slots with the latest VPN slot that VPNMON-R2 just made a connection to, then performs the necessary steps to make YazFi acknowledge the change to ensure your guest client devices continue to work without interruption!
 21. Added capabilities to check if your modem goes down, or your ISP stops working, then falls back and waits until your WAN comes back up in order to re-establish a VPN connection.
 22. VPNMON-R2 is now SurfShark and Perfect Privacy VPN compatible.  You will be able to enjoy many of the same features that NordVPN users have, such as SuperRandom functionality that will populate your VPN slots with random servers in your selected country, multi-country capable where SuperRandom will pick one of up to 3 of your selected countries, randomly fill your slots with servers from that country and connect to a random one, keeping an eye on the SurfShark server load, and reconnect to another server if it exceeds your set threshold... and of course, showing all the same stats we've all gotten so accustomed to.
-23. Added capabilities to switch connections based on ping ms across the tunnel, or automatically reconnecting to your fastest VPN server configured in your slots.
+23. Added capabilities to switch to the fastest connections based on ping ms to your VPN endpoints.
 24. Happy to announce that VPNMON-R2 is now being included in AMTM! Many thanks to @thelonelycoder!
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
