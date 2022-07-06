@@ -1,21 +1,21 @@
 #!/bin/sh
 
-# VPNMON-R2 v1.92 (VPNMON-R2.SH) is an all-in-one shell script which compliments @JackYaz's VPNMGR program to maintain a
-# NordVPN/PIA/WeVPN setup, though this is not a requirement, and can function without problems in a standalone environment.
-# This script checks your (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a
-# host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of
-# commands that will kill all VPN clients, and optionally use VPNMGR's to poll NordVPN/PIA/WeVPN for updated
-# server names based on the locations you have selected in VPNMGR, optionally whitelists all selected NordVPN servers in the
-# Skynet Firewall, and randomly picks one of the 5 VPN Clients to connect to. Logging added to capture relevant events for
-# later review.  As mentioned, disabling VPNMGR and Skynet functionality is completely supported should you be using other
-# VPN options, and as such, this script would help maintain an eye on your connection, and able to randomly reset it if
-# needed.
+# VPNMON-R2 v1.93 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
+# function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
+# (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
+# through the active connection. If it finds that connection has been lost, it will execute a series of commands that will
+# kill all VPN clients, will optionally whitelist all NordVPN/PerfectPrivacy VPN servers in the Skynet Firewall, and
+# randomly picks one of your (up to) 5 VPN Clients to connect to. One of VPNMON-R2's unique features is called
+# "SuperRandom", where it will randomly assign VPN endpoints for a random county (or your choice) to your VPN slots, and
+# randomly connect to one of these. It will now also test your WAN connection, and put itself into standby until the WAN
+# is restored before reconnecting your VPN connections.
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Usage and configuration Guide - *UPDATED*
 # -------------------------------------------------------------------------------------------------------------------------
 # All previous user-selectable options are now available through the Configuration Utility.  You may access and run this
-# utility by running "vpnmon-r2.sh -config".  Once configured, a "vpnmon-r2.cfg" file will be written to your
+# utility by running "vpnmon-r2.sh -setup".  Once configured, a "vpnmon-r2.cfg" file will be written to your
 # /jffs/addons/vpnmon-r2.d/ folder containing the options you have selected. Once everything looks good, you are able to
 # run VPNMON-R2 for under normal monitoring conditions using this command: "vpnmon-r2.sh -monitor". Please note this change
 # for any current automations you may have in place.  To easily view the log file, enter: "vpnmon-r2.sh -log".  You will be
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="1.92"                                      # Current version of VPNMON-R2
+Version="1.93"                                      # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VPNON-Lock.txt"             # Predefined lockfile that VPNON.sh creates when it resets the VPN so
@@ -173,7 +173,7 @@ promptYesn () {   # Enter defaults Yes
         [Yy] ) echo -e "${CGreen}Using: Yes${CClear}";return 0 ;;
         [Nn] ) echo -e "${CGreen}Using: No${CClear}";return 1 ;;
         "" ) echo -e "${CGreen}Using: Yes${CClear}";return 0 ;;
-        * ) echo -e "\nPlease answer Yes or No, or Enter to accept default value.";;
+        * ) echo -e "\nPlease answer y or n, or Enter to accept default value.";;
       esac
   done
 }
@@ -185,18 +185,18 @@ promptyNo () {   # Enter defaults No
         [Yy] ) echo -e "${CGreen}Using: Yes${CClear}";return 0 ;;
         [Nn] ) echo -e "${CGreen}Using: No${CClear}";return 1 ;;
         "" ) echo -e "${CGreen}Using: No${CClear}";return 1 ;;
-        * ) echo -e "\nPlease answer Yes or No, or Enter to accept default value.";;
+        * ) echo -e "\nPlease answer y or n, or Enter to accept default value.";;
       esac
   done
 }
 
 promptyn () {   # No defaults, just y or n
   while true; do
-    read -p "[Y/N]? " -n 1 -r yn
+    read -p "[y/n]? " -n 1 -r yn
       case "${yn}" in
         [Yy]* ) return 0 ;;
         [Nn]* ) return 1 ;;
-        * ) echo -e "\nPlease answer Yes or No.";;
+        * ) echo -e "\nPlease answer y or n.";;
       esac
   done
 }
@@ -278,12 +278,12 @@ bossmode() {
   echo -e "${InvDkGray} ${InvCyan}${CBlack}MS Body Copy            ${InvDkGray} ${InvCyan}COURIER PC 12     ${InvDkGray} ${InvCyan} B ${InvDkGray} ${InvCyan} I ${InvDkGray} ${InvCyan} U ${InvDkGray} ${InvCyan}<*>${InvDkGray} ${InvWhite} L ${InvDkGray} ${InvCyan} C ${InvDkGray} ${InvCyan} R ${InvDkGray} ${InvCyan} J ${InvDkGray} ${InvCyan}|1${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CWhite}                                                                               |${CClear}"
   echo -e "${InvBlack}${CWhite}                A S U S W R T - M E R L I N   P R O J E C T                    ${InvLtGray} ${CClear}"
-  echo -e "${InvBlack}${CCyan}                      by${CWhite} Eric Sauvageau ${CCyan} aka ${CWhite} RMerlin                           ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}                      by${CWhite} Eric Sauvageau ${CCyan} aka ${CWhite} RMerlin                          ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}                                                                               ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}            ${CCyan}\"A brief stroll through the history of the project...\"             ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CWhite}                                                                               |${CClear}"
   echo -e "${InvBlack}${CWhite}==============================================================================W ${CClear}"
-  echo -e "${InvBlack}${CCyan}     -About-                                                                   ${CWhite}|${CClear}"
+  echo -e "${InvBlack}${CCyan}     ***About***                                                               ${CWhite}|${CClear}"
   echo -e "${InvBlack}${CCyan}     Asuswrt-Merlin is an alternative, customized version of that firmware.    ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CCyan}Developed by Eric Sauvageau, its primary goals are to enhance the existing     ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CCyan}firmware without bringing any radical changes, and to fix some of the known    ${InvDkGray} ${CClear}"
@@ -295,12 +295,12 @@ bossmode() {
   echo -e "${InvBlack}${CCyan}Trend Micro-powered AiProtection.  New feature addition is very low on the     ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CCyan}list of priorities for for this project.                                       ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CCyan}                                                                               ${InvDkGray} ${CClear}"
-  echo -e "${InvBlack}${CCyan}     -AddOns-                                                                  ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}     ***AddOns***                                                              ${InvDkGray} ${CClear}"
   echo -e "${InvGreen}${CBlack}Asuswrt-Merlin has a rich ecosystem that consists of third party developed add-${InvDkGray} ${CClear}"
   echo -e "${InvGreen}${CBlack}ons, which can enhance the router with features like ad blocking or connection ${InvDkGray} ${CClear}"
   echo -e "${InvGreen}${CBlack}monitoring.${InvBlack}${CCyan} You find more info in the AddOns support forum at SNBForums.       ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CCyan}                                                                               ${InvDkGray} ${CClear}"
-  echo -e "${InvBlack}${CCyan}     -Features-                                                                ${InvDkGray} ${CClear}"
+  echo -e "${InvBlack}${CCyan}     ***Features***                                                            ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CCyan}With a few rare exceptions, Asuswrt-Merlin retains the features from the       ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CCyan}original stock Asus firmware. In addition, the following features have been    ${InvDkGray} ${CClear}"
   echo -e "${InvBlack}${CCyan}added or enhanced:                                                             ${CWhite}|${CClear}"
@@ -2264,13 +2264,13 @@ vupdate () {
   echo ""
   if [ "$Version" == "$DLVersion" ]
     then
-      echo -e "${CGreen}No update available.  Exiting Update Utility...${CClear}"
+      echo -e "${CGreen}No update available.  You are on the latest version!${CClear}"
       echo ""
-      sleep 2
+      read -rsp $'Press any key to continue...\n' -n1 key
       return
     else
       echo -e "${CCyan}Would you like to update to the latest version?${CClear}"
-      if promptyn "(Yes/No): "; then
+      if promptyn "(y/n): "; then
         echo ""
         echo -e "${CCyan}Updating VPNMON-R2 to ${CYellow}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-$DLVersion.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"
@@ -2279,8 +2279,8 @@ vupdate () {
         echo -e "$(date) - VPNMON-R2 - Successfully updated VPNMON-R2 from v$Version to v$DLVersion" >> $LOGFILE
         echo ""
         echo -e "${CYellow}Please exit, restart and configure new options using: 'vpnmon-r2.sh -config'.${CClear}"
-        echo -e "${CYellow}NOTE: New features may have been added that require your input for full${CClear}"
-        echo -e "${CYellow}functionality.${CClear}"
+        echo -e "${CYellow}NOTE: New features may have been added that require your input to take${CClear}"
+        echo -e "${CYellow}advantage of its full functionality.${CClear}"
         echo ""
         read -rsp $'Press any key to continue...\n' -n1 key
         return
@@ -2288,7 +2288,6 @@ vupdate () {
         echo ""
         echo ""
         echo -e "${CGreen}Exiting Update Utility...${CClear}"
-        echo ""
         sleep 1
         return
       fi
@@ -2305,27 +2304,27 @@ vuninstall () {
   echo ""
   echo -e "${CCyan}You are about to uninstall VPNMON-R2!  This action is irreversible."
   echo -e "${CCyan}Do you wish to proceed?${CClear}"
-  if promptyn "(Yes/No): "; then
+  if promptyn "(y/n): "; then
     echo ""
-    echo -e "${CCyan}Are you sure? Please type 'Yes' to validate you want to proceed.${CClear}"
-      if promptyn "(Yes/No): "; then
+    echo -e "\n${CCyan}Are you sure? Please type 'Y' to validate you want to proceed.${CClear}"
+      if promptyn "(y/n): "; then
         clear
         rm -r /jffs/addons/vpnmon-r2.d
         rm /jffs/scripts/vpnmon-r2.sh
         echo ""
-        echo -e "${CGreen}VPNMON-R2 has been uninstalled...${CClear}"
+        echo -e "\n${CGreen}VPNMON-R2 has been uninstalled...${CClear}"
         echo ""
-        return
+        exit 0
       else
         echo ""
-        echo -e "${CGreen}Exiting Uninstall Utility...${CClear}"
-        echo ""
+        echo -e "\n${CGreen}Exiting Uninstall Utility...${CClear}"
+        sleep 1
         return
       fi
   else
     echo ""
-    echo -e "${CGreen}Exiting Uninstall Utility...${CClear}"
-    echo ""
+    echo -e "\n${CGreen}Exiting Uninstall Utility...${CClear}"
+    sleep 1
     return
   fi
 }
@@ -2390,11 +2389,11 @@ vsetup () {
               echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
               echo -e "${CCyan}provide greater stability due to it running from the router itself."
               echo ""
-              RouterModel=$(nvram get model)
+              [ -z "$(nvram get odmpid)" ] && RouterModel="$(nvram get productid)" || RouterModel="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
               echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
               echo ""
               echo -e "${CCyan}Install?${CClear}"
-              if promptyn "(Yes/No): "
+              if promptyn "(y/n): "
                 then
                   if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
                     echo ""
@@ -2450,11 +2449,11 @@ vsetup () {
             echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
             echo -e "${CCyan}provide greater stability due to it running from the router itself."
             echo ""
-            RouterModel=$(nvram get model)
+            [ -z "$(nvram get odmpid)" ] && RouterModel="$(nvram get productid)" || RouterModel="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
             echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
             echo ""
             echo -e "${CCyan}Force Re-install?${CClear}"
-            if promptyn "(Yes/No): "
+            if promptyn "(y/n): "
               then
                 if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
                   echo ""
