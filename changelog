@@ -4,8 +4,8 @@ v2.0   - (TBA)
          continue to live on in VPNMON-R2.
        * ADDED: The ability to reset the VPN with a "vpnmon-r2.sh -reset" commandline switch.  This gives you the
          same functionality that VPNON gave you, and are able to use this method to randomly reset your VPN 
-         connection using CRON jobs. VPNMON-R2 is aware of these actions, and will pause the UI while the reset is
-         running, and will resume when finished.
+         connection using CRON jobs. VPNMON-R2 running in its own SSH or Screen window will be aware of these
+         actions, will pause the UI while the reset is running, and will resume when finished.
        * ADDED: New indicator showing if one of your pre-configured VPN host slots goes down, and will display the
          VPN slot as OFFLINE.
        * FIXED: Made a few more wording changes in the setup menu thanks to the keen eye of @RimRider, and also
