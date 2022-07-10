@@ -1,4 +1,4 @@
-v2.0   - (TBA)
+v2.0   - (July 10, 2022)
        * MAJOR: The VPNON.SH project has been sunset. Instead of maintaining almost 2 identical functions in both
          VPNMON-R2 and VPNON, I have decided to terminate the VPNON project. All functionality of VPNON will
          continue to live on in VPNMON-R2.
