@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v1.93 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.0 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,11 +43,11 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="1.93"                                      # Current version of VPNMON-R2
+Version="2.0"                                       # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
-LOCKFILE="/jffs/scripts/VPNON-Lock.txt"             # Predefined lockfile that VPNON.sh creates when it resets the VPN so
-                                                    # that VPNMON-R2 does not interfere during a reset
+LOCKFILE="/jffs/scripts/VPNMON-R2-Lock.txt"         # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
+                                                    # that VPNMON-R2 does not interfere during an external reset
 RSTFILE="/jffs/addons/vpnmon-r2.d/vpnmon-rst.log"   # Logfile containing the last date/time a VPN reset was performed. Else,
                                                     # the latest date/time that VPNMON-R2 restarted will be shown.
 PERSIST="/jffs/addons/vpnmon-r2.d/persist.log"      # Logfile containing a persistence date/time log
@@ -155,11 +155,11 @@ CClear="\e[0m"
 
 # Logo is a function that displays the VPNMON-R2 script name in a cool ASCII font
 logo () {
-  echo -e "${CYellow} _    ______  _   ____  _______  _   __      ____ ___  "
-  echo -e "| |  / / __ \/ | / /  |/  / __ \/ | / /     / __ \__ \ "
-  echo -e "| | / / /_/ /  |/ / /|_/ / / / /  |/ /_____/ /_/ /_/ / "
-  echo -e "| |/ / ____/ /|  / /  / / /_/ / /|  /_____/ _, _/ __/  "
-  echo -e "|___/_/   /_/ |_/_/  /_/\____/_/ |_/     /_/ |_/____/  "
+  echo -e "${CYellow}   _    ______  _   ____  _______  _   __      ____ ___  "
+  echo -e "  | |  / / __ \/ | / /  |/  / __ \/ | / /     / __ \__ \  ${CGreen}v$Version${CYellow}"
+  echo -e "  | | / / /_/ /  |/ / /|_/ / / / /  |/ /_____/ /_/ /_/ / "
+  echo -e "  | |/ / ____/ /|  / /  / / /_/ / /|  /_____/ _, _/ __/  "
+  echo -e "  |___/_/   /_/ |_/_/  /_/\____/_/ |_/     /_/ |_/____/  "
   echo ""
 }
 
@@ -254,16 +254,12 @@ progressbar() {
 
   if [ $key_press ]; then
       case $key_press in
-          's') vsetup;;
-          'S') vsetup;;
-          'r') echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
-          'R') echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
-          'b') (bossmode);;
-          'B') (bossmode);;
+          [Ss]) (vsetup); echo -e "${CGreen} [Returning to the Main UI momentarily]                                    ";;
+          [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
+          [Bb]) (bossmode);;
           'e') echo -e "${CClear}"; exit 0;;
       esac
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -310,8 +306,7 @@ bossmode() {
 
     if [ $key_press ]; then
         case $key_press in
-            'e') echo -e "${InvBlack}${CCyan}The boss is gone!  Stealthily returning to VPNMON-R2..."; echo -e "${CClear}"; exit 0;;
-            'E') echo -e "${InvBlack}${CCyan}The boss is gone!  Stealthily returning to VPNMON-R2..."; echo -e "${CClear}"; exit 0;;
+            [Ee]) echo -e "${InvBlack}${CCyan}The boss is gone!  Stealthily returning to VPNMON-R2..."; echo -e "${CClear}"; exit 0;;
         esac
     fi
   done
@@ -404,7 +399,6 @@ updatecheck () {
         UpdateNotify=0
       fi
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -441,20 +435,28 @@ checkwan () {
 
         while [ $wandownbreakertrip == "1" ]; do
 
+          if [ $RESETSWITCH = 1 ]
+            then
+              echo ""
+              echo -e "${CRed} ERROR: WAN DOWN... VPN Reset is terminating."
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: WAN CONNECTIVITY ISSUE DETECTED. VPN RESET TERMINATED." >> $LOGFILE
+              rm $LOCKFILE # Clean up lockfile
+              kill 0
+          fi
+
           # Continue to test for WAN connectivity while in this loop. If it comes back up, break out of the loop and reset VPN
           if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -ne 2 ] && [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -ne 2 ]
             then
               # Continue to loop and retest the WAN every 15 seconds
               SPIN=15
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: WAN DOWN" >> $LOGFILE
-              clear && clear
-                echo -e "${CRed}-----------------> ERROR: WAN DOWN <-----------------"
+              clear
+              logo
+                echo -e "${CRed} ---------------------> ERROR: WAN DOWN <---------------------"
                 echo ""
-                echo -e "${CRed}VPNMON-R2 is unable to detect a stable WAN connection."
-                echo -e "Trying to verify connection every $SPIN seconds...${CClear}\n"
-                echo ""
-                echo -e "${CRed}Please check with your ISP, or reset your modem to "
-                echo -e "${CRed}re-establish a connection.${CClear}\n"
+                echo -e "${CRed} VPNMON-R2 is unable to detect a stable WAN connection. Please"
+                echo -e "${CRed} check with your ISP, or reset your modem to re-establish a"
+                echo -e "${CRed} stable connection.${CClear}\n"
                 spinner
                 wandownbreakertrip=1
             else
@@ -470,12 +472,12 @@ checkwan () {
             echo -e "$(date) - VPNMON-R2 - WAN Link Detected -- Trying to reconnect/Reset VPN" >> $LOGFILE
             wandownbreakertrip=0
             vpnresettripped=1
-            clear && clear
+            clear
+            logo
+            echo -e "${CRed} ---------------------> ERROR: WAN DOWN <---------------------"
             echo ""
-            echo -e "${CRed}-----------------> ERROR: WAN DOWN <-----------------"
-            echo ""
-            echo -e "${CGreen}WAN Link Detected... waiting 60 seconds to reconnect"
-            echo -e "${CGreen}or for connection to stabilize."
+            echo -e "${CGreen} WAN Link/Modem Detected... waiting 60 seconds to reconnect"
+            echo -e "${CGreen} and for general connectivity to stabilize."
             SPIN=60
             spinner
             echo -e "$(date +%s)" > $RSTFILE
@@ -641,6 +643,9 @@ vpnresetlowestping() {
 
 # VPNReset is a function based on my VPNON.SH script to kill connections and reconnect to a clean VPN state
 vpnreset() {
+
+  # Create a rudimentary lockfile so that VPNMON-R2 doesn't interfere during the reset
+    echo -n > $LOCKFILE
 
   # Start the VPN reset process
     echo -e "$(date) - VPNMON-R2 - Executing VPN Reset" >> $LOGFILE
@@ -1157,13 +1162,14 @@ vpnreset() {
       sleep 1
     else
       i=0
-      while [ $i -ne $N ]
+      WANIFNAME=$(get_wan_setting ifname)
+      while [ $i -ne $N ] # Determine which connection has the fastest ping
         do
           i=$(($i+1))
           OFFLINEVPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client"$i"_addr)
           DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
           testping=${DISCHOSTPING%.*}
-          if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
+          if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=99; testping=99; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
           if [ $i -eq 1 ]; then
             LOWEST=$i
@@ -1271,8 +1277,15 @@ vpnreset() {
     newrxbytes=0
     newtxbytes=0
 
-    # Returning from a WAN Down situation, restart VPNMON-R2 with -monitor switch
-    if [ $vpnresettripped == "1" ]
+    # Clean up lockfile
+    rm $LOCKFILE
+
+    # Returning from a WAN Down situation or scheduled reset, restart VPNMON-R2 with -monitor switch, or return
+    if [ $RESETSWITCH = 1 ]
+      then
+        RESETSWITCH=0
+        return
+    elif [ $vpnresettripped == "1" ]
       then
         vpnresettripped=0
         sh /jffs/scripts/vpnmon-r2.sh -monitor
@@ -1326,7 +1339,7 @@ checkvpn() {
         if [ $CNT -eq $TRIES ];then # But if it fails, report back that we have an issue requiring a VPN reset
           STATUS=0
           echo -e "${CRed} x-VPN$1 Ping/http failed${CClear}"
-          echo -e "$(date) - VPNMON-R2 - **VPN$1 Ping/http failed**" >> $LOGFILE
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPN$1 Ping/HTTP response failed" >> $LOGFILE
         fi
       fi
     done
@@ -1334,10 +1347,13 @@ checkvpn() {
     OFFLINEVPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
     DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
     testping=${DISCHOSTPING%.*}
-    if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
-
-    echo -e "${CClear} - VPN$1 Disconnected  | || $DISCHOSTPING ms || | "
-
+    if [ -z "$DISCHOSTPING" ]; then # On that rare occasion where it's unable to get the Ping time, assign 99
+      DISCHOSTPING=99
+      testping=99
+      echo -e "${CClear} - VPN$1 Disconnected  ${CRed}| ||  OFFLINE  || | ${CClear}"
+    else
+      echo -e "${CClear} - VPN$1 Disconnected  | || $DISCHOSTPING ms || | "
+    fi
   fi
 
   if [ $1 -eq 1 ]; then
@@ -1351,12 +1367,11 @@ checkvpn() {
   if [ $LOWESTPING -eq 1 ]; then
     LOWEST=$CURRCLNT
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# checkwan is a function that checks each wan connection to see if its active, and performs a ping and a city lookup...
+# wancheck is a function that checks each wan connection to see if its active, and performs a ping and a city lookup...
 wancheck() {
 
   WANIF=$1
@@ -1400,7 +1415,7 @@ vconfig () {
   if [ -f $CFGPATH ] #Making sure file exists before proceeding
     then
       logo
-      echo -e "VPNMON-R2 v$Version Configuration Utility${CClear}"
+      echo -e "VPNMON-R2 Configuration Utility${CClear}"
       echo ""
       echo -e "${CCyan}Please answer the following items to successfully configure VPNMON-R2."
       echo -e "${CCyan}This process is the same for a new installation, or if you wanted to"
@@ -1419,7 +1434,7 @@ vconfig () {
         return
       fi
       # -----------------------------------------------------------------------------------------
-      echo -e "${CCyan}Would you like to use proceed through this setup using default values,"
+      echo -e "${CCyan}Would you like to proceed through this setup using default values,"
       echo -e "${CCyan}or your own custom values that are used from an already existing"
       echo -e "${CCyan}config file? NOTE: Hitting enter on field selections will use your"
       echo -e "${CCyan}custom values as default values if 'custom' is selected."
@@ -1515,7 +1530,7 @@ vconfig () {
       # -----------------------------------------------------------------------------------------
       echo ""
       echo -e "${CCyan}4. Would you like to update VPNMGR? (Note: must be already installed "
-      echo -e "${CCyan}and you must be NordVPN/PIA/WeVPN subscriber) ${CYellow}(No=0, Yes=1)${CClear}"
+      echo -e "${CCyan}and you must be a NordVPN/PIA/WeVPN subscriber) ${CYellow}(No=0, Yes=1)${CClear}"
       echo -e "${CYellow}(Default = $UpdateVPNMGR)${CClear}"
       while true; do
         read -p "Update VPNMGR? (0/1): " UpdateVPNMGR1
@@ -1528,7 +1543,7 @@ vconfig () {
       done
       # -----------------------------------------------------------------------------------------
       echo ""
-      echo -e "${CCyan}5. In what manner you like VPNMON-R2 to activate a selected a VPN slot?"
+      echo -e "${CCyan}5. In what manner should VPNMON-R2 activate a selected VPN slot?"
       echo -e "${CCyan}There are 2 options to consider: ${CYellow}Random or Lowest PING.${CCyan} The 'Random'"
       echo -e "${CCyan}option will randomly pick one of your configured VPN slots to connect"
       echo -e "${CCyan}to, while the 'Lowest PING' option will continually test each of your"
@@ -1548,7 +1563,7 @@ vconfig () {
       # -----------------------------------------------------------------------------------------
       if [ $USELOWESTSLOT == "1" ]; then
         echo ""
-        echo -e "${CCyan}5a. When using the 'Lowest PING' method, there is a higher chance that"
+        echo -e "${CCyan}5a. When using the 'Lowest PING' method, there is a greater chance that"
         echo -e "${CCyan}your connections will reset at a higher rate, due to competing servers"
         echo -e "${CCyan}giving slighly lower pings.  To combat this, a counter is available to"
         echo -e "${CCyan}help give your connection a chance to recover and regain its status as"
@@ -1966,7 +1981,8 @@ vconfig () {
       echo ""
       echo -e "${CCyan}11. How many seconds would you like to delay start-up of VPNMON-R2 in"
       echo -e "${CCyan}order to provide more stability among other competing start-up scripts"
-      echo -e "${CCyan}during a reboot? ${CYellow}(Default = $DelayStartup)${CClear}"
+      echo -e "${CCyan}during a reboot? NOTE: VPNMON-R2 itself does not auto-start on a reboot,"
+      echo -e "${CCyan}and leaves that method up to you. ${CYellow}(Default = $DelayStartup)${CClear}"
       read -p 'Delay Startup (seconds): ' DelayStartup1
       if [ -z "$DelayStartup1" ]; then DelayStartup1=$DelayStartup; else DelayStartup=$DelayStartup1; fi # Using default value on enter keypress
       echo -e "${CGreen}Using value: "$DelayStartup
@@ -2184,17 +2200,6 @@ vconfig () {
           sleep 2
           return
       fi
-      echo ""
-      echo -e "${CYellow}Would you like to start VPNMON-R2 now?${CClear}"
-      if promptyNo; then
-        sh $APPPATH -monitor
-      else
-        echo ""
-        printf '%b\n' "${CGreen}\nExecute VPNMON-R2 using command 'vpnmon-r2.sh -monitor' for normal operations${CClear}"
-        echo ""
-        sleep 2
-        return
-      fi
     else
       #Create a new config file with default values to get it to a basic running state
       { echo 'TRIES=3'
@@ -2257,7 +2262,7 @@ vupdate () {
   updatecheck # Check for the latest version from source repository
   clear
   logo
-  echo -e "VPNMON-R2 v$Version Update Utility${CClear}"
+  echo -e "VPNMON-R2 Update Utility${CClear}"
   echo ""
   echo -e "${CCyan}Current Version: ${CYellow}$Version${CClear}"
   echo -e "${CCyan}Updated Version: ${CYellow}$DLVersion${CClear}"
@@ -2300,7 +2305,7 @@ vupdate () {
 vuninstall () {
   clear
   logo
-  echo -e "VPNMON-R2 v$Version Uninstall Utility${CClear}"
+  echo -e "VPNMON-R2 Uninstall Utility${CClear}"
   echo ""
   echo -e "${CCyan}You are about to uninstall VPNMON-R2!  This action is irreversible."
   echo -e "${CCyan}Do you wish to proceed?${CClear}"
@@ -2334,9 +2339,8 @@ vuninstall () {
 # vlogs is a function that calls the nano text editor to view the VPNMON-R2 log file
 vlogs() {
 
+export TERM=linux
 nano $LOGFILE
-echo -e "${CClear}"
-exit 0
 
 }
 
@@ -2344,21 +2348,32 @@ exit 0
 
 # vsetup is a function that sets up and confiures VPNMON-R2 on your router...
 vsetup () {
+
+  # Check for and add an alias for VPNMON-R2
+  if ! grep -F "sh /jffs/scripts/vpnmon-r2.sh" /jffs/configs/profile.add; then
+		echo "alias vpnmon-r2=\"sh /jffs/scripts/vpnmon-r2.sh\" # VPNMON-R2" >> /jffs/configs/profile.add
+  fi
+
   while true; do
     clear
     logo
-    echo -e "VPNMON-R2 v$Version Setup Utility${CClear}" # Provide main setup menu
+    echo -e "VPNMON-R2 Setup Utility${CClear}" # Provide main setup menu
     echo ""
-    echo -e "${CGreen}--------------------------------------------------------------------"
-    echo -e "${CCyan}"
-    echo -e "${CCyan}1: Setup and Configure VPNMON-R2"
-    echo -e "${CCyan}2: Force Re-install Entware Dependencies"
-    echo -e "${CCyan}3: Check for latest updates"
-    echo -e "${CCyan}4: Launch VPNMON-R2 into Normal Monitoring Mode"
-    echo -e "${CCyan}5: Launch VPNMON-R2 into Normal Monitoring Mode using Screen utility"
-    echo -e "${CCyan}6: View the VPNMON-R2 logs"
-    echo -e "${CCyan}u: Uninstall VPNMON-R2"
-    echo -e "${CCyan}e: Exit"
+    echo -e "${CGreen}----------------------------------------------------------------"
+    echo -e "${CGreen}Operations"
+    echo -e "${CGreen}----------------------------------------------------------------"
+    echo -e "${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure VPNMON-R2"
+    echo -e "${InvDkGray}${CWhite} fr ${CClear}${CCyan}: Force Re-install Entware Dependencies"
+    echo -e "${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
+    echo -e "${InvDkGray}${CWhite} vl ${CClear}${CCyan}: View logs"
+    echo -e "${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
+    echo -e "${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit"
+    echo -e "${CGreen}----------------------------------------------------------------"
+    echo -e "${CGreen}Launch"
+    echo -e "${CGreen}----------------------------------------------------------------"
+    echo -e "${InvDkGray}${CWhite} m1 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode"
+    echo -e "${InvDkGray}${CWhite} m2 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode w/ Screen"
+    echo -e "${CGreen}----------------------------------------------------------------"
     echo ""
     printf "Selection: "
     read -r InstallSelection
@@ -2366,7 +2381,7 @@ vsetup () {
     # Execute chosen selections
         case "$InstallSelection" in
 
-          1) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r2 -config
+          sc) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r2 -config
             clear
             if [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ]; then
               vconfig
@@ -2429,7 +2444,7 @@ vsetup () {
           ;;
 
 
-          2) # Force re-install the CoreUtils timeout/screen package
+          fr) # Force re-install the CoreUtils timeout/screen package
             clear
             logo
             echo -e "${CYellow}Force Re-installing CoreUtils-Timeout/Screen Packages...${CClear}"
@@ -2480,31 +2495,31 @@ vsetup () {
             fi
           ;;
 
-          3)
+          up)
             echo ""
             vupdate
           ;;
 
-          4)
+          m1)
             echo ""
             echo -e "\n${CGreen}Launching VPNMON-R2 into Monitor Mode...${CClear}"
             sleep 2
             sh $APPPATH -monitor
           ;;
 
-          5)
+          m2)
             echo ""
             echo -e "\n${CGreen}Launching VPNMON-R2 into Monitor Mode with Screen Utility...${CClear}"
             sleep 2
             sh $APPPATH -screen
           ;;
 
-          6)
+          vl)
             echo ""
-            (vlogs)
+            vlogs
           ;;
 
-          u)
+          un)
             echo ""
             vuninstall
           ;;
@@ -2555,7 +2570,7 @@ vsetup () {
   fi
 
   # Check and see if an invalid commandline option is being used
-  if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-config" ] || [ "$1" == "-monitor" ] || [ "$1" == "-log" ] || [ "$1" == "-update" ] || [ "$1" == "-setup" ] || [ "$1" == "-uninstall" ] || [ "$1" == "-screen" ] || [ "$1" == "-quit" ]
+  if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-config" ] || [ "$1" == "-monitor" ] || [ "$1" == "-log" ] || [ "$1" == "-update" ] || [ "$1" == "-setup" ] || [ "$1" == "-uninstall" ] || [ "$1" == "-screen" ] || [ "$1" == "-reset" ]
     then
       clear
     else
@@ -2582,6 +2597,7 @@ vsetup () {
     echo "vpnmon-r2.sh -config"
     echo "vpnmon-r2.sh -update"
     echo "vpnmon-r2.sh -setup"
+    echo "vpnmon-r2.sh -reset"
     echo "vpnmon-r2.sh -uninstall"
     echo "vpnmon-r2.sh -screen"
     echo "vpnmon-r2.sh -monitor"
@@ -2591,6 +2607,7 @@ vsetup () {
     echo " -config (configuration/setup utility)"
     echo " -update (script update utility)"
     echo " -setup (setup/dependencies utility)"
+    echo " -reset (initiate a VPN reset)"
     echo " -uninstall (uninstall utility)"
     echo " -screen (normal VPN monitoring using the screen utility)"
     echo " -monitor (normal VPN monitoring operations)"
@@ -2603,6 +2620,7 @@ vsetup () {
   if [ "$1" == "-log" ]
     then
       vlogs
+      exit 0
   fi
 
   # Check to see if the configuration option is being called, and run through setup utility
@@ -2625,6 +2643,39 @@ vsetup () {
   if [ "$1" == "-setup" ]
     then
       vsetup
+  fi
+
+  # Check to see if the reset option is being called
+  if [ "$1" == "-reset" ]
+    then
+      clear
+      if [ -f $CFGPATH ]; then
+        source $CFGPATH
+
+          if [ -f "/opt/bin/timeout" ] # If the timeout utility is available then use it and assign variables
+            then
+              timeoutcmd="timeout "
+              timeoutsec="10"
+              timeoutlng="60"
+            else
+              timeoutcmd=""
+              timeoutsec=""
+              timeoutlng=""
+          fi
+      else
+        echo -e "${CRed}Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup' to complete setup${CClear}"
+        echo ""
+        echo -e "$(date) - VPNMON-R2 ----------> ERROR: vpnmon-r2.cfg was not found. Please run the setup tool." >> $LOGFILE
+        kill 0
+      fi
+      logo
+      echo -e "${CRed} VPNMON-R2 is executing VPN Reset via Commandline Switch...${CClear}"
+      echo -e "$(date) - VPNMON-R2 ----------> INFO: Executing VPN Reset via Commandline Switch" >> $LOGFILE
+      echo ""
+      RESETSWITCH=1
+      vpnreset
+      echo -e "${CClear}"
+      exit 0
   fi
 
   # Check to see if the uninstall option is being called
@@ -2707,16 +2758,19 @@ while true; do
   # Write persistence logfile
   echo -e "$(date +%s)" > $PERSIST
 
-  # Testing to see if VPNON is currently running, and if so, hold off until it finishes
+  # Testing to see if VPNMON-R2 external reset is currently running, and if so, hold off until it finishes
   while test -f "$LOCKFILE"; do
     # clear screen
-    clear && clear
+    clear
     SPIN=15
+    logo
+    echo -e "${CGreen} ---------> NOTICE: VPN RESET CURRENTLY IN-PROGRESS <---------"
     echo ""
-    echo -e "${CRed}-----------------> NOTICE: VPNON ACTIVE <-----------------"
+    echo -e "${CGreen} VPNMON-R2 is currently performing an external scheduled reset"
+    echo -e "${CGreen} of the VPN through the means of the '-reset' commandline"
+    echo -e "${CGreen} option or scheduled CRON job."
     echo ""
-    echo -e "${CGreen}VPNON is currently performing a scheduled reset of the VPN."
-    echo -e "${CGreen}Retrying for normal operations every $SPIN seconds...${CClear}\n"
+    echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
     echo -e "$(date +%s)" > $RSTFILE
     START=$(cat $RSTFILE)
     spinner
@@ -2772,7 +2826,7 @@ while true; do
   LASTVPNRESET=$(printf '%dd %02dh:%02dm:%02ds\n' $(($SDIFF/86400)) $(($SDIFF%86400/3600)) $(($SDIFF%3600/60)) $(($SDIFF%60)))
 
   # clear screen
-  clear && clear
+  clear
 
   # Display title/version
   echo -e "${CYellow}   _    ______  _   ____  _______  _   __      ____ ___  "
@@ -2821,6 +2875,10 @@ while true; do
   echo -e "${CGreen}/${CRed}Interfaces${CClear}${CGreen}\______________________________________________________${CClear}"
   echo ""
 
+  # Initialize timer to measure how long it takes to check the WAN & VPN interfaces
+  VW_ELAPSED_TIME=0
+  VW_START_TIME=$(date +%s)
+
   # Cycle through the WANCheck connection function to display ping/city info
   i=0
   for i in 0 1
@@ -2837,6 +2895,10 @@ while true; do
       i=$(($i+1))
       checkvpn $i $((state$i))
   done
+
+  # End the timer for the WAN & VPN interfaces
+  VW_END_TIME=$(date +%s)
+  VW_ELAPSED_TIME=$(( VW_END_TIME - VW_START_TIME ))
 
   # Determine whether to show all the stats based on user preference
   if [ $SHOWSTATS == "1" ]
@@ -2963,8 +3025,8 @@ while true; do
     diffrxbytes=$(awk -v new=$newrxbytes -v old=$oldrxbytes -v mb=125000 'BEGIN{printf "%.4f\n", (new-old)/mb}')
     difftxbytes=$(awk -v new=$newtxbytes -v old=$oldtxbytes -v mb=125000 'BEGIN{printf "%.4f\n", (new-old)/mb}')
 
-    # Modify the amount of time for the calculation to be the Interval + Time to check for NordVPN Load + Time to check for WAN connectivity
-    INTERVALTIMEMOD=$(($INTERVAL + $LOAD_ELAPSED_TIME + $WAN_ELAPSED_TIME))
+    # Modify the amount of time for the calculation to be the Interval + VPN Server Load check + VPN/WAN Ping checks + WAN connectivity check
+    INTERVALTIMEMOD=$(($INTERVAL + $LOAD_ELAPSED_TIME + $VW_ELAPSED_TIME + $WAN_ELAPSED_TIME))
 
     # Results are further divided by the timer/interval to give Megabits/sec
     rxmbrate=$(awk -v rb=$diffrxbytes -v intv=$INTERVALTIMEMOD 'BEGIN{printf "%0.2f\n", rb/intv}')
