@@ -1,15 +1,16 @@
 v2.0   - (TBA)
-       * SUNSET: The VPNON.SH project has been sunset. Instead of maintaining almost 2 identical functions in both
+       * MAJOR: The VPNON.SH project has been sunset. Instead of maintaining almost 2 identical functions in both
          VPNMON-R2 and VPNON, I have decided to terminate the VPNON project. All functionality of VPNON will
          continue to live on in VPNMON-R2.
        * ADDED: The ability to reset the VPN with a "vpnmon-r2.sh -reset" commandline switch.  This gives you the
          same functionality that VPNON gave you, and are able to use this method to randomly reset your VPN 
          connection using CRON jobs. VPNMON-R2 running in its own SSH or Screen window will be aware of these
          actions, will pause the UI while the reset is running, and will resume when finished.
-       * ADDED: New indicator showing if one of your pre-configured VPN host slots goes down, and will display the
-         VPN slot as OFFLINE.
+       * ADDED: New indicator showing if one of your pre-configured VPN host slots goes down, and is no longer
+         reachable via ping, and will display the affected VPN slot as OFFLINE.
        * ADDED: Configured an alias for VPNMON-R2 that is added when you go into the setup menu.  Now you can call
-         all functions relating to the script from any location with a command like this: "vpnmon-r2 -log"
+         all functions relating to the script from any location (without having to be in the /jffs/scripts folder
+         or having to call it like /jffs/scripts/vpnmon-r2.sh), now using a command like this: "vpnmon-r2 -log"
        * FIXED: Made a few more wording changes in the setup menu thanks to the keen eye of @RimRider, and also
          tweaked the functionality of the menu a bit more.  Now, when calling the setup menu from the UI, you will
          return to the UI when exiting out of the menu.
