@@ -1,10 +1,13 @@
-v2.01  - (TBA)
+v2.01  - (July 17, 2022)
        * ADDED: New logic to determine if a screen session already is running with the alias 'vpnmon-r2'. If there
          is a session running, and you execute another "vpnmon-r2 -screen", it will prompt you whether or not you
-         want to reattach to the already-running session - thanks @Kal1975!
+         want to just reattach to the already-running session - thanks @Kal1975!
        * FIXED: Better dual-wan logic for those running @Ranger802004's dual-wan script to eliminitate some error
          messages when both WAN0 and WAN1 were connected at the same time. Thanks to @JAX1337 and @Stephen
-         Harrington for the heads-up!
+         Harrington for the heads-up!  Huge thanks To @Ranger802004 for further troubleshooting routing 
+         compatibility between our two scripts in a Dual-WAN failover/load balancing situation. Please note, this
+         is an interim release until I can dive into Dual-WAN capabilities at a near future date to ensure
+         VPNMON-R2 can effectively handle each situation presented to it.
 
 v2.0   - (July 10, 2022)
        * MAJOR: The VPNON.SH project has been sunset. Instead of maintaining almost 2 identical functions in both
