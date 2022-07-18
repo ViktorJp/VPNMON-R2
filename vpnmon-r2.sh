@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.0 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.01 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,10 +43,10 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.0"                                       # Current version of VPNMON-R2
+Version="2.01"                                      # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
-LOCKFILE="/jffs/scripts/VPNMON-R2-Lock.txt"         # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
+LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
                                                     # that VPNMON-R2 does not interfere during an external reset
 RSTFILE="/jffs/addons/vpnmon-r2.d/vpnmon-rst.log"   # Logfile containing the last date/time a VPN reset was performed. Else,
                                                     # the latest date/time that VPNMON-R2 restarted will be shown.
@@ -62,6 +62,7 @@ STATUS=0                                            # Tracks whether or not a pi
 VPNCLCNT=0                                          # Tracks to make sure there are not multiple connections running
 CURRCLNT=0                                          # Tracks which VPN client is currently active
 CNT=0                                               # Counter
+FromUI=0                                            # Tracks selections made from the UI
 AVGPING=0                                           # Average ping value
 MINPING=100                                         # Minimum ping value in ms before a reset takes place
 USELOWESTSLOT=1                                     # Option to select either random VPN slot connections, or using the one
@@ -85,7 +86,8 @@ SKIPPROGRESS=0                                      # Variable to skip the progr
 VPNIP="Unassigned"                                  # Tracking VPN IP for city location display. API gives you 1K lookups
                                                     # per day, and is optimized to only lookup city location after a reset
 vpnresettripped=0                                   # Tracking whether a VPN Reset is tripped due to a WAN outage
-WANIP="Unassigned"                                  # Tracking WAN IP for city location display
+WAN0IP="Unassigned"                                 # Tracking WAN IP for city location display
+WAN1IP="Unassigned"                                 # Tracking WAN IP for city location display
 ICANHAZIP=""                                        # Variable for tracking public facing VPN IP
 VPNLOAD=0                                           # Variable tracks the NordVPN server load
 AVGPING=0                                           # Variable tracks average ping time
@@ -254,7 +256,7 @@ progressbar() {
 
   if [ $key_press ]; then
       case $key_press in
-          [Ss]) (vsetup); echo -e "${CGreen} [Returning to the Main UI momentarily]                                    ";;
+          [Ss]) FromUI=1; (vsetup); echo -e "${CGreen} [Returning to the Main UI momentarily]                                    "; FromUI=0;;
           [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
           [Bb]) (bossmode);;
           'e') echo -e "${CClear}"; exit 0;;
@@ -317,7 +319,7 @@ bossmode() {
 # Trimlogs is a function that does exactly what you think it does - it, uh... trims the logs. LOL
 trimlogs() {
 
-  if [ $TRIMLOGS == "1" ]
+  if [ "$TRIMLOGS" == "1" ]
     then
 
       CURRLOGSIZE=$(wc -l $LOGFILE | awk '{ print $1 }' ) # Determine the number of rows in the log
@@ -376,6 +378,88 @@ get_wan_setting() {
   printf "%s" "${varval}"
 } # get_wan_setting
 
+# Separated these out to get the ifname for a dual-wan/failover situation where both WAN connections are on
+get_wan_setting0() {
+  local varname varval
+  varname="${1}"
+  prefixes="wan0_"
+
+  if [ "$($timeoutcmd$timeoutsec nvram get wans_mode)" = "lb" ] ; then
+      for prefix in $prefixes; do
+          state="$($timeoutcmd$timeoutsec nvram get "${prefix}"state_t)"
+          sbstate="$($timeoutcmd$timeoutsec nvram get "${prefix}"sbstate_t)"
+          auxstate="$($timeoutcmd$timeoutsec nvram get "${prefix}"auxstate_t)"
+
+          # is_wan_connect()
+          [ "${state}" = "2" ] || continue
+          [ "${sbstate}" = "0" ] || continue
+          [ "${auxstate}" = "0" ] || [ "${auxstate}" = "2" ] || continue
+
+          # get_wan_ifname()
+          proto="$($timeoutcmd$timeoutsec nvram get "${prefix}"proto)"
+          if [ "${proto}" = "pppoe" ] || [ "${proto}" = "pptp" ] || [ "${proto}" = "l2tp" ] ; then
+              varval="$($timeoutcmd$timeoutsec nvram get "${prefix}"pppoe_"${varname}")"
+          else
+              varval="$($timeoutcmd$timeoutsec nvram get "${prefix}""${varname}")"
+          fi
+      done
+  else
+      for prefix in $prefixes; do
+          primary="$($timeoutcmd$timeoutsec nvram get "${prefix}"primary)"
+          [ "${primary}" = "1" ] && break
+      done
+
+      proto="$($timeoutcmd$timeoutsec nvram get "${prefix}"proto)"
+      if [ "${proto}" = "pppoe" ] || [ "${proto}" = "pptp" ] || [ "${proto}" = "l2tp" ] ; then
+          varval="$($timeoutcmd$timeoutsec nvram get "${prefix}"pppoe_"${varname}")"
+      else
+          varval="$($timeoutcmd$timeoutsec nvram get "${prefix}""${varname}")"
+      fi
+  fi
+  printf "%s" "${varval}"
+} # get_wan_setting
+
+# Separated these out to get the ifname for a dual-wan/failover situation where both WAN connections are on
+get_wan_setting1() {
+  local varname varval
+  varname="${1}"
+  prefixes="wan1_"
+
+  if [ "$($timeoutcmd$timeoutsec nvram get wans_mode)" = "lb" ] ; then
+      for prefix in $prefixes; do
+          state="$($timeoutcmd$timeoutsec nvram get "${prefix}"state_t)"
+          sbstate="$($timeoutcmd$timeoutsec nvram get "${prefix}"sbstate_t)"
+          auxstate="$($timeoutcmd$timeoutsec nvram get "${prefix}"auxstate_t)"
+
+          # is_wan_connect()
+          [ "${state}" = "2" ] || continue
+          [ "${sbstate}" = "0" ] || continue
+          [ "${auxstate}" = "0" ] || [ "${auxstate}" = "2" ] || continue
+
+          # get_wan_ifname()
+          proto="$($timeoutcmd$timeoutsec nvram get "${prefix}"proto)"
+          if [ "${proto}" = "pppoe" ] || [ "${proto}" = "pptp" ] || [ "${proto}" = "l2tp" ] ; then
+              varval="$($timeoutcmd$timeoutsec nvram get "${prefix}"pppoe_"${varname}")"
+          else
+              varval="$($timeoutcmd$timeoutsec nvram get "${prefix}""${varname}")"
+          fi
+      done
+  else
+      for prefix in $prefixes; do
+          primary="$($timeoutcmd$timeoutsec nvram get "${prefix}"primary)"
+          [ "${primary}" = "1" ] && break
+      done
+
+      proto="$($timeoutcmd$timeoutsec nvram get "${prefix}"proto)"
+      if [ "${proto}" = "pppoe" ] || [ "${proto}" = "pptp" ] || [ "${proto}" = "l2tp" ] ; then
+          varval="$($timeoutcmd$timeoutsec nvram get "${prefix}"pppoe_"${varname}")"
+      else
+          varval="$($timeoutcmd$timeoutsec nvram get "${prefix}""${varname}")"
+      fi
+  fi
+  printf "%s" "${varval}"
+} # get_wan_setting
+
 # -------------------------------------------------------------------------------------------------------------------------
 
 # Updatecheck is a function that downloads the latest update version file, and compares it with what's currently installed
@@ -390,7 +474,7 @@ updatecheck () {
       DLVersion=$(cat $DLVERPATH)
 
       # Compare the new version with the old version and log it
-      if [ $Beta == "1" ]; then   # Check if Dev/Beta Mode is enabled and disable notification message
+      if [ "$Beta" == "1" ]; then   # Check if Dev/Beta Mode is enabled and disable notification message
         UpdateNotify=0
       elif [ "$DLVersion" != "$Version" ]; then
         UpdateNotify="Update available: v$Version -> v$DLVersion"
@@ -412,10 +496,10 @@ checkwan () {
   testssl=8.8.8.8
 
   # Show that we're testing the WAN connection
-  if [ $1 == "Loop" ]
+  if [ "$1" == "Loop" ]
   then
     printf "${CGreen}\r [Checking WAN Connectivity]..."
-  elif [ $1 = "Reset" ]
+  elif [ "$1" = "Reset" ]
   then
     printf "${CGreen}\r [Checking WAN Connectivity]..."
   fi
@@ -425,23 +509,53 @@ checkwan () {
 
     # Start a timer to see how long this takes to add to the TX/RX Calculations
     WAN_START_TIME=$(date +%s)
+    #DUALWANMODE=$($timeoutcmd$timeoutsec nvram get wans_mode)
 
     # Check the actual WAN State from NVRAM before running connectivity test, or insert itself into loop after failing an SSL handshake test
-    if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -ne 2 ] && [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -ne 2 ] || [ $wandownbreakertrip == "1" ]
+    if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -eq 2 ] || [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -eq 2 ]
+    then
+
+      # Test the active WAN connection using 443 and verifying a handshake... if this fails, then the WAN connection is most likely down... or Google is down ;)
+      if ($timeoutcmd$timeoutlng nc -w1 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 |awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }')
+        then
+          if [ "$1" == "Loop" ]
+          then
+            printf "${CGreen}\r [Checking WAN Connectivity]...ACTIVE"
+            sleep 1
+            printf "\33[2K\r"
+          elif [ "$1" = "Reset" ]
+          then
+            printf "${CGreen}\r [Checking WAN Connectivity]...ACTIVE"
+            sleep 1
+            echo -e "\n"
+          fi
+
+          WAN_END_TIME=$(date +%s)
+          WAN_ELAPSED_TIME=$(( WAN_END_TIME - WAN_START_TIME ))
+
+          return
+
+        else
+          wandownbreakertrip=1
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: WAN CONNECTIVITY ISSUE DETECTED" >> $LOGFILE
+      fi
+    fi
+
+    if [ "$wandownbreakertrip" == "1" ]
       then
-
         # The WAN is most likely down, and keep looping through until NVRAM reports that it's back up
-        wandownbreakertrip=1
 
-        while [ $wandownbreakertrip == "1" ]; do
+        while [ "$wandownbreakertrip" == "1" ]; do
 
-          if [ $RESETSWITCH = 1 ]
+          if [ "$RESETSWITCH" == "1" ] || [ -f "$LOCKFILE" ]
             then
               echo ""
               echo -e "${CRed} ERROR: WAN DOWN... VPN Reset is terminating."
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: WAN CONNECTIVITY ISSUE DETECTED. VPN RESET TERMINATED." >> $LOGFILE
-              rm $LOCKFILE # Clean up lockfile
-              kill 0
+              RESETSWITCH=0
+              rm $LOCKFILE >/dev/null 2>&1
+              sleep 2
+              clear
           fi
 
           # Continue to test for WAN connectivity while in this loop. If it comes back up, break out of the loop and reset VPN
@@ -467,7 +581,7 @@ checkwan () {
       else
 
         # If the WAN was down, and now it has just reset, then run a VPN Reset, and try to establish a new VPN connection
-        if [ $wandownbreakertrip == "2" ]
+        if [ "$wandownbreakertrip" == "2" ]
           then
             echo -e "$(date) - VPNMON-R2 - WAN Link Detected -- Trying to reconnect/Reset VPN" >> $LOGFILE
             wandownbreakertrip=0
@@ -482,33 +596,8 @@ checkwan () {
             spinner
             echo -e "$(date +%s)" > $RSTFILE
             START=$(cat $RSTFILE)
-            clear && clear
+            clear
             vpnreset
-        fi
-
-        # Else test the active WAN connection using 443 and verifying a handshake... if this fails, then the WAN connection is most likely down... or Google is down ;)
-        if ($timeoutcmd$timeoutlng nc -w1 $testssl 443 && echo |openssl s_client -connect $testssl:443 2>&1 |awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }')
-          then
-            if [ $1 == "Loop" ]
-            then
-              printf "${CGreen}\r [Checking WAN Connectivity]...ACTIVE"
-              sleep 1
-              printf "\33[2K\r"
-            elif [ $1 = "Reset" ]
-            then
-              printf "${CGreen}\r [Checking WAN Connectivity]...ACTIVE"
-              sleep 1
-              echo -e "\n"
-            fi
-
-            WAN_END_TIME=$(date +%s)
-            WAN_ELAPSED_TIME=$(( WAN_END_TIME - WAN_START_TIME ))
-
-            return
-
-          else
-            wandownbreakertrip=1
-            echo -e "$(date) - VPNMON-R2 ----------> ERROR: WAN CONNECTIVITY ISSUE DETECTED" >> $LOGFILE
         fi
     fi
   done
@@ -519,12 +608,14 @@ checkwan () {
 # vpnresetlowestping is a function that resets the VPN connection based on lowest ping.
 vpnresetlowestping() {
 
-  if [ $USELOWESTSLOT == "1" ]; then
+  if [ "$USELOWESTSLOT" == "1" ]; then
 
     # Start the VPN reset process
       echo -e "$(date) - VPNMON-R2 - Executing VPN Reset to Slot with Lowest PING" >> $LOGFILE
 
-    # Reset the VPN IP/Locations
+    # Reset the WAN/VPN IP/Locations
+      WAN0IP="Unassigned"
+      WAN1IP="Unassigned"
       VPNIP="Unassigned"
 
     # Kill all current VPN client sessions
@@ -631,7 +722,7 @@ vpnresetlowestping() {
         newtxbytes=0
 
         # Returning from a WAN Down situation, restart VPNMON-R2 with -monitor switch
-        if [ $vpnresettripped == "1" ]
+        if [ "$vpnresettripped" == "1" ]
           then
             vpnresettripped=0
             sh /jffs/scripts/vpnmon-r2.sh -monitor
@@ -650,7 +741,9 @@ vpnreset() {
   # Start the VPN reset process
     echo -e "$(date) - VPNMON-R2 - Executing VPN Reset" >> $LOGFILE
 
-  # Reset the VPN IP/Locations
+  # Reset the WAN/VPN IP/Locations
+    WAN0IP="Unassigned"
+    WAN1IP="Unassigned"
     VPNIP="Unassigned"
 
   # Kill all current VPN client sessions
@@ -1094,7 +1187,7 @@ vpnreset() {
       echo -e "$(date) - VPNMON-R2 - Refreshed VPNMGR Server Locations and Hostnames" >> $LOGFILE
     fi
 
-    if [ $USELOWESTSLOT == "0" ]; then
+    if [ "$USELOWESTSLOT" == "0" ]; then
 
     # Pick a random VPN Client to connect to
       printf "${CGreen}\r                                                               "
@@ -1167,7 +1260,7 @@ vpnreset() {
         do
           i=$(($i+1))
           OFFLINEVPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client"$i"_addr)
-          DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
+          DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
           testping=${DISCHOSTPING%.*}
           if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=99; testping=99; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
@@ -1278,14 +1371,14 @@ vpnreset() {
     newtxbytes=0
 
     # Clean up lockfile
-    rm $LOCKFILE
+    rm $LOCKFILE >/dev/null 2>&1
 
     # Returning from a WAN Down situation or scheduled reset, restart VPNMON-R2 with -monitor switch, or return
-    if [ $RESETSWITCH = 1 ]
+    if [ "$RESETSWITCH" == "1" ]
       then
         RESETSWITCH=0
         return
-    elif [ $vpnresettripped == "1" ]
+    elif [ "$vpnresettripped" == "1" ]
       then
         vpnresettripped=0
         sh /jffs/scripts/vpnmon-r2.sh -monitor
@@ -1304,6 +1397,8 @@ checkvpn() {
   TUN="tun1"$1
   VPNSTATE=$2
 
+  WANIFNAME=$(get_wan_setting ifname)
+
   # If the VPN slot is connected then proceed, else display it's disconnected
   if [ $VPNSTATE -eq $connState ]
   then
@@ -1315,18 +1410,18 @@ checkvpn() {
       if [ $RC -eq 0 ] && [ $IC -eq 0 ];then  # If both ping/curl come back successful, then proceed
         STATUS=1
         VPNCLCNT=$((VPNCLCNT+1))
-        AVGPING=$(ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
+        AVGPING=$(ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
 
         if [ -z "$AVGPING" ]; then AVGPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
-        if [ $VPNIP == "Unassigned" ];then # The first time through, use API lookup to get exit VPN city and display
+        if [ "$VPNIP" == "Unassigned" ];then # The first time through, use API lookup to get exit VPN city and display
           VPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
           VPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$ICANHAZIP/city"
           VPNCITY="$(eval $VPNCITY)"; if echo $VPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then VPNCITY="$ICANHAZIP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update VPN city to $VPNCITY" >> $LOGFILE
         fi
 
-        CONNHOSTPING=$(ping -I $WANIFNAME -c 1 $VPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
+        CONNHOSTPING=$(ping -I $WANIFNAME -c 1 $VPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
         testping=${CONNHOSTPING%.*}
 
         echo -e "${CGreen} ==VPN$1 Tunnel Active | ||${CWhite}${InvGreen} $AVGPING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$VPNCITY${CClear}"
@@ -1345,7 +1440,7 @@ checkvpn() {
     done
   else
     OFFLINEVPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
-    DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) # Get ping stats
+    DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
     testping=${DISCHOSTPING%.*}
     if [ -z "$DISCHOSTPING" ]; then # On that rare occasion where it's unable to get the Ping time, assign 99
       DISCHOSTPING=99
@@ -1375,35 +1470,74 @@ checkvpn() {
 wancheck() {
 
   WANIF=$1
+  WANIFNAME=$(get_wan_setting ifname)
+  DUALWANMODE=$($timeoutcmd$timeoutsec nvram get wans_mode)
 
   # If WAN 0 or 1 is connected, then proceed, else display that it's inactive
-  if [ "$($timeoutcmd$timeoutsec nvram get wan"$WANIF"_state_t)" -eq 2 ]
-    then
+  if [ "$WANIF" == "0" ]; then
+    if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -eq 2 ]
+      then
+        # Call the get_wan_setting function courtesy of @dave14305 and using this interface name to ping and get a city name from
+        WAN0IFNAME=$(get_wan_setting0 ifname)
 
-      # Call the get_wan_setting function courtesy of @dave14305 and using this interface name to ping and get a city name from
-      WANIFNAME=$(get_wan_setting ifname)
+        # Backup Interface Retrieval method courtesy of @SomewhereOverTheRainbow's excellent coding skills:
+        #WANIFNAME=$(ip r | grep default | grep -oE "\b($(nvram get wan_ifname)|$(nvram get wan0_ifname)|$(nvram get wan1_ifname)|$(nvram get wan_pppoe_ifname)|$(nvram get wan0_pppoe_ifname)|$(nvram get wan1_pppoe_ifname))\b")
 
-      # Backup Interface Retrieval method courtesy of @SomewhereOverTheRainbow's excellent coding skills:
-      #WANIFNAME=$(ip r | grep default | grep -oE "\b($(nvram get wan_ifname)|$(nvram get wan0_ifname)|$(nvram get wan1_ifname)|$(nvram get wan_pppoe_ifname)|$(nvram get wan0_pppoe_ifname)|$(nvram get wan1_pppoe_ifname))\b")
+        # Ping through the WAN interface
+        if [ "$WANIFNAME" == "$WAN0IFNAME" ] || [ "$DUALWANMODE" == "lb" ]; then
+          WAN0PING=$(ping -I $WAN0IFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+        else
+          WAN0PING="DW-FO"
+        fi
 
-      # Ping through the WAN interface
-      WANPING=$(ping -I $WANIFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn)
+        if [ -z "$WAN0PING" ]; then WAN0PING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
-      if [ -z "$WANPING" ]; then WANPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
+        # Get the public IP of the WAN, determine the city from it, and display it on screen
+        if [ "$WAN0IP" == "Unassigned" ]; then
+          WAN0IP=$(curl --silent --fail --interface $WAN0IFNAME --request GET --url http://icanhazip.com)
+          WAN0CITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$WAN0IP/city"
+          WAN0CITY="$(eval $WAN0CITY)"; if echo $WAN0CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
+          echo -e "$(date) - VPNMON-R2 - API call made to update WAN0 city to $WAN0CITY" >> $LOGFILE
+        fi
+        #WANCITY="Your City"
+        echo -e "${CGreen} ==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} $WAN0PING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WAN0CITY${CClear}"
 
-      # Get the public IP of the WAN, determine the city from it, and display it on screen
-      if [ $WANIP == "Unassigned" ];then
-        WANIP=$(curl --silent --fail --interface $WANIFNAME --request GET --url http://icanhazip.com)
-        WANCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$WANIP/city"
-        WANCITY="$(eval $WANCITY)"; if echo $WANCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WANCITY="$WANIP"; fi
-        echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WANCITY" >> $LOGFILE
-      fi
+      else
+        echo -e "${CClear} - WAN0 Port Inactive"
+    fi
+  fi
 
-      #WANCITY="Your City"
-      echo -e "${CGreen} ==WAN$WANIF $WANIFNAME Active | ||${CWhite}${InvGreen} $WANPING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WANCITY${CClear}"
+  if [ "$WANIF" == "1" ]; then
+    if [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -eq 2 ]
+      then
+        # Call the get_wan_setting function courtesy of @dave14305 and using this interface name to ping and get a city name from
+        WAN1IFNAME=$(get_wan_setting1 ifname)
 
-    else
-      echo -e "${CClear} - WAN$WANIF Port Inactive"
+        # Backup Interface Retrieval method courtesy of @SomewhereOverTheRainbow's excellent coding skills:
+        #WANIFNAME=$(ip r | grep default | grep -oE "\b($(nvram get wan_ifname)|$(nvram get wan0_ifname)|$(nvram get wan1_ifname)|$(nvram get wan_pppoe_ifname)|$(nvram get wan0_pppoe_ifname)|$(nvram get wan1_pppoe_ifname))\b")
+
+        # Ping through the WAN interface
+        if [ "$WANIFNAME" == "$WAN1IFNAME" ] || [ "$DUALWANMODE" == "lb" ]; then
+          WAN1PING=$(ping -I $WAN1IFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+        else
+          WAN1PING="DW-FO"
+        fi
+
+        if [ -z "$WAN1PING" ]; then WAN1PING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
+
+        # Get the public IP of the WAN, determine the city from it, and display it on screen
+        if [ "$WAN1IP" == "Unassigned" ]; then
+          WAN1IP=$(curl --silent --fail --interface $WAN1IFNAME --request GET --url http://icanhazip.com)
+          WAN1CITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$WAN1IP/city"
+          WAN1CITY="$(eval $WAN1CITY)"; if echo $WAN1CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
+          echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WAN1CITY" >> $LOGFILE
+        fi
+        #WANCITY="Your City"
+        echo -e "${CGreen} ==WAN1 $WAN1IFNAME Active | ||${CWhite}${InvGreen} $WAN1PING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WAN1CITY${CClear}"
+
+      else
+        echo -e "${CClear} - WAN1 Port Inactive"
+    fi
   fi
 }
 
@@ -1448,7 +1582,7 @@ vconfig () {
             * ) echo -e "\nPlease answer 1 or 2, or Enter to accept default value.";;
           esac
       done
-        if [ $DefCusVals == "1" ]; then
+        if [ "$DefCusVals" == "1" ]; then
           TRIES=3
           INTERVAL=60
           PINGHOST="8.8.8.8"
@@ -1495,7 +1629,7 @@ vconfig () {
           YF52GN1=0
           YF52GN2=0
           YF52GN3=0
-        elif [ $DefCusVals == "2" ]; then
+        elif [ "$DefCusVals" == "2" ]; then
           if [ -f $CFGPATH ]; then
             source $CFGPATH
           else
@@ -1561,7 +1695,7 @@ vconfig () {
           esac
       done
       # -----------------------------------------------------------------------------------------
-      if [ $USELOWESTSLOT == "1" ]; then
+      if [ "$USELOWESTSLOT" == "1" ]; then
         echo ""
         echo -e "${CCyan}5a. When using the 'Lowest PING' method, there is a greater chance that"
         echo -e "${CCyan}your connections will reset at a higher rate, due to competing servers"
@@ -1577,11 +1711,11 @@ vconfig () {
       # -----------------------------------------------------------------------------------------
       echo ""
 
-      if [ $UseNordVPN == "1" ]; then
+      if [ "$UseNordVPN" == "1" ]; then
         VPNProvider=1
-      elif [ $UseSurfShark == "1" ]; then
+      elif [ "$UseSurfShark" == "1" ]; then
         VPNProvider=2
-      elif [ $UsePP == "1" ]; then
+      elif [ "$UsePP" == "1" ]; then
         VPNProvider=3
       else
         VPNProvider=4
@@ -1606,7 +1740,7 @@ vconfig () {
       # NordVPN Logic
       # -----------------------------------------------------------------------------------------
 
-      if [ $VPNProvider == "1" ]; then # NordVPN
+      if [ "$VPNProvider" == "1" ]; then # NordVPN
         UseNordVPN=1
 
         echo ""
@@ -1653,7 +1787,7 @@ vconfig () {
               esac
           done
 
-          if [ $NordVPNMultipleCountries == "1" ]; then
+          if [ "$NordVPNMultipleCountries" == "1" ]; then
               echo -e "${CCyan}"
               read -p "Enter Country #2 (Use 0 for blank) (Default = $NordVPNCountry2): " NordVPNCountry21
               if [ -z "$NordVPNCountry21" ]; then NordVPNCountry21="$NordVPNCountry2"; else NordVPNCountry2="$NordVPNCountry21"; fi # Using default value on enter keypress
@@ -1709,7 +1843,7 @@ vconfig () {
       # Surfshark Logic
       # -----------------------------------------------------------------------------------------
 
-      if [ $VPNProvider == "2" ]; then # Surfshark
+      if [ "$VPNProvider" == "2" ]; then # Surfshark
         UseSurfShark=1
 
         echo ""
@@ -1760,7 +1894,7 @@ vconfig () {
               esac
           done
 
-          if [ $SurfSharkMultipleCountries == "1" ]; then
+          if [ "$SurfSharkMultipleCountries" == "1" ]; then
               echo -e "${CCyan}"
               read -p "Enter Country #2 (Use 0 for blank) (Default = $SurfSharkCountry2): " SurfSharkCountry21
               if [ -z "$SurfSharkCountry21" ]; then SurfSharkCountry21="$SurfSharkCountry2"; else SurfSharkCountry2="$SurfSharkCountry21"; fi # Using default value on enter keypress
@@ -1801,7 +1935,7 @@ vconfig () {
       # Perfect Privacy Logic
       # -----------------------------------------------------------------------------------------
 
-      if [ $VPNProvider == "3" ]; then # Perfect Privacy
+      if [ "$VPNProvider" == "3" ]; then # Perfect Privacy
         UsePP=1
 
         echo ""
@@ -1842,7 +1976,7 @@ vconfig () {
                 * ) echo -e "\nPlease answer 0 or 1, or Enter to accept default value.";;
               esac
           done
-          if [ $PPMultipleCountries == "1" ]; then
+          if [ "$PPMultipleCountries" == "1" ]; then
               echo -e "${CCyan}"
               read -p "Enter Country #2 (Use 0 for blank) (Default = $PPCountry2): " PPCountry21
               if [ -z "$PPCountry21" ]; then PPCountry21="$PPCountry2"; else PPCountry2="$PPCountry21"; fi # Using default value on enter keypress
@@ -1895,7 +2029,7 @@ vconfig () {
       # VPN Service Not Listed Logic
       # -----------------------------------------------------------------------------------------
 
-      if [ $VPNProvider == "4" ]; then # Not Listed
+      if [ "$VPNProvider" == "4" ]; then # Not Listed
         UseNordVPN=0
         NordVPNSuperRandom=0
         NordVPNMultipleCountries=0
@@ -1936,7 +2070,7 @@ vconfig () {
           esac
       done
       # -----------------------------------------------------------------------------------------
-      if [ $ResetOption == "1" ]; then
+      if [ "$ResetOption" == "1" ]; then
         echo ""
         echo -e "${CCyan}7a. What time would you like to reset your connection?"
         echo -e "${CYellow}(Default = $DailyResetTime)${CClear}"
@@ -2000,7 +2134,7 @@ vconfig () {
           esac
       done
       # -----------------------------------------------------------------------------------------
-      if [ $TRIMLOGS == "1" ]; then
+      if [ "$TRIMLOGS" == "1" ]; then
           echo ""
         echo -e "${CCyan}12a. How large would you like your log file to grow (in # of lines)?"
         echo -e "${CCyan}This option will automatically trim your log after each VPN reset."
@@ -2026,7 +2160,7 @@ vconfig () {
           esac
       done
       # -----------------------------------------------------------------------------------------
-      if [ $SyncYazFi == "1" ]; then
+      if [ "$SyncYazFi" == "1" ]; then
         echo ""
         echo -e "${CCyan}13a. Please indicate which of your YazFi guest network slots you want to"
         echo -e "${CCyan}sync with the active VPN slot?${CClear}"
@@ -2369,11 +2503,13 @@ vsetup () {
     echo -e "${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
     echo -e "${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit"
     echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${CGreen}Launch"
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${InvDkGray}${CWhite} m1 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode"
-    echo -e "${InvDkGray}${CWhite} m2 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode w/ Screen"
-    echo -e "${CGreen}----------------------------------------------------------------"
+    if [ "$FromUI" == "0" ]; then
+      echo -e "${CGreen}Launch"
+      echo -e "${CGreen}----------------------------------------------------------------"
+      echo -e "${InvDkGray}${CWhite} m1 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode"
+      echo -e "${InvDkGray}${CWhite} m2 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode w/ Screen"
+      echo -e "${CGreen}----------------------------------------------------------------"
+    fi
     echo ""
     printf "Selection: "
     read -r InstallSelection
@@ -2689,17 +2825,35 @@ vsetup () {
   # Check to see if the screen option is being called and run operations normally using the screen utility
   if [ "$1" == "-screen" ]
     then
-      clear
-      echo -e "${CGreen}Executing VPNMON-R2 using the SCREEN utility...${CClear}"
-      echo ""
-      echo -e "${CGreen}Reconnect at any time using the command 'screen -r vpnmon-r2'${CClear}"
-      echo -e "${CGreen}To exit the SCREEN session, type: CTRL-A + D${CClear}"
-      echo ""
-      screen -dmS "vpnmon-r2" $APPPATH -monitor
-      sleep 2
-      read -rsp $'Press any key to continue...\n' -n1 key
-      echo -e "${CClear}"
-      exit 0
+      ScreenSess=$(screen -ls | grep "vpnmon-r2" | awk '{print $1}' | cut -d . -f 1)
+      if [ -z $ScreenSess ]; then
+        clear
+        echo -e "${CGreen}Executing VPNMON-R2 using the SCREEN utility...${CClear}"
+        echo ""
+        echo -e "${CGreen}Reconnect at any time using the command 'screen -r vpnmon-r2'${CClear}"
+        echo -e "${CGreen}To exit the SCREEN session, type: CTRL-A + D${CClear}"
+        echo ""
+        screen -dmS "vpnmon-r2" $APPPATH -monitor
+        sleep 2
+        read -rsp $'Press any key to continue...\n' -n1 key
+        echo -e "${CClear}"
+        exit 0
+      else
+        clear
+        echo -e "${CGreen}Another VPNMON-R2 Screen session is already running...${CClear}"
+        echo -e "${CGreen}Would you like to attach to this session?${CClear}"
+        if promptyn "(y/n): "; then
+          screen -dr $ScreenSess
+          sleep 2
+          echo -e "${CClear}"
+          exit 0
+        else
+          echo ""
+          echo -e "\n${CGreen}Exiting...${CClear}"
+          sleep 1
+          return
+        fi
+      fi
   fi
 
   # Check to see if the monitor option is being called and run operations normally
@@ -2708,6 +2862,9 @@ vsetup () {
       clear
       if [ -f $CFGPATH ]; then
         source $CFGPATH
+
+          # Clean up lockfile
+          rm $LOCKFILE >/dev/null 2>&1
 
           if [ -f "/opt/bin/timeout" ] # If the timeout utility is available then use it and assign variables
             then
@@ -2720,7 +2877,7 @@ vsetup () {
               timeoutlng=""
           fi
 
-          if [ $DelayStartup != "0" ]
+          if [ "$DelayStartup" != "0" ]
             then
               SPIN=$DelayStartup
               echo -e "${CGreen}Delaying VPNMON-R2 start-up for $DelayStartup seconds..."
@@ -2759,7 +2916,7 @@ while true; do
   echo -e "$(date +%s)" > $PERSIST
 
   # Testing to see if VPNMON-R2 external reset is currently running, and if so, hold off until it finishes
-  while test -f "$LOCKFILE"; do
+  while [ -f "$LOCKFILE" ]; do
     # clear screen
     clear
     SPIN=15
@@ -2776,6 +2933,8 @@ while true; do
     spinner
 
     # Reset the VPN IP/Locations after a reset occurred
+    WAN0IP="Unassigned" # Look for an updated WAN IP/Location
+    WAN1IP="Unassigned" # Look for an updated WAN IP/Location
     VPNIP="Unassigned" # Look for a new VPN IP/Location
     ICANHAZIP="" # Reset Public VPN IP
     PINGLOW=0 # Reset ping time history variables
@@ -2901,7 +3060,7 @@ while true; do
   VW_ELAPSED_TIME=$(( VW_END_TIME - VW_START_TIME ))
 
   # Determine whether to show all the stats based on user preference
-  if [ $SHOWSTATS == "1" ]
+  if [ "$SHOWSTATS" == "1" ]
     then
 
       echo -e "${CGreen} _________"
@@ -3009,7 +3168,7 @@ while true; do
     vpnport=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_port)
     vpnproto=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_proto)
 
-    if [ -z "$vpncrypto" ]; then vpncrypto=""; elif [ $vpncrypto == "tcp-client" ]; then vpncrypto="tcp"; fi
+    if [ -z "$vpncrypto" ]; then vpncrypto=""; elif [ "$vpncrypto" == "tcp-client" ]; then vpncrypto="tcp"; fi
     echo -e "${CYellow} Proto: ${InvBlue}$vpnproto${CClear}${CYellow} | Port: ${InvBlue}$vpnport${CClear}${CYellow} | Crypto: ${InvBlue}$vpncrypto${CClear}${CYellow} | AuthDigest: ${InvBlue}$vpndigest${CClear}"
 
     # Grab total bytes VPN Traffic Measurement
@@ -3168,8 +3327,8 @@ while true; do
   fi
 
   # If a different VPN slot has a lower ping than the current connection, then don't randomize and reset it to that VPN slot with lowest ping value
-  if [ $USELOWESTSLOT == "1" ]; then
-    if [ $LOWEST != $CURRCLNT ]; then
+  if [ "$USELOWESTSLOT" == "1" ]; then
+    if [ "$LOWEST" != "$CURRCLNT" ]; then
 
       LOWPINGCOUNT=$(($LOWPINGCOUNT+1))
 
@@ -3200,7 +3359,7 @@ while true; do
   fi
 
   # If a force reset command has been received by the UI, then go through a regular reset
-  if [ $FORCEDRESET == "1" ]; then
+  if [ "$FORCEDRESET" == "1" ]; then
     echo -e "\n${CRed} Forced reset captured through UI, VPNMON-R2 is executing VPN Reset${CClear}\n"
     echo -e "$(date) - VPNMON-R2 ----------> WARNING: Forced reset captured through UI - Executing VPN Reset" >> $LOGFILE
 
@@ -3222,7 +3381,7 @@ while true; do
   fi
 
   # Provide a progressbar to show script activity
-  if [ $SKIPPROGRESS == "0" ]; then
+  if [ "$SKIPPROGRESS" == "0" ]; then
     echo ""
     i=0
     while [ $i -le $INTERVAL ]
