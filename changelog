@@ -1,9 +1,9 @@
 v2.1   - (TBA)
-       - ADDED: Completely reworked the setup/config menus to make the look  RMON's. The hope was
+       - ADDED: Completely reworked the setup/config menus to make the look/feel/act like RTRMON's. The hope was
          to simplify the process, allowing one to pick and choose settings to configure, instead of having to run
          down a long laundry list of configuration questions. I have done away with the loading of current config
          values as "defaults" when hitting the enter button, as it would be fairly easy to scroll up and see what
-         value you had in place if need be.
+         value you had in place if need be. Enter on a blank line now assumes you want the system default.
        - ADDED: An extra round of VPN client kill commands when the router detects WAN trouble, just to make sure
          it pre-emptively kills everything incase these VPN clients try to reconnect while the WAN is down.
 
