@@ -1,4 +1,4 @@
-v2.1   - (TBA)
+v2.1   - (July 22, 2022)
        - ADDED: Completely reworked the setup/config menus to make the look/feel/act like RTRMON's. The hope was
          to simplify the process, allowing one to pick and choose settings to configure, instead of having to run
          down a long laundry list of configuration questions. I have done away with the loading of current config
@@ -6,8 +6,8 @@ v2.1   - (TBA)
          value you had in place if need be. Enter on a blank line now assumes you want the system default.
        - ADDED: An extra round of VPN client kill commands when the router detects WAN trouble, just to make sure
          it pre-emptively kills everything incase these VPN clients try to reconnect while the WAN is down.
-       - FIXED: Changed some of the logic of the WAN down scenario, and seems to be transitioning much smoother
-         through the various stages of dealing with a lost connection.
+       - FIXED: Vastly reworked the logic of the WAN down scenario, and seems to be transitioning much smoother
+         through the various stages of dealing with a lost connection. Definitely game-changing!!
 
 v2.01  - (July 17, 2022)
        * ADDED: New logic to determine if a screen session already is running with the alias 'vpnmon-r2'. If there
