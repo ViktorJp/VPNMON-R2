@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.1 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.11 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.1"                                       # Current version of VPNMON-R2
+Version="2.11"                                      # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -678,9 +678,15 @@ vpnresetlowestping() {
       # Reset VPN connection to one with lowest PING
         service start_vpnclient$LOWEST >/dev/null 2>&1
         logger -t VPN Client$LOWEST "Active" >/dev/null 2>&1
-        printf "${CGreen}\r [VPN$LOWEST Client ON]                                       "
+        printf "${CGreen}\r [VPN$LOWEST Client ON]                                        "
         sleep 2
         echo -e "$(date) - VPNMON-R2 - VPN$LOWEST Client ON - Lowest PING of $N VPN slots" >> $LOGFILE
+
+      # Reset the VPN Director Rules
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Restart VPN Director Rules]                                  "
+        service restart_vpnrouting0
+        sleep 2
 
       # Optionally sync active VPN Slot with YazFi guest network(s)
         if [ $SyncYazFi -eq 1 ]
@@ -1359,6 +1365,12 @@ vpnreset() {
       sleep 2
     fi
 
+    # Reset the VPN Director Rules
+    printf "${CGreen}\r                                                               "
+    printf "${CGreen}\r [Restart VPN Director Rules]                                  "
+    service restart_vpnrouting0
+    sleep 2
+
     # Optionally sync active VPN Slot with YazFi guest network(s)
     if [ $SyncYazFi -eq 1 ]
     then
@@ -1479,7 +1491,7 @@ checkvpn() {
     while [ $CNT -lt $TRIES ]; do # Loop through number of tries
       ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
       RC=$?
-      ICANHAZIP=$(curl --silent --fail --interface $TUN --request GET --url http://icanhazip.com) # Grab the public IP of the VPN Connection
+      ICANHAZIP=$(curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com) # Grab the public IP of the VPN Connection
       IC=$?
       if [ $RC -eq 0 ] && [ $IC -eq 0 ];then  # If both ping/curl come back successful, then proceed
         STATUS=1
@@ -1568,7 +1580,7 @@ wancheck() {
 
         # Get the public IP of the WAN, determine the city from it, and display it on screen
         if [ "$WAN0IP" == "Unassigned" ]; then
-          WAN0IP=$(curl --silent --fail --interface $WAN0IFNAME --request GET --url http://icanhazip.com)
+          WAN0IP=$(curl --silent --fail --interface $WAN0IFNAME --request GET --url https://ipv4.icanhazip.com)
           WAN0CITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$WAN0IP/city"
           WAN0CITY="$(eval $WAN0CITY)"; if echo $WAN0CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN0 city to $WAN0CITY" >> $LOGFILE
@@ -1605,7 +1617,7 @@ wancheck() {
 
         # Get the public IP of the WAN, determine the city from it, and display it on screen
         if [ "$WAN1IP" == "Unassigned" ]; then
-          WAN1IP=$(curl --silent --fail --interface $WAN1IFNAME --request GET --url http://icanhazip.com)
+          WAN1IP=$(curl --silent --fail --interface $WAN1IFNAME --request GET --url https://ipv4.icanhazip.com)
           WAN1CITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$WAN1IP/city"
           WAN1CITY="$(eval $WAN1CITY)"; if echo $WAN1CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WAN1CITY" >> $LOGFILE
@@ -3351,17 +3363,20 @@ while true; do
   if [ $NordVPNLoadReset -le $VPNLOAD ] || [ $SurfSharkLoadReset -le $VPNLOAD ] || [ $PPLoadReset -le $VPNLOAD ]; then
 
       if [ $UseNordVPN -eq 1 ];then
-        echo -e "\n${CRed} NordVPN Server Load is higher than $NordVPNLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
+        echo -e "\n${CRed} NordVPN Server Load is higher than $NordVPNLoadReset %."
+        echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
         echo -e "$(date) - VPNMON-R2 ----------> WARNING: NordVPN Server Load > $NordVPNLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
       if [ $UseSurfShark -eq 1 ];then
-        echo -e "\n${CRed} SurfShark Server Load is higher than $SurfSharkLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
+        echo -e "\n${CRed} SurfShark Server Load is higher than $SurfSharkLoadReset %."
+        echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
         echo -e "$(date) - VPNMON-R2 ----------> WARNING: SurfShark Server Load > $SurfSharkLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
       if [ $UsePP -eq 1 ];then
-        echo -e "\n${CRed} Perfect Privacy Server Load is higher than $PPLoadReset %, VPNMON-R2 is executing VPN Reset${CClear}\n"
+        echo -e "\n${CRed} Perfect Privacy Server Load is higher than $PPLoadReset %."
+        echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
         echo -e "$(date) - VPNMON-R2 ----------> WARNING: Perfect Privacy Server Load > $PPLoadReset% - Executing VPN Reset" >> $LOGFILE
       fi
 
@@ -3437,7 +3452,7 @@ while true; do
   # If a force reset command has been received by the UI, then go through a regular reset
   if [ "$FORCEDRESET" == "1" ]; then
     echo -e "\n${CRed} Forced reset captured through UI, VPNMON-R2 is executing VPN Reset${CClear}\n"
-    echo -e "$(date) - VPNMON-R2 ----------> WARNING: Forced reset captured through UI - Executing VPN Reset" >> $LOGFILE
+    echo -e "$(date) - VPNMON-R2 ----------> INFO: Forced reset captured through UI - Executing VPN Reset" >> $LOGFILE
 
         vpnreset
 
