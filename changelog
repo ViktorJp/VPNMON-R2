@@ -1,3 +1,8 @@
+v2.11  - (August 3, 2022)
+       - ADDED: Added a VPN Director rule restart after VPNMON-R2 goes through a reset cycle to help with 
+         possible compatibility issues in dual WAN/secondary WAN disconnects.
+       - FIXED: Minor tweaks and corrections
+
 v2.1   - (July 22, 2022)
        - ADDED: Completely reworked the setup/config menus to make the look/feel/act like RTRMON's. The hope was
          to simplify the process, allowing one to pick and choose settings to configure, instead of having to run
