@@ -3,9 +3,7 @@ Future Enhancements (Planned)
 
 To-Do:
 ------
-* spdMerlin integration that changes which VPN tunnel to run speed tests from when the slots change -- thanks @iTyPsIDg
-* Integrate VPNON functionality within VPNMON-R2 itself, as in being able to call a vpn reset function within VPNMON-R2
-  and performing the same function as what VPNON does.
+
 
 Completed:
 ----------
@@ -17,6 +15,8 @@ Completed:
   based on user input/preference) (completed) 
 * Other possible stats to display:
    - Snapshot of current upload/download bandwidth amounts going over VPN pipe (if this is even available) (completed)
+* Integrate VPNON functionality within VPNMON-R2 itself, as in being able to call a vpn reset function within VPNMON-R2
+  and performing the same function as what VPNON does.
 
 Ideas or Discussion
 -------------------
