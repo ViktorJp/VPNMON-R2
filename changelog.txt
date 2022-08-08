@@ -1,6 +1,6 @@
 v2.12  - (August 8, 2022)
        - CHANGED: the color scheme to match that of RTRMON and PWRMON a bit more. Seeing a little more uniformity
-         and standardization between the two helps calm my OCD. ;)
+         and standardization between the three helps calm my OCD. ;)
        - FIXED: realizing that the timezone abbreviation can vary from 1 char to 5 chars across the world, so I
          have built in some logic that adjusts the top line that includes the current line to ensure that it
          lines up with the subsequent lines underneath. Yep, another OCD-related fix. lol
