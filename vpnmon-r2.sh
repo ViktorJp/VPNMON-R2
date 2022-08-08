@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.11 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.12 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.11"                                      # Current version of VPNMON-R2
+Version="2.12"                                      # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -243,12 +243,12 @@ progressbar() {
     barsp=$((barlen-barch))
     progr=$((100*$1/$2))
 
-    if [ $progr -lt 60 ]; then
-      printf "${CGreen}\r [%.${barch}s%.${barsp}s]${CClear} ${CYellow}${InvBlue}${i}s / ${progr}%%\r${CClear}" "$barchars" "$barspaces"
-    elif [ $progr -gt 59 ] && [ $progr -lt 85 ]; then
-      printf "${CYellow}\r [%.${barch}s%.${barsp}s]${CClear} ${CYellow}${InvBlue}${i}s / ${progr}%%\r${CClear}" "$barchars" "$barspaces"
+    if [ $progr -le 60 ]; then
+      printf "${CGreen}\r [%.${barch}s%.${barsp}s]${CClear} ${CWhite}${InvDkGray}${i}s / ${progr}%%\r${CClear}" "$barchars" "$barspaces"
+    elif [ $progr -gt 60 ] && [ $progr -le 85 ]; then
+      printf "${CYellow}\r [%.${barch}s%.${barsp}s]${CClear} ${CWhite}${InvDkGray}${i}s / ${progr}%%\r${CClear}" "$barchars" "$barspaces"
     else
-      printf "${CRed}\r [%.${barch}s%.${barsp}s]${CClear} ${CYellow}${InvBlue}${i}s / ${progr}%%\r${CClear}" "$barchars" "$barspaces"
+      printf "${CRed}\r [%.${barch}s%.${barsp}s]${CClear} ${CWhite}${InvDkGray}${i}s / ${progr}%%\r${CClear}" "$barchars" "$barspaces"
     fi
   fi
 
@@ -499,10 +499,10 @@ checkwan () {
   # Show that we're testing the WAN connection
   if [ "$1" == "Loop" ]
   then
-    printf "${CGreen}\r [Checking WAN Connectivity]..."
+    printf "${CYellow}\r [Checking WAN Connectivity]..."
   elif [ "$1" = "Reset" ]
   then
-    printf "${CGreen}\r [Checking WAN Connectivity]..."
+    printf "${CYellow}\r [Checking WAN Connectivity]..."
   fi
 
   #Run main checkwan loop
@@ -1510,7 +1510,7 @@ checkvpn() {
         CONNHOSTPING=$(ping -I $WANIFNAME -c 1 $VPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
         testping=${CONNHOSTPING%.*}
 
-        echo -e "${CGreen} ==VPN$1 Tunnel Active | ||${CWhite}${InvGreen} $AVGPING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$VPNCITY${CClear}"
+        echo -e "${InvGreen} ${CClear}${CGreen}==VPN$1 Tunnel Active | ||${CWhite}${InvGreen} $AVGPING ms ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$VPNCITY${CClear}"
         CURRCLNT=$1
         break
       else
@@ -1519,7 +1519,7 @@ checkvpn() {
 
         if [ $CNT -eq $TRIES ];then # But if it fails, report back that we have an issue requiring a VPN reset
           STATUS=0
-          echo -e "${CRed} x-VPN$1 Ping/http failed${CClear}"
+          echo -e "${InvRed} ${CClear}${CRed}x-VPN$1 Ping/http failed${CClear}"
           echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPN$1 Ping/HTTP response failed" >> $LOGFILE
         fi
       fi
@@ -1587,9 +1587,9 @@ wancheck() {
         fi
         #WAN0CITY="Your City"
         if [ $WAN0PING == "DW-FO" ]; then
-          echo -e "${CGreen} ==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WAN0CITY${CClear}"
+          echo -e "${InvGreen} ${CClear}${CGreen}==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN0CITY${CClear}"
         else
-          echo -e "${CGreen} ==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} $WAN0PING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WAN0CITY${CClear}"
+          echo -e "${InvGreen} ${CClear}${CGreen}==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} $WAN0PING ms ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN0CITY${CClear}"
         fi
 
       else
@@ -1624,9 +1624,9 @@ wancheck() {
         fi
         #WAN1CITY="Your City"
         if [ $WAN1PING == "DW-FO" ]; then
-          echo -e "${CGreen} ==WAN1 $WAN1IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WAN1CITY${CClear}"
+          echo -e "${InvGreen} ${CClear}${CGreen}==WAN1 $WAN1IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN1CITY${CClear}"
         else
-          echo -e "${CGreen} ==WAN1 $WAN1IFNAME Active | ||${CWhite}${InvGreen} $WAN1PING ms ${CClear}${CGreen}|| | ${CClear}${CYellow}Exit: ${InvBlue}$WAN1CITY${CClear}"
+          echo -e "${InvGreen} ${CClear}${CGreen}==WAN1 $WAN1IFNAME Active | ||${CWhite}${InvGreen} $WAN1PING ms ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN1CITY${CClear}"
         fi
 
       else
@@ -3093,8 +3093,17 @@ while true; do
   echo -e "${CGreen}/${CRed}General Info${CClear}${CGreen}\_____________________________________________________${CClear}"
   echo ""
 
-  # Show the date and time
-  echo -e "${CWhite} $(date)${CGreen} -------- ${CYellow}Last Reset: ${InvBlue}$LASTVPNRESET${CClear}"
+  # Show the date and time and adjust the length of the line based on the number of chars in the timezone abbreviation
+  tzone=$(date +%Z)
+  tzonechars=$(echo ${#tzone})
+
+  if [ $tzonechars = 1 ]; then dashes="---------";
+  elif [ $tzonechars = 2 ]; then dashes="--------";
+  elif [ $tzonechars = 3 ]; then dashes="-------";
+  elif [ $tzonechars = 4 ]; then dashes="------";
+  elif [ $tzonechars = 5 ]; then dashes="-----"; fi
+
+  echo -e "${InvCyan} ${CClear}${CCyan} $(date)${CGreen} $dashes ${CGreen}Last Reset: ${CWhite}${InvDkGray}$LASTVPNRESET${CClear}"
 
   # Determine if a VPN Client is active, first by getting the VPN state from NVRAM
   state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
@@ -3109,13 +3118,13 @@ while true; do
   if [ -z $ICANHAZIP ]; then ICANHAZIP="Probing"; fi
 
   # Display the VPN and WAN states along with the public VPN IP and other info
-  echo -e "${CCyan} VPN State 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5${CClear}${CGreen} ---- ${CYellow}Public VPN IP: ${InvBlue}$ICANHAZIP${CClear}"
+  echo -e "${InvCyan} ${CClear}${CCyan} VPN State 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5${CClear}${CGreen} --- ${CGreen}Public VPN IP: ${CWhite}${InvDkGray}$ICANHAZIP${CClear}"
 
   if [ $ResetOption -eq 1 ]
     then
-      echo -e "${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} ------------------ ${CYellow}Sched Reset: ${InvBlue}$ConvDailyResetTime${CClear}${CYellow} / ${InvBlue}$INTERVAL Sec${CClear}"
+      echo -e "${InvCyan} ${CClear}${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} ----------------- ${CGreen}Sched Reset: ${CWhite}${InvDkGray}$ConvDailyResetTime${CClear}${CYellow} / ${CWhite}${InvDkGray}$INTERVAL Sec${CClear}"
     else
-      echo -e "${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} --------------------- ${CYellow}Interval: ${InvBlue}$INTERVAL Sec${CClear}"
+      echo -e "${InvCyan} ${CClear}${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} -------------------- ${CGreen}Interval: ${CWhite}${InvDkGray}$INTERVAL Sec${CClear}"
   fi
 
   echo -e "${CGreen} __________${CClear}"
@@ -3240,14 +3249,14 @@ while true; do
     # Display some of the NordVPN/SurfShark/PerfectPrivacy specific stats
     if [ $NordVPNSuperRandom -eq 1 ] || [ $UseNordVPN -eq 1 ] || [ $SurfSharkSuperRandom -eq 1 ] || [ $UseSurfShark -eq 1 ] || [ $PPSuperRandom -eq 1 ] || [ $UsePP -eq 1 ]
       then
-        echo -e "${CYellow} Ping Lo:${CWhite}${InvGreen}$PINGLOW${CClear}${CYellow} Hi:${CWhite}${InvRed}$PINGHIGH${CClear}${CYellow} ms | Load: ${InvBlue} $VPNLOAD% ${CClear}${CYellow} | Cfg: ${InvBlue}$RANDOMMETHOD${CClear}"
+        echo -e "${InvGreen} ${CClear}${CGreen} Ping Lo:${CWhite}${InvGreen}$PINGLOW${CClear}${CGreen} Hi:${CWhite}${InvRed}$PINGHIGH${CClear}${CGreen} ms | Load: ${CWhite}${InvDkGray} $VPNLOAD% ${CClear}${CGreen} | Cfg: ${CWhite}${InvDkGray}$RANDOMMETHOD${CClear}"
 
         # Display the high/low ping times, and for non-NordVPN/SurfShark/PerfectPrivacy customers, whether Skynet update is enabled.
         elif [ $UpdateSkynet -eq 0 ]
         then
-          echo -e "${CYellow} Ping Lo:${CWhite}${InvGreen}$PINGLOW${CClear}${CYellow} Hi:${CWhite}${InvRed}$PINGHIGH${CClear}${CYellow} ms | Cfg: ${InvBlue}$RANDOMMETHOD${CClear}"
+          echo -e "${InvGreen} ${CClear}${CGreen} Ping Lo:${CWhite}${InvGreen}$PINGLOW${CClear}${CGreen} Hi:${CWhite}${InvRed}$PINGHIGH${CClear}${CGreen} ms | Cfg: ${CWhite}${InvDkGray}$RANDOMMETHOD${CClear}"
         else
-          echo -e "${CYellow} Ping Lo:${CWhite}${InvGreen}$PINGLOW${CClear}${CYellow} Hi:${CWhite}${InvRed}$PINGHIGH${CClear}${CYellow} ms | Skynet: ${InvBlue}[Y]${CClear}${CYellow} | Cfg: ${InvBlue}$RANDOMMETHOD${CClear}"
+          echo -e "${InvGreen} ${CClear}${CGreen} Ping Lo:${CWhite}${InvGreen}$PINGLOW${CClear}${CGreen} Hi:${CWhite}${InvRed}$PINGHIGH${CClear}${CGreen} ms | Skynet: ${CWhite}${InvDkGray}[Y]${CClear}${CGreen} | Cfg: ${CWhite}${InvDkGray}$RANDOMMETHOD${CClear}"
     fi
 
     # Display some general OpenVPN connection specific Stats
@@ -3257,7 +3266,7 @@ while true; do
     vpnproto=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_proto)
 
     if [ -z "$vpncrypto" ]; then vpncrypto=""; elif [ "$vpncrypto" == "tcp-client" ]; then vpncrypto="tcp"; fi
-    echo -e "${CYellow} Proto: ${InvBlue}$vpnproto${CClear}${CYellow} | Port: ${InvBlue}$vpnport${CClear}${CYellow} | Crypto: ${InvBlue}$vpncrypto${CClear}${CYellow} | AuthDigest: ${InvBlue}$vpndigest${CClear}"
+    echo -e "${InvGreen} ${CClear}${CGreen} Proto: ${CWhite}${InvDkGray}$vpnproto${CClear}${CGreen} | Port: ${CWhite}${InvDkGray}$vpnport${CClear}${CGreen} | Crypto: ${CWhite}${InvDkGray}$vpncrypto${CClear}${CGreen} | AuthDigest: ${CWhite}${InvDkGray}$vpndigest${CClear}"
 
     # Grab total bytes VPN Traffic Measurement
     txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client$CURRCLNT/status 2>/dev/null)
@@ -3290,10 +3299,10 @@ while true; do
     if [ "$oldrxbytes" == "0" ] || [ "$oldtxbytes" == "0" ]
       then
         # Still gathering stats
-        echo -e "${CYellow} [Gathering VPN RX and TX Stats]... | Ttl RX:${InvBlue}$txgbytes GB${CClear} ${CYellow}TX:${InvBlue}$rxgbytes GB${CClear}"
+        echo -e "${InvYellow} ${CClear}${CYellow} [Gathering VPN RX and TX Stats]... ${CGreen}| Ttl RX:${CWhite}${InvDkGray}$txgbytes GB${CClear} ${CGreen}TX:${CWhite}${InvDkGray}$rxgbytes GB${CClear}"
       else
         # Display current avg rx/tx rates and total rx/tx bytes for active VPN tunnel.
-        echo -e "${CYellow} Avg RX:${InvBlue}$txmbrate Mbps${CClear}${CYellow} TX:${InvBlue}$rxmbrate Mbps${CClear}${CYellow} | Ttl RX:${InvBlue}$txgbytes GB${CClear} ${CYellow}TX:${InvBlue}$rxgbytes GB${CClear}"
+        echo -e "${InvGreen} ${CClear}${CGreen} Avg RX:${CWhite}${InvDkGray}$txmbrate Mbps${CClear}${CGreen} TX:${CWhite}${InvDkGray}$rxmbrate Mbps${CClear}${CGreen} | Ttl RX:${CWhite}${InvDkGray}$txgbytes GB${CClear} ${CGreen}TX:${CWhite}${InvDkGray}$rxgbytes GB${CClear}"
     fi
 
     #VPN Traffic Measurement assignment of newest bytes to old counter before timer kicks off again
