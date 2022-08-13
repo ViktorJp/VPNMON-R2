@@ -1,8 +1,13 @@
-v2.13  - (TBA)
+v2.15  - (TBA)
        - CHANGED: The order of operations for checkwan, and now occurs directly after the interface tab is drawn.
          It makes sense to perform this operation here, before the WAN0/1 checks are done, in a more optimized
          fashion.  Also, changed the look/feel of the checkwan/load check notifications to fall more in line with
          the rest of the theme.
+       - CHANGED: In a dual-WAN scenario, the high ping rule will be disabled should the WAN failover to WAN1,
+         due to the fact that it will most likely be a slower more latent device.  In this scenario, this rule
+         would most likely cause continuous resets due to higher ping/latency, and is rightly so ignored in this
+         particular scenario.
+       - FIXED: Minor tweaks and corrections
          
 v2.12  - (August 8, 2022)
        - CHANGED: the color scheme to match that of RTRMON and PWRMON a bit more. Seeing a little more uniformity
