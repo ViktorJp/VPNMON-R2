@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.12 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.15 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.12"                                      # Current version of VPNMON-R2
+Version="2.15"                                      # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -70,6 +70,7 @@ USELOWESTSLOT=1                                     # Option to select either ra
 FORCEDRESET=0                                       # Variable tracks whether a forced reset is initiated through the UI
 LOWPINGCOUNT=0                                      # Counter for the number of tries before switching to lower ping server
 PINGCHANCES=5                                       # Number of chances your current connection gets before reconnecting to
+IGNOREHIGHPING=0                                    # Ignore high ping rule if running on WAN1 failover mode
                                                     # faster server
 SPIN=15                                             # 15-second Spin timer
 state1=0                                            # Initialize the VPN connection states for VPN Clients 1-5
@@ -499,7 +500,7 @@ checkwan () {
   # Show that we're testing the WAN connection
   if [ "$1" == "Loop" ]
   then
-    printf "${CYellow}\r [Checking WAN Connectivity]..."
+    printf "\r${InvYellow} ${CClear}${CYellow} [Checking WAN Connectivity]..."
   elif [ "$1" = "Reset" ]
   then
     printf "${CYellow}\r [Checking WAN Connectivity]..."
@@ -521,7 +522,7 @@ checkwan () {
           then
             if [ "$1" == "Loop" ]
             then
-              printf "${CGreen}\r [Checking WAN Connectivity]...ACTIVE"
+              printf "\r${InvGreen} ${CClear}${CGreen} [Checking WAN Connectivity]...ACTIVE"
               sleep 1
               printf "\33[2K\r"
             elif [ "$1" = "Reset" ]
@@ -673,7 +674,7 @@ vpnresetlowestping() {
 
       # Check the WAN state before continuing
         printf "${CGreen}\r                                                               "
-        checkwan Loop
+        checkwan Reset
 
       # Reset VPN connection to one with lowest PING
         service start_vpnclient$LOWEST >/dev/null 2>&1
@@ -1627,6 +1628,7 @@ wancheck() {
           echo -e "${InvGreen} ${CClear}${CGreen}==WAN1 $WAN1IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN1CITY${CClear}"
         else
           echo -e "${InvGreen} ${CClear}${CGreen}==WAN1 $WAN1IFNAME Active | ||${CWhite}${InvGreen} $WAN1PING ms ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN1CITY${CClear}"
+          IGNOREHIGHPING=1
         fi
 
       else
@@ -3131,6 +3133,9 @@ while true; do
   echo -e "${CGreen}/${CRed}Interfaces${CClear}${CGreen}\_______________________________________________________${CClear}"
   echo ""
 
+  # Check the WAN connectivity to determine if we need to keep looping until WAN connection is re-established
+  checkwan Loop
+
   # Initialize timer to measure how long it takes to check the WAN & VPN interfaces
   VW_ELAPSED_TIME=0
   VW_START_TIME=$(date +%s)
@@ -3197,9 +3202,6 @@ while true; do
         RANDOMMETHOD="Standard"
     fi
 
-    # Check the WAN connectivity to determine if we need to keep looping until WAN connection is re-established
-    checkwan Loop
-
     # Initialize timer to measure how long it takes to grab the VPN server load
     LOAD_ELAPSED_TIME=0
 
@@ -3207,7 +3209,7 @@ while true; do
       then
         # Get the NordVPN server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
-        printf "${CYellow}\r [Checking NordVPN Server Load]..."
+        printf "\r${InvYellow} ${CClear}${CYellow} [Checking NordVPN Server Load]..."
         VPNLOAD=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16354" | jq '.[] | select(.station == "'"$VPNIP"'") | .load')
         printf "\r"
         LOAD_END_TIME=$(date +%s)
@@ -3218,7 +3220,7 @@ while true; do
       then
         # Get the SurfShark server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
-        printf "${CYellow}\r [Checking SurfShark Server Load]..."
+        printf "\r${InvYellow} ${CClear}${CYellow}  [Checking SurfShark Server Load]..."
         VPNLOAD=$(curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.connectionName == "'"$VPNIP"'") | .load')
         printf "\r"
         LOAD_END_TIME=$(date +%s)
@@ -3229,7 +3231,7 @@ while true; do
       then
         # Get the Perfect Privacy server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
-        printf "${CYellow}\r [Checking Perfect Privacy Server Load]..."
+        printf "\r${InvYellow} ${CClear}${CYellow}  [Checking Perfect Privacy Server Load]..."
         PPcurl=$(curl --silent --retry 3 "https://www.perfect-privacy.com/api/traffic.json")
         PP_in=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_in"')
         PP_out=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_out"')
@@ -3406,7 +3408,7 @@ while true; do
   fi
 
   # If the AVGPING average ping across the tunnel is greater than the set variable, reset the VPN and hopefully land on a server with lesser ping times
-  if [ ${AVGPING%.*} -gt $MINPING ]; then
+  if [ ${AVGPING%.*} -gt $MINPING ] && [ $IGNOREHIGHPING == "0" ]; then
     echo -e "\n${CRed} Average PING across VPN tunnel is higher than $MINPING ms, VPNMON-R2 is executing VPN Reset${CClear}\n"
     echo -e "$(date) - VPNMON-R2 ----------> WARNING: AVG PING across VPN tunnel > $MINPING ms - Executing VPN Reset" >> $LOGFILE
 
@@ -3424,6 +3426,8 @@ while true; do
     oldtxbytes=0
     newrxbytes=0
     newtxbytes=0
+  else
+    IGNOREHIGHPING=0
   fi
 
   # If a different VPN slot has a lower ping than the current connection, then don't randomize and reset it to that VPN slot with lowest ping value
