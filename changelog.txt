@@ -1,3 +1,6 @@
+v2.16  - (TBA)
+       - FIXED: Minor code optimizations and tweaks
+
 v2.15  - (August 15, 2022)
        - CHANGED: The order of operations for checkwan, and now occurs directly after the interface tab is drawn.
          It makes sense to perform this operation here, before the WAN0/1 checks are done, in a more optimized
