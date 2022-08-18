@@ -3,7 +3,7 @@ Future Enhancements (Planned)
 
 To-Do:
 ------
-
+- WeVPN integration
 
 Completed:
 ----------
