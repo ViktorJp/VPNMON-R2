@@ -3434,6 +3434,9 @@ while true; do
       elif [ $PPSuperRandom -eq 1 ]
         then
           RANDOMMETHOD="PerfPriv SuperRandom"
+      elif [ $WeVPNSuperRandom -eq 1 ]
+        then
+          RANDOMMETHOD="WeVPN SuperRandom"
       else
         RANDOMMETHOD="Standard"
     fi
