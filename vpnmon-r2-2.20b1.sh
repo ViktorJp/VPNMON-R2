@@ -1372,6 +1372,7 @@ vpnreset() {
     if [ $UpdateVPNMGR -eq 1 ]
     then
 
+      echo ""
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Refresh VPNMGRs NordVPN/PIA/WeVPN Server Locations]          "
       sh /jffs/scripts/service-event start vpnmgrrefreshcacheddata >/dev/null 2>&1
@@ -1384,6 +1385,7 @@ vpnreset() {
     if [ "$USELOWESTSLOT" == "0" ]; then
 
     # Pick a random VPN Client to connect to
+      echo ""
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Randomly selecting a VPN Client between 1 and $N]            "
       sleep 1
@@ -1447,6 +1449,7 @@ vpnreset() {
         ;;
       esac
       sleep 1
+      echo ""
     else
       i=0
       WANIFNAME=$(get_wan_setting ifname)
@@ -1471,6 +1474,7 @@ vpnreset() {
           fi
       done
 
+      echo ""
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Starting fastest PING VPN$LOWEST Client ON]                  "
       service start_vpnclient$LOWEST >/dev/null 2>&1
@@ -1482,6 +1486,7 @@ vpnreset() {
     fi
 
     # Reset the VPN Director Rules
+    echo ""
     printf "${CGreen}\r                                                               "
     printf "${CGreen}\r [Restart VPN Director Rules]                                  "
     service restart_vpnrouting0 >/dev/null 2>&1
