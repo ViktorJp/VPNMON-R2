@@ -3,6 +3,9 @@ v2.20  - (TBA)
          functionality. Please note: WeVPN does not provide server loads (yet), and will incorporate that when it
          becomes available. Also, they don't provide straight IP addresses for their VPN hosts, which makes it
          more difficult to make it compatible with Skynet, so these two options are grayed out.
+       - CHANGED: Changed the logic that kills VPN client slots to only kill the number of VPN clients you have
+         configured for VPNMON-R2's purposes, and leaves all others alone in case you are using them for other
+         purposes.  Thanks to @IKNOWNOTHING for this great suggestion!
        - FIXED: Minor code optimizations and tweaks
 
 v2.15  - (August 15, 2022)
