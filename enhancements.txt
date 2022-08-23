@@ -3,10 +3,11 @@ Future Enhancements (Planned)
 
 To-Do:
 ------
-- WeVPN integration
+* Only kill the number of VPN slots that are actually configured per VPNMON-R2 config.
 
 Completed:
 ----------
+* WeVPN integration
 * Other VPN providers that offer API solutions to easier integrate between them and vpnmon-r2, starting with NordVPN
    - Surfshark VPN integration (completed)
    - Perfect privacy VPN integration (completed)
