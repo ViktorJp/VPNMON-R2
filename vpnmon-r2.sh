@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.15 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.20 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.15"                                      # Current version of VPNMON-R2
+Version="2.20"                                      # Current version of VPNMON-R2
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 Beta=0                                              # Beta Testmode on/off
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -131,6 +131,14 @@ PPCountry2=""
 PPCountry3=""
 PPSuperRandom=0
 PPLoadReset=50
+
+UseWeVPN=0                                          # Variables for WeVPN
+WeVPNMultipleCountries=0
+WeVPNCountry="USA"
+WeVPNCountry2=""
+WeVPNCountry3=""
+WeVPNSuperRandom=0
+WeVPNLoadReset=50
 
 # Color variables
 CBlack="\e[1;30m"
@@ -564,11 +572,13 @@ checkwan () {
           fi
 
           # Preemptively kill all the VPN Clients incase they're trying to reconnect on their own
-          service stop_vpnclient1 >/dev/null 2>&1
-          service stop_vpnclient2 >/dev/null 2>&1
-          service stop_vpnclient3 >/dev/null 2>&1
-          service stop_vpnclient4 >/dev/null 2>&1
-          service stop_vpnclient5 >/dev/null 2>&1
+
+          i=0
+          while [ $i -ne $N ]
+            do
+              i=$(($i+1))
+              service stop_vpnclient$i >/dev/null 2>&1
+          done
 
           # Continue to test for WAN connectivity while in this loop. If it comes back up, break out of the loop and reset VPN
           if [ "$($timeoutcmd$timeoutsec nvram get wan0_state_t)" -ne 2 ] && [ "$($timeoutcmd$timeoutsec nvram get wan1_state_t)" -ne 2 ]
@@ -634,11 +644,12 @@ vpnresetlowestping() {
     # Kill all current VPN client sessions
       echo ""
       printf "${CGreen}\r [Killing all VPN Client Connections]                          "
-      service stop_vpnclient1 >/dev/null 2>&1
-      service stop_vpnclient2 >/dev/null 2>&1
-      service stop_vpnclient3 >/dev/null 2>&1
-      service stop_vpnclient4 >/dev/null 2>&1
-      service stop_vpnclient5 >/dev/null 2>&1
+      i=0
+      while [ $i -ne $N ]
+        do
+          i=$(($i+1))
+          service stop_vpnclient$i >/dev/null 2>&1
+      done
 
     # Wait for confirmation that all VPN client slots are at 0 (disconnected)
       vpncount=0
@@ -659,11 +670,14 @@ vpnresetlowestping() {
           vpncount=$(($vpncount+1))
           if [ "$vpncount" = "60" ]; then
             printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...         "
-            service stop_vpnclient1 >/dev/null 2>&1
-            service stop_vpnclient2 >/dev/null 2>&1
-            service stop_vpnclient3 >/dev/null 2>&1
-            service stop_vpnclient4 >/dev/null 2>&1
-            service stop_vpnclient5 >/dev/null 2>&1
+
+            i=0
+            while [ $i -ne $N ]
+              do
+                i=$(($i+1))
+                service stop_vpnclient$i >/dev/null 2>&1
+            done
+
             vpncount=0
           fi
         fi
@@ -686,7 +700,7 @@ vpnresetlowestping() {
       # Reset the VPN Director Rules
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Restart VPN Director Rules]                                  "
-        service restart_vpnrouting0
+        service restart_vpnrouting0 >/dev/null 2>&1
         sleep 2
 
       # Optionally sync active VPN Slot with YazFi guest network(s)
@@ -797,11 +811,12 @@ vpnreset() {
 
   # Kill all current VPN client sessions
     printf "${CGreen}\r [Killing all VPN Client Connections]...                          "
-    service stop_vpnclient1 >/dev/null 2>&1
-    service stop_vpnclient2 >/dev/null 2>&1
-    service stop_vpnclient3 >/dev/null 2>&1
-    service stop_vpnclient4 >/dev/null 2>&1
-    service stop_vpnclient5 >/dev/null 2>&1
+    i=0
+    while [ $i -ne $N ]
+      do
+        i=$(($i+1))
+        service stop_vpnclient$i >/dev/null 2>&1
+    done
 
   # Wait for confirmation that all VPN client slots are at 0 (disconnected)
     vpncount=0
@@ -822,11 +837,14 @@ vpnreset() {
         vpncount=$(($vpncount+1))
         if [ "$vpncount" = "60" ]; then
           printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...         "
-          service stop_vpnclient1 >/dev/null 2>&1
-          service stop_vpnclient2 >/dev/null 2>&1
-          service stop_vpnclient3 >/dev/null 2>&1
-          service stop_vpnclient4 >/dev/null 2>&1
-          service stop_vpnclient5 >/dev/null 2>&1
+
+          i=0
+          while [ $i -ne $N ]
+            do
+              i=$(($i+1))
+              service stop_vpnclient$i >/dev/null 2>&1
+          done
+
           vpncount=0
         fi
       fi
@@ -1007,6 +1025,62 @@ vpnreset() {
       PPRandomCountry=$PPCountry
     fi
 
+  # Determine if multiple WeVPN countries need to be considered, and pick a random one
+    if [ $WeVPNMultipleCountries -eq 1 ]
+    then
+
+      # Determine how many countries we're dealing with
+      if [ -z "$WeVPNCountry2" ] || [ "$WeVPNCountry2" == "0" ]
+      then
+            COUNTRYTOTAL2=0
+      else
+            COUNTRYTOTAL2=1
+      fi
+
+      if [ -z "$WeVPNCountry3" ] || [ "$WeVPNCountry3" == "0" ]
+      then
+            COUNTRYTOTAL3=0
+      else
+            COUNTRYTOTAL3=1
+      fi
+
+      COUNTRYTOTAL=$(( COUNTRYTOTAL2 + COUNTRYTOTAL3 + 1 ))
+
+      # Generate a number between 1 and the total # of countries, to choose which country to connect to
+        RANDOMCOUNTRY=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+        COUNTRYNUM=$(( RANDOMCOUNTRY % COUNTRYTOTAL + 1 ))
+
+      # Set COUNTRYNUM to 1 in that rare case that it comes out to 0
+        if [ $COUNTRYNUM -eq 0 ]
+          then
+          COUNTRYNUM=1
+        fi
+
+      # Pick and assign the selected Perfect Privacy Country
+        case ${COUNTRYNUM} in
+
+          1)
+              WeVPNRandomCountry=$WeVPNCountry
+          ;;
+
+          2)
+              WeVPNRandomCountry=$WeVPNCountry2
+          ;;
+
+          3)
+              WeVPNRandomCountry=$WeVPNCountry3
+          ;;
+
+        esac
+        echo ""
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Random WeVPN Multi-Country selected: $WeVPNRandomCountry]    "
+        echo -e "$(date) - VPNMON-R2 - Randomly selected WeVPN Country: $WeVPNRandomCountry" >> $LOGFILE
+        sleep 1
+    else
+      WeVPNRandomCountry=$WeVPNCountry
+    fi
+
   # Export NordVPN/PerfectPrivacy IPs via API into a txt file, and import them into Skynet
     if [ $UpdateSkynet -eq 1 ]
     then
@@ -1152,7 +1226,7 @@ vpnreset() {
           # Run SurfShark API to get full server list from SurfShark
           curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.country == "'"$SurfSharkRandomCountry"'") | .connectionName' > /jffs/scripts/surfshark.txt
 
-          LINES=$(cat /jffs/scripts/surfshark.txt | wc -l) #Check to see how many linesare in this file
+          LINES=$(cat /jffs/scripts/surfshark.txt | wc -l) #Check to see how many lines are in this file
 
           if [ $LINES -eq 0 ] #If there are no lines, error out
           then
@@ -1232,6 +1306,51 @@ vpnreset() {
         fi
     fi
 
+    if [ $UseWeVPN -eq 1 ]
+    then
+      # Randomly select VPN Client slots against entire field of available WeVPN server IPs for selected country
+      if [ $WeVPNSuperRandom -eq 1 ]
+      then
+        UpdateVPNMGR=0 # Failsafe to make sure VPNMGR doesn't overwrite values written by the SuperRandom function
+
+          # Run WeVPN API to get full server list from SurfShark
+          curl --silent --retry 3 "https://client.wevpn.com/api/v3/locations" | jq --raw-output '.data[] | select(.country.name == "'"$WeVPNRandomCountry"'" ) | .hostname' > /jffs/scripts/wevpn.txt
+
+          LINES=$(cat /jffs/scripts/wevpn.txt | wc -l) #Check to see how many lines are in this file
+
+          if [ $LINES -eq 0 ] #If there are no lines, error out
+          then
+            echo -e "\n${CRed}Error: wevpn.txt list is blank! Check WeVPN service or config's Country Name.\n${CClear}"
+            echo -e "$(date) - VPNMON-R2 ----------> ERROR: wevpn.txt list is blank!" >> $LOGFILE
+            sleep 3
+            return
+          fi
+
+          printf "${CGreen}\r                                                                 "
+          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom WeVPN Hostnames] "
+          sleep 1
+          echo ""
+
+          i=0
+          while [ $i -ne $N ] #Assign SuperRandom hostnames/Descriptions to VPN Slots 1-N
+            do
+              i=$(($i+1))
+              RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+              R_LINE=$(( RANDOM % LINES + 1 ))
+              RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/wevpn.txt)
+              RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
+              RNDVPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$RNDVPNIP/city"
+              RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
+              nvram set vpn_client"$i"_addr="$RNDVPNHOST"
+              nvram set vpn_client"$i"_desc="WeVPN - $RNDVPNCITY"
+              echo -e "${CGreen}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
+              sleep 1
+          done
+            echo ""
+            echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom WeVPN Server Locations" >> $LOGFILE
+      fi
+    fi
+
   # Clean up API NordVPN Server Extracts
     if [ -f /jffs/scripts/NordVPN.txt ]
     then
@@ -1253,10 +1372,17 @@ vpnreset() {
       rm /jffs/scripts/ppipslst.txt
     fi
 
+  # Clean up API SurfShark Server Extracts
+    if [ -f /jffs/scripts/wevpn.txt ]
+    then
+      rm /jffs/scripts/wevpn.txt  #Cleanup WeVPN temp files
+    fi
+
   # Call VPNMGR functions to refresh server lists and save their results to the VPN client configs
     if [ $UpdateVPNMGR -eq 1 ]
     then
 
+      echo ""
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Refresh VPNMGRs NordVPN/PIA/WeVPN Server Locations]          "
       sh /jffs/scripts/service-event start vpnmgrrefreshcacheddata >/dev/null 2>&1
@@ -1269,6 +1395,7 @@ vpnreset() {
     if [ "$USELOWESTSLOT" == "0" ]; then
 
     # Pick a random VPN Client to connect to
+      echo ""
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Randomly selecting a VPN Client between 1 and $N]            "
       sleep 1
@@ -1332,6 +1459,7 @@ vpnreset() {
         ;;
       esac
       sleep 1
+      echo ""
     else
       i=0
       WANIFNAME=$(get_wan_setting ifname)
@@ -1356,6 +1484,7 @@ vpnreset() {
           fi
       done
 
+      echo ""
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Starting fastest PING VPN$LOWEST Client ON]                  "
       service start_vpnclient$LOWEST >/dev/null 2>&1
@@ -1367,9 +1496,10 @@ vpnreset() {
     fi
 
     # Reset the VPN Director Rules
+    echo ""
     printf "${CGreen}\r                                                               "
     printf "${CGreen}\r [Restart VPN Director Rules]                                  "
-    service restart_vpnrouting0
+    service restart_vpnrouting0 >/dev/null 2>&1
     sleep 2
 
     # Optionally sync active VPN Slot with YazFi guest network(s)
@@ -1672,6 +1802,8 @@ vconfig () {
           printf "SurfShark"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
         elif [ "$UsePP" == "1" ]; then
           printf "PerfectPrivacy"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
+        elif [ "$UseWeVPN" == "1" ]; then
+          printf "WeVPN"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
         else
           printf "Other"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n"
         fi
@@ -1688,6 +1820,10 @@ vconfig () {
       elif [ "$UsePP" == "1" ] && [ "$PPSuperRandom" == "0" ]; then
         printf "No"; printf "%s\n";
       elif [ "$UsePP" == "1" ] && [ "$PPSuperRandom" == "1" ]; then
+        printf "Yes"; printf "%s\n";
+      elif [ "$UseWeVPN" == "1" ] && [ "$WeVPNSuperRandom" == "0" ]; then
+        printf "No"; printf "%s\n";
+      elif [ "$UseWeVPN" == "1" ] && [ "$WeVPNSuperRandom" == "1" ]; then
         printf "Yes"; printf "%s\n";
       else
         printf "No"; printf "%s\n";
@@ -1717,18 +1853,32 @@ vconfig () {
       elif [ "$UsePP" == "1" ]; then
         if [ "$PPCountry2" != "0" ] && [ "$PPCountry3" == "0" ]; then
           printf "$PPCountry, $PPCountry2"; printf "%s\n";
-        elif [ "$PPCountry2" == "0" ] && [ "$SurfSharkCountry3" != "0" ]; then
+        elif [ "$PPCountry2" == "0" ] && [ "$PPCountry3" != "0" ]; then
           printf "$PPCountry, $PPCountry3"; printf "%s\n";
         elif [ "$PPCountry2" != "0" ] && [ "$PPCountry3" != "0" ]; then
           printf "$PPCountry, $PPCountry2, $PPCountry3"; printf "%s\n";
         else
           printf "$PPCountry"; printf "%s\n";
         fi
+      elif [ "$UseWeVPN" == "1" ]; then
+        if [ "$WeVPNCountry2" != "0" ] && [ "$WeVPNCountry3" == "0" ]; then
+          printf "$WeVPNCountry, $WeVPNCountry2"; printf "%s\n";
+        elif [ "$WeVPNCountry2" == "0" ] && [ "$WeVPNCountry3" != "0" ]; then
+          printf "$WeVPNCountry, $WeVPNCountry3"; printf "%s\n";
+        elif [ "$WeVPNCountry2" != "0" ] && [ "$WeVPNCountry3" != "0" ]; then
+          printf "$WeVPNCountry, $WeVPNCountry2, $WeVPNCountry3"; printf "%s\n";
+        else
+          printf "$WeVPNCountry"; printf "%s\n";
+        fi
       else
         printf "None"; printf "%s\n";
       fi
 
-      echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  % Server Load Threshold?     :"$ODISABLED2
+      if [ "$UseWeVPN" == "1" ]; then
+        echo -en "${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  % Server Load Threshold?     :"${CDkGray}
+      else
+        echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  % Server Load Threshold?     :"$ODISABLED2
+      fi
       if [ "$UseNordVPN" == "1" ]; then
         printf "$NordVPNLoadReset"; printf "%s\n";
       elif [ "$UseSurfShark" == "1" ]; then
@@ -1739,7 +1889,7 @@ vconfig () {
         printf "No"; printf "%s\n";
       fi
 
-      if [ "$UseSurfShark" == "1" ]; then
+      if [ "$UseSurfShark" == "1" ] || [ "$UseWeVPN" == "1" ]; then
         echo -en "${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  Update Skynet?               :"${CDkGray}
       else
         echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Update Skynet?               :"$ODISABLED2
@@ -1878,16 +2028,18 @@ vconfig () {
             6) # -----------------------------------------------------------------------------------------
                echo ""
                echo -e "${CCyan}6. Which service is your default VPN Provider? ${CYellow}(NordVPN = 1,"
-               echo -e "${CYellow}Surfshark = 2, Perfect Privacy = 3, Other = 4) (Default = Other)${CClear}"
+               echo -e "${CYellow}Surfshark = 2, Perfect Privacy = 3, WeVPN = 4, Other = 5)"
+               echo -e "${CYellow}(Default = Other)${CClear}"
                while true; do
-                read -p "VPN Provider (1/2/3/4): " VPNProvider1
+                read -p "VPN Provider (1/2/3/4/5): " VPNProvider1
                   case $VPNProvider1 in
                     [1] ) VPNProvider=1; break ;;
                     [2] ) VPNProvider=2; break ;;
                     [3] ) VPNProvider=3; break ;;
                     [4] ) VPNProvider=4; break ;;
-                    "" ) echo -e "\nPlease answer 1/2/3/4";;
-                    * ) echo -e "\nPlease answer 1/2/3/4";;
+                    [5] ) VPNProvider=5; break ;;
+                    "" ) echo -e "\nPlease answer 1/2/3/4/5";;
+                    * ) echo -e "\nPlease answer 1/2/3/4/5";;
                   esac
                done
 
@@ -2169,10 +2321,87 @@ vconfig () {
             fi
 
             # -----------------------------------------------------------------------------------------
+            # WeVPN Logic
+            # -----------------------------------------------------------------------------------------
+
+            if [ "$VPNProvider" == "4" ]; then # WeVPN
+              UseWeVPN=1
+              WeVPNLoadReset=50
+
+              echo ""
+              echo -e "${CCyan}6a. Would you like to use the WeVPN SuperRandom functionality?"
+              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              while true; do
+                read -p "Use SuperRandom? (0/1): " WeVPNSuperRandom1
+                  case $WeVPNSuperRandom1 in
+                    [0] ) WeVPNSuperRandom=0; break ;;
+                    [1] ) WeVPNSuperRandom=1; break ;;
+                    "" ) echo -e "\nPlease answer 0 or 1";;
+                    * ) echo -e "\nPlease answer 0 or 1";;
+                  esac
+              done
+              # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan}6b. What Country is your country of origin for SurfShark? ${CYellow}(Default = "
+              echo -e "${CYellow}USA). NOTE: Country names must be spelled correctly as below!"
+              echo -e "${CCyan}Valid country names as follows: Australia, Austria, Belgium, Brazil,"
+              echo -e "${CCyan}Bulgaria, Canada, Czech Republic, Denmark, Egypt, Estonia, Finland,"
+              echo -e "${CCyan}France, Germany, Greece, Hong Kong, Hungary, Iceland, India, Indonesia,"
+              echo -e "${CCyan}Ireland, Israel, Italy, Japan, Luxembourg, Malaysia, Mexico, Netherlands,"
+              echo -e "${CCyan}New Zealand, Nigeria, Norway, Philippines, Poland, Portugal, Romania,"
+              echo -e "${CCyan}Russia, Serbia, Singapore, South Africa, South Korea, Spain, Sweden,"
+              echo -e "${CCyan}Switzerland, Taiwan, Turkey, UAE, UK, Ukraine, USA, Vietnam${CClear}"
+              read -p 'WeVPN Country: ' WeVPNCountry1
+              if [ -z "$WeVPNCountry1" ]; then WeVPNCountry="USA"; else WeVPNCountry=$WeVPNCountry1; fi # Using default value on enter keypress
+              # -----------------------------------------------------------------------------------------
+              if [ "$WeVPNSuperRandom" == "1" ]; then
+                echo ""
+                echo -e "${CCyan}6c. Would you like to randomize connections across multiple countries?"
+                echo -e "${CCyan}NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
+                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                while true; do
+                  read -p "Use Multiple Countries? (0/1): " WeVPNMultipleCountries1
+                    case $WeVPNMultipleCountries1 in
+                      [0] ) WeVPNMultipleCountries=0; break ;;
+                      [1] ) WeVPNMultipleCountries=1; break ;;
+                      "" ) echo -e "\nPlease answer 0 or 1";;
+                      * ) echo -e "\nPlease answer 0 or 1";;
+                    esac
+                done
+
+                if [ "$WeVPNMultipleCountries" == "1" ]; then
+                    echo -e "${CCyan}"
+                    read -p "$(echo -e "Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" WeVPNCountry21
+                    if [ -z "$WeVPNCountry21" ]; then WeVPNCountry2=0; else WeVPNCountry2="$WeVPNCountry21"; fi
+                    echo -e "${CCyan}"
+                    read -p "$(echo -e "Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" WeVPNCountry31
+                    if [ -z "$WeVPNCountry31" ]; then WeVPNCountry3=0; else WeVPNCountry3="$WeVPNCountry31"; fi
+                else
+                  WeVPNMultipleCountries=0
+                  WeVPNCountry2=0
+                  WeVPNCountry3=0
+                fi
+              else
+                WeVPNMultipleCountries=0
+                WeVPNCountry2=0
+                WeVPNCountry3=0
+              fi
+              # -----------------------------------------------------------------------------------------
+            else
+              UseWeVPN=0
+              WeVPNSuperRandom=0
+              WeVPNMultipleCountries=0
+              WeVPNCountry="USA"
+              WeVPNCountry2=0
+              WeVPNCountry3=0
+              WeVPNLoadReset=50
+            fi
+
+            # -----------------------------------------------------------------------------------------
             # VPN Service Not Listed Logic
             # -----------------------------------------------------------------------------------------
 
-            if [ "$VPNProvider" == "4" ]; then # Not Listed
+            if [ "$VPNProvider" == "5" ]; then # Not Listed
               UseNordVPN=0
               NordVPNSuperRandom=0
               NordVPNMultipleCountries=0
@@ -2197,6 +2426,14 @@ vconfig () {
               PPCountry2=0
               PPCountry3=0
               PPLoadReset=50
+
+              UseWeVPN=0
+              WeVPNSuperRandom=0
+              WeVPNMultipleCountries=0
+              WeVPNCountry="USA"
+              WeVPNCountry2=0
+              WeVPNCountry3=0
+              WeVPNLoadReset=50
             fi
           ;;
 
@@ -2389,6 +2626,13 @@ vconfig () {
                 echo 'PPCountry2="'"$PPCountry2"'"'
                 echo 'PPCountry3="'"$PPCountry3"'"'
                 echo 'PPLoadReset='$PPLoadReset
+                echo 'UseWeVPN='$UseWeVPN
+                echo 'WeVPNSuperRandom='$WeVPNSuperRandom
+                echo 'WeVPNMultipleCountries='$WeVPNMultipleCountries
+                echo 'WeVPNCountry="'"$WeVPNCountry"'"'
+                echo 'WeVPNCountry2="'"$WeVPNCountry2"'"'
+                echo 'WeVPNCountry3="'"$WeVPNCountry3"'"'
+                echo 'WeVPNLoadReset='$WeVPNLoadReset
                 echo 'UpdateSkynet='$UpdateSkynet
                 echo 'ResetOption='$ResetOption
                 echo 'DailyResetTime="'"$DailyResetTime"'"'
@@ -2452,6 +2696,13 @@ vconfig () {
       echo 'PPCountry2=0'
       echo 'PPCountry3=0'
       echo 'PPLoadReset=50'
+      echo 'UseWeVPN=0'
+      echo 'WeVPNSuperRandom=0'
+      echo 'WeVPNMultipleCountries=0'
+      echo 'WeVPNCountry="USA"'
+      echo 'WeVPNCountry2=0'
+      echo 'WeVPNCountry3=0'
+      echo 'WeVPNLoadReset=50'
       echo 'UpdateSkynet=0'
       echo 'ResetOption=1'
       echo 'DailyResetTime="01:00"'
@@ -3198,6 +3449,9 @@ while true; do
       elif [ $PPSuperRandom -eq 1 ]
         then
           RANDOMMETHOD="PerfPriv SuperRandom"
+      elif [ $WeVPNSuperRandom -eq 1 ]
+        then
+          RANDOMMETHOD="WeVPN SuperRandom"
       else
         RANDOMMETHOD="Standard"
     fi
@@ -3437,7 +3691,7 @@ while true; do
       LOWPINGCOUNT=$(($LOWPINGCOUNT+1))
 
       if [ $LOWPINGCOUNT -le $PINGCHANCES ]; then
-        echo -e "${CRed} WARNING:${CYellow} Switching to faster ${InvBlue}VPN$LOWEST Client${CClear}${CYellow} after $(($PINGCHANCES-$LOWPINGCOUNT)) more chances"
+        echo -e "${InvRed} ${CClear}${CRed} WARNING:${CYellow} Switching to faster ${InvDkGray}${CWhite}VPN$LOWEST Client${CClear}${CYellow} after $(($PINGCHANCES-$LOWPINGCOUNT)) more chances"
       else
         echo -e "$(date) - VPNMON-R2 ----------> WARNING: Switching to faster VPN$LOWEST Client - Executing VPN Reset" >> $LOGFILE
 
