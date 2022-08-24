@@ -1,4 +1,4 @@
-v2.20  - (TBA)
+v2.20  - (August 24, 2022)
        - MAJOR: VPNMON-R2 now officially supports WeVPN, including SuperRandom(r) and Multi-Country SuperRandom(r)
          functionality. Please note: WeVPN does not provide server loads (yet), and will incorporate that when it
          becomes available. Also, they don't provide straight IP addresses for their VPN hosts, which makes it
