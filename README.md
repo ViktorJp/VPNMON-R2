@@ -58,6 +58,7 @@ What this script does
 22. VPNMON-R2 is now SurfShark and Perfect Privacy VPN compatible.  You will be able to enjoy many of the same features that NordVPN users have, such as SuperRandom functionality that will populate your VPN slots with random servers in your selected country, multi-country capable where SuperRandom will pick one of up to 3 of your selected countries, randomly fill your slots with servers from that country and connect to a random one, keeping an eye on the SurfShark server load, and reconnect to another server if it exceeds your set threshold... and of course, showing all the same stats we've all gotten so accustomed to.
 23. Added capabilities to switch to the fastest connections based on ping ms to your VPN endpoints.
 24. Happy to announce that VPNMON-R2 is now being included in AMTM! Many thanks to @thelonelycoder!
+25. VPNMON-R2 is now compatible with WeVPN!
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
