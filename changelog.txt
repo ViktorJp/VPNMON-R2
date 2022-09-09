@@ -2,6 +2,8 @@ v2.21  - (TBA)
        - CHANGED: Replaced the API provider that translates IP to citynames from ipapi.co to ip-api.com, which
          seems to much more reliable.  I have been encountering issues where the ipapi.co service seemed to be
          overloaded or blocked at many times, requiring VPNMON-R2 to have to resort to displaying a plain IP.
+         The new API from ip-api.com allows for unlimited usage, as long as you stay below 45 requests per
+         minute, which I *think* we can handle!  LOL
 
 v2.20  - (August 24, 2022)
        - MAJOR: VPNMON-R2 now officially supports WeVPN, including SuperRandom(r) and Multi-Country SuperRandom(r)
