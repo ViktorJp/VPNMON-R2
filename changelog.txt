@@ -1,13 +1,13 @@
-v2.21  - (TBA)
+v2.21  - (September 10, 2022)
        - CHANGED: Replaced the API provider that translates IP to citynames from ipapi.co to ip-api.com, which
          seems to much more reliable.  I have been encountering issues where the ipapi.co service seemed to be
          overloaded or blocked at many times, requiring VPNMON-R2 to have to resort to displaying a plain IP.
          The new API from ip-api.com allows for unlimited usage, as long as you stay below 45 requests per
          minute, which I *think* we can handle!  LOL.  Needless to say, they've been around since 2012, and seem
          to have nice infrastructure around the world.  Think we'll stay with this for the time being!
-       - CHANGED: Fixed the way that VPNMON-R2 checks for a lockfile incase a commandline script starts to run to
-         reset the VPN through a cron job, and now checks for this lockfile throughout the script, and during the
-         timer interval.
+       - CHANGED: Fixed the way that VPNMON-R2 checks for a lockfile should you run the script with the -reset
+         switch either manually or through a cron job.  It is now hyper-aware of this lockfile, and checks for
+         this lockfile throughout the script, as well as during the timer interval.
        - FIXED: Minor code optimizations and tweaks
 
 v2.20  - (August 24, 2022)
