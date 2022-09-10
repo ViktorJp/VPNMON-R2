@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.20 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.21 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,9 +43,9 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.20"                                      # Current version of VPNMON-R2
-DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
+Version="2.21"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
+DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
                                                     # that VPNMON-R2 does not interfere during an external reset
 RSTFILE="/jffs/addons/vpnmon-r2.d/vpnmon-rst.log"   # Logfile containing the last date/time a VPN reset was performed. Else,
@@ -1168,14 +1168,14 @@ vpnreset() {
             RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
             R_LINE=$(( RANDOM % LINES + 1 ))
             RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
-            RNDVPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$RNDVPNIP/city"
+            RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
             RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
             nvram set vpn_client"$i"_addr="$RNDVPNIP"
             nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-            echo -e "${CGreen}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+            echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
             sleep 1
         done
-        echo ""
+        #echo ""
         echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom NordVPN Server Locations" >> $LOGFILE
 
       else
@@ -1204,14 +1204,14 @@ vpnreset() {
             RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
             R_LINE=$(( RANDOM % LINES + 1 ))
             RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
-            RNDVPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$RNDVPNIP/city"
+            RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
             RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
             nvram set vpn_client"$i"_addr="$RNDVPNIP"
             nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-            echo -e "${CGreen}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+            echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
             sleep 1
         done
-        echo ""
+        #echo ""
         echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom NordVPN Server Locations" >> $LOGFILE
       fi
     fi
@@ -1249,15 +1249,15 @@ vpnreset() {
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/surfshark.txt)
               RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$RNDVPNIP/city"
+              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
               nvram set vpn_client"$i"_desc="SurfShark - $RNDVPNCITY"
-              echo -e "${CGreen}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
               sleep 1
           done
-            echo ""
-            echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom SurfShark Server Locations" >> $LOGFILE
+          #echo ""
+          echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom SurfShark Server Locations" >> $LOGFILE
       fi
     fi
 
@@ -1294,15 +1294,15 @@ vpnreset() {
                 R_LINE=$(( RANDOM % LINES + 1 ))
                 RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/pp.txt)
                 RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
-                RNDVPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$RNDVPNIP/city"
+                RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
                 RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
                 nvram set vpn_client"$i"_addr="$RNDVPNHOST"
                 nvram set vpn_client"$i"_desc="Perfect Privacy - $RNDVPNCITY"
-                echo -e "${CGreen}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY\n${CClear}"
+                echo -e "${CCyan}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY\n${CClear}"
                 sleep 1
             done
-              echo ""
-              echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom Perfect Privacy Server Locations" >> $LOGFILE
+            #echo ""
+            echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom Perfect Privacy Server Locations" >> $LOGFILE
         fi
     fi
 
@@ -1339,15 +1339,15 @@ vpnreset() {
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/wevpn.txt)
               RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$RNDVPNIP/city"
+              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
               nvram set vpn_client"$i"_desc="WeVPN - $RNDVPNCITY"
-              echo -e "${CGreen}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY${CClear}"
               sleep 1
           done
-            echo ""
-            echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom WeVPN Server Locations" >> $LOGFILE
+          #echo ""
+          echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom WeVPN Server Locations" >> $LOGFILE
       fi
     fi
 
@@ -1633,7 +1633,7 @@ checkvpn() {
 
         if [ "$VPNIP" == "Unassigned" ];then # The first time through, use API lookup to get exit VPN city and display
           VPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
-          VPNCITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$ICANHAZIP/city"
+          VPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$ICANHAZIP | jq --raw-output .city"
           VPNCITY="$(eval $VPNCITY)"; if echo $VPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then VPNCITY="$ICANHAZIP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update VPN city to $VPNCITY" >> $LOGFILE
         fi
@@ -1712,7 +1712,7 @@ wancheck() {
         # Get the public IP of the WAN, determine the city from it, and display it on screen
         if [ "$WAN0IP" == "Unassigned" ]; then
           WAN0IP=$(curl --silent --fail --interface $WAN0IFNAME --request GET --url https://ipv4.icanhazip.com)
-          WAN0CITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$WAN0IP/city"
+          WAN0CITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
           WAN0CITY="$(eval $WAN0CITY)"; if echo $WAN0CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN0 city to $WAN0CITY" >> $LOGFILE
         fi
@@ -1749,7 +1749,7 @@ wancheck() {
         # Get the public IP of the WAN, determine the city from it, and display it on screen
         if [ "$WAN1IP" == "Unassigned" ]; then
           WAN1IP=$(curl --silent --fail --interface $WAN1IFNAME --request GET --url https://ipv4.icanhazip.com)
-          WAN1CITY="curl --silent --retry 3 --request GET --url https://ipapi.co/$WAN1IP/city"
+          WAN1CITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
           WAN1CITY="$(eval $WAN1CITY)"; if echo $WAN1CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WAN1CITY" >> $LOGFILE
         fi
@@ -1765,6 +1765,41 @@ wancheck() {
         echo -e "${CClear} - WAN1 Port Inactive"
     fi
   fi
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+lockcheck () {
+  # Testing to see if VPNMON-R2 external reset is currently running, and if so, hold off until it finishes
+  while [ -f "$LOCKFILE" ]; do
+    # clear screen
+    clear
+    SPIN=15
+    logo
+    echo -e "${CGreen} ---------> NOTICE: VPN RESET CURRENTLY IN-PROGRESS <---------"
+    echo ""
+    echo -e "${CGreen} VPNMON-R2 is currently performing an external scheduled reset"
+    echo -e "${CGreen} of the VPN through the means of the '-reset' commandline"
+    echo -e "${CGreen} option or scheduled CRON job."
+    echo ""
+    echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
+    echo -e "$(date +%s)" > $RSTFILE
+    START=$(cat $RSTFILE)
+    spinner
+
+    # Reset the VPN IP/Locations after a reset occurred
+    WAN0IP="Unassigned" # Look for an updated WAN IP/Location
+    WAN1IP="Unassigned" # Look for an updated WAN IP/Location
+    VPNIP="Unassigned" # Look for a new VPN IP/Location
+    ICANHAZIP="" # Reset Public VPN IP
+    PINGLOW=0 # Reset ping time history variables
+    PINGHIGH=0
+    oldrxbytes=0 # Reset Stats
+    oldtxbytes=0
+    newrxbytes=0
+    newtxbytes=0
+  done
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3256,35 +3291,8 @@ while true; do
   # Write persistence logfile
   echo -e "$(date +%s)" > $PERSIST
 
-  # Testing to see if VPNMON-R2 external reset is currently running, and if so, hold off until it finishes
-  while [ -f "$LOCKFILE" ]; do
-    # clear screen
-    clear
-    SPIN=15
-    logo
-    echo -e "${CGreen} ---------> NOTICE: VPN RESET CURRENTLY IN-PROGRESS <---------"
-    echo ""
-    echo -e "${CGreen} VPNMON-R2 is currently performing an external scheduled reset"
-    echo -e "${CGreen} of the VPN through the means of the '-reset' commandline"
-    echo -e "${CGreen} option or scheduled CRON job."
-    echo ""
-    echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
-    echo -e "$(date +%s)" > $RSTFILE
-    START=$(cat $RSTFILE)
-    spinner
-
-    # Reset the VPN IP/Locations after a reset occurred
-    WAN0IP="Unassigned" # Look for an updated WAN IP/Location
-    WAN1IP="Unassigned" # Look for an updated WAN IP/Location
-    VPNIP="Unassigned" # Look for a new VPN IP/Location
-    ICANHAZIP="" # Reset Public VPN IP
-    PINGLOW=0 # Reset ping time history variables
-    PINGHIGH=0
-    oldrxbytes=0 # Reset Stats
-    oldtxbytes=0
-    newrxbytes=0
-    newtxbytes=0
-  done
+  # Check for external commandline activity
+  lockcheck
 
   # Testing to see if a reset needs to run at the scheduled time, first by pulling our hair out to find a timeslot to
   # run this thing, by looking at current time and the scheduled time, converting to epoch seconds, and seeing if it
@@ -3384,6 +3392,9 @@ while true; do
   echo -e "${CGreen}/${CRed}Interfaces${CClear}${CGreen}\_______________________________________________________${CClear}"
   echo ""
 
+  # Check for external commandline activity
+  lockcheck
+
   # Check the WAN connectivity to determine if we need to keep looping until WAN connection is re-established
   checkwan Loop
 
@@ -3399,6 +3410,9 @@ while true; do
   done
 
   echo -e "${CGreen} ------------------------------------------------------------------${CClear}"
+
+  # Check for external commandline activity
+  lockcheck
 
   # Cycle through the CheckVPN connection function for N number of VPN Clients
   i=0
@@ -3569,6 +3583,9 @@ while true; do
 
     echo ""
     checkwan Loop # Check the WAN connectivity to determine if we need to keep looping until WAN connection is re-established
+
+    # Check for external commandline activity
+    lockcheck
 
   fi
 
@@ -3748,6 +3765,9 @@ while true; do
         progressbar $i $INTERVAL
         #sleep 1
         i=$(($i+1))
+
+        lockcheck # check to see if a lockfile is present from a commandline process
+
     done
   fi
 
