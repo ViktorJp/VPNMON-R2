@@ -43,22 +43,21 @@ What this script does
 7. Updates VPNMGR cache with recommended NordVPN/PIA/WeVPN endpoint information (optional), and merges/refreshes these changes with your VPN Client configurations
 8. Uses a randomizer to pick one of 5 different VPN Clients to connect to (configurable between 1 and 5)
 9. It will loop through this process every 60 seconds (configurable)
-10. If it determines that my other (optional) external script VPNON.SH is resetting the connection, it will hang back until it's done.
-11. Logs major events (resets/connection errors/etc) to a log file.
-12. It will reset your VPN connection at a regularly scheduled time using the settings at the top of the script (optional)
-13. It now shows the last time a VPN reset happened indicated by "Last Reset:", an indicator when the next reset will happen, and how often the interval happens (in seconds) on the easy-to-read VPNMON-R2 interface in your SSH shell, along with a progressbar to show script activity
-14. Added a new API lookup to display the VPN exit node city/location next to the active VPN connection.  This API is free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single refresh interval, a location lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2 initiates a reset.
-15. Added the concept of SuperRandom(tm) NordVPN Connections! This is a NordVPN feature only! When enabled, it will fill your VPN client slots with random VPN servers across the country of your choice.  Distance, load, and performance be damned!!
-16. Added an integrated configuration utility (by running "vpnmon-r2.sh -config") that steps you through all the options and saves results to a config file, without the need to manually edit and configure the script itself.
-17. Added a script update checker, which notifies you when a new version becomes available, and allows you to easily download an install the latest script by using the 'vpnmon-r2.sh -update' command.
-18. Optionally shows a row of stats on bottom row, indicating low/high ping times, NordVPN server load, Avg sent/received bandwidth (in Mbps), and total traffic sent/received on the active tunnel.
-19. Added the ability to specify up to 2 additional NordVPN countries (for a total of 3) to randomly pick VPN servers located within that country.  Yes, we have gone completely international!
-20. Happy to report that VPNMON-R2 now integrates beautifully with YazFi - the premier expanded guest network utility for Merlin firmware!  For those running multiple guest networks, VPNMON-R2 can now automatically update your guest network slots with the latest VPN slot that VPNMON-R2 just made a connection to, then performs the necessary steps to make YazFi acknowledge the change to ensure your guest client devices continue to work without interruption!
-21. Added capabilities to check if your modem goes down, or your ISP stops working, then falls back and waits until your WAN comes back up in order to re-establish a VPN connection.
-22. VPNMON-R2 is now SurfShark and Perfect Privacy VPN compatible.  You will be able to enjoy many of the same features that NordVPN users have, such as SuperRandom functionality that will populate your VPN slots with random servers in your selected country, multi-country capable where SuperRandom will pick one of up to 3 of your selected countries, randomly fill your slots with servers from that country and connect to a random one, keeping an eye on the SurfShark server load, and reconnect to another server if it exceeds your set threshold... and of course, showing all the same stats we've all gotten so accustomed to.
-23. Added capabilities to switch to the fastest connections based on ping ms to your VPN endpoints.
-24. Happy to announce that VPNMON-R2 is now being included in AMTM! Many thanks to @thelonelycoder!
-25. VPNMON-R2 is now compatible with WeVPN!
+10. Logs major events (resets/connection errors/etc) to a log file.
+11. It will reset your VPN connection at a regularly scheduled time using the settings at the top of the script (optional)
+12. It now shows the last time a VPN reset happened indicated by "Last Reset:", an indicator when the next reset will happen, and how often the interval happens (in seconds) on the easy-to-read VPNMON-R2 interface in your SSH shell, along with a progressbar to show script activity
+13. Added a new API lookup to display the VPN exit node city/location next to the active VPN connection.  This API is free, and guarantees at least 1000 lookups per month.  In lieu of doing a lookup each single refresh interval, a location lookup is only done when either the script starts up fresh, when it detects VPNON doing a reset, or if VPNMON-R2 initiates a reset.
+14. Added the concept of SuperRandom(tm) NordVPN Connections! This is a NordVPN feature only! When enabled, it will fill your VPN client slots with random VPN servers across the country of your choice.  Distance, load, and performance be damned!!
+15. Added an integrated configuration utility (by running "vpnmon-r2.sh -config") that steps you through all the options and saves results to a config file, without the need to manually edit and configure the script itself.
+16. Added a script update checker, which notifies you when a new version becomes available, and allows you to easily download an install the latest script by using the 'vpnmon-r2.sh -update' command.
+17. Optionally shows a row of stats on bottom row, indicating low/high ping times, server load, Avg sent/received bandwidth (in Mbps), and total traffic sent/received on the active tunnel.
+18. Added the ability to specify up to 2 additional countries (for a total of 3) to randomly pick VPN servers located within that country.  Yes, we have gone completely international!
+19. Happy to report that VPNMON-R2 now integrates beautifully with YazFi - the premier expanded guest network utility for Merlin firmware!  For those running multiple guest networks, VPNMON-R2 can now automatically update your guest network slots with the latest VPN slot that VPNMON-R2 just made a connection to, then performs the necessary steps to make YazFi acknowledge the change to ensure your guest client devices continue to work without interruption!
+20. Added capabilities to check if your modem goes down, or your ISP stops working, then falls back and waits until your WAN comes back up in order to re-establish a VPN connection.
+21. VPNMON-R2 is now SurfShark and Perfect Privacy VPN compatible.  You will be able to enjoy many of the same features that NordVPN users have, such as SuperRandom functionality that will populate your VPN slots with random servers in your selected country, multi-country capable where SuperRandom will pick one of up to 3 of your selected countries, randomly fill your slots with servers from that country and connect to a random one, keeping an eye on the SurfShark server load, and reconnect to another server if it exceeds your set threshold... and of course, showing all the same stats we've all gotten so accustomed to.
+22. Added capabilities to switch to the fastest connections based on ping ms to your VPN endpoints.
+23. Happy to announce that VPNMON-R2 is now being included in AMTM! Many thanks to @thelonelycoder!
+24. VPNMON-R2 is now compatible with WeVPN!
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
