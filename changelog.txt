@@ -1,3 +1,10 @@
+v2.22  - (TBA)
+       - CHANGED: The behavior of the "vpnmon-r2 -screen" command, so that when you execute this commandline
+         parameter, it first will look for orphaned screens and wipe them... then, it will launch VPNMON-R2
+         into a new screen environment, and connect to it.  This skips the original behavior where it drops
+         back to a command prompt, and asks the user to connect to the VPNMON-R2 screen by requiring the 
+         user to run the "screen -r vpnmon-r2" command.  Thanks much to @TITAN for the great suggestion!
+         
 v2.21  - (September 10, 2022)
        - CHANGED: Replaced the API provider that translates IP to citynames from ipapi.co to ip-api.com, which
          seems to much more reliable.  I have been encountering issues where the ipapi.co service seemed to be
