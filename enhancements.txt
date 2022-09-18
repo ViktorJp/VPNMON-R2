@@ -3,10 +3,13 @@ Future Enhancements (Planned)
 
 To-Do:
 ------
-* Only kill the number of VPN slots that are actually configured per VPNMON-R2 config.
+* Add the screen -wipe command
+* After executing vpnmon-r2 -screen, execute the screen window instead of dropping back to a prompt with instructions.
+* Look into more granular city control of VPN slots that won't participate in superrandom
 
 Completed:
 ----------
+* Only kill the number of VPN slots that are actually configured per VPNMON-R2 config.
 * WeVPN integration
 * Other VPN providers that offer API solutions to easier integrate between them and vpnmon-r2, starting with NordVPN
    - Surfshark VPN integration (completed)
