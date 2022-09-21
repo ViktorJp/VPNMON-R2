@@ -1,4 +1,4 @@
-v2.22  - (TBA)
+v2.22  - (September 21, 2022)
        - CHANGED: The behavior of the "vpnmon-r2 -screen" command, so that when you execute this commandline
          parameter, it first will look for orphaned screens and wipe them... then, it will launch VPNMON-R2
          into a new screen environment, and connect to it.  This skips the original behavior where it drops
