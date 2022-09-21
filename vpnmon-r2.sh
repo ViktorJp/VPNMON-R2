@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.21 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.22 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.21"                                      # Current version of VPNMON-R2
+Version="2.22"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -3206,29 +3206,38 @@ vsetup () {
         clear
         echo -e "${CGreen}Executing VPNMON-R2 using the SCREEN utility...${CClear}"
         echo ""
-        echo -e "${CGreen}Reconnect at any time using the command 'screen -r vpnmon-r2'${CClear}"
-        echo -e "${CGreen}To exit the SCREEN session, type: CTRL-A + D${CClear}"
+        echo -e "${CCyan}IMPORTANT:${CClear}"
+        echo -e "${CCyan}In order to keep VPNMON-R2 running in the background,${CClear}"
+        echo -e "${CCyan}properly exit the SCREEN session by using: CTRL-A + D${CClear}"
         echo ""
+        screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
+        sleep 1
         screen -dmS "vpnmon-r2" $APPPATH -monitor
         sleep 2
-        read -rsp $'Press any key to continue...\n' -n1 key
-        echo -e "${CClear}"
+        if [ ! -f /jffs/addons/vpnmon-r2.d/titanspeed.txt ]; then
+          echo -e "${CGreen}Switching to the SCREEN session in T-5 sec...${CClear}"
+          echo -e "${CClear}"
+          SPIN=5
+          spinner
+        fi
+        screen -r vpnmon-r2
         exit 0
       else
         clear
-        echo -e "${CGreen}Another VPNMON-R2 Screen session is already running...${CClear}"
-        echo -e "${CGreen}Would you like to attach to this session?${CClear}"
-        if promptyn "(y/n): "; then
-          screen -dr $ScreenSess
-          sleep 2
-          echo -e "${CClear}"
-          exit 0
-        else
+        if [ ! -f /jffs/addons/vpnmon-r2.d/titanspeed.txt ]; then
+          echo -e "${CGreen}Connecting to existing VPNMON-R2 SCREEN session...${CClear}"
           echo ""
-          echo -e "\n${CGreen}Exiting...${CClear}"
-          sleep 1
-          return
+          echo -e "${CCyan}IMPORTANT:${CClear}"
+          echo -e "${CCyan}In order to keep VPNMON-R2 running in the background,${CClear}"
+          echo -e "${CCyan}properly exit the SCREEN session by using: CTRL-A + D${CClear}"
+          echo ""
+          echo -e "${CGreen}Switching to the SCREEN session in T-5 sec...${CClear}"
+          echo -e "${CClear}"
+          SPIN=5
+          spinner
         fi
+        screen -dr $ScreenSess
+        exit 0
       fi
   fi
 
