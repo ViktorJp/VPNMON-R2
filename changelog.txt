@@ -4,8 +4,9 @@ v2.23  - (TBA)
          default, or came along with an Entware install by default.  Now, when going into Setup -> Config,
          the script will check for the existence of JQ, and will prompt an install if it's not already
          present under /opt/bin. JQ is necessary for pulling data from the various supported VPN Providers
-         in order to populate VPN host lists for the country you have configured. Thanks to @monakh for
-         noticing this behavior on a fresh install!
+         in order to populate VPN host lists for the country you have configured. Added a check when the
+         script starts up to ensure that all prerequisites are in place before running the script. Thanks
+         to @monakh for noticing this behavior with JQ on a fresh install of VPNMON-R2!
 
 v2.22  - (September 21, 2022)
        - CHANGED: The behavior of the "vpnmon-r2 -screen" command, so that when you execute this commandline
