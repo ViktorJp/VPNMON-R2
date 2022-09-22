@@ -1,3 +1,12 @@
+v2.23  - (TBA)
+       - CHANGED: Included JQ as part of the prerequisites needed to be installed when VPNMON-R2 is set up
+         for the first time. This was my error, thinking that the JQ tool was either already installed by
+         default, or came along with an Entware install by default.  Now, when going into Setup -> Config,
+         the script will check for the existence of JQ, and will prompt an install if it's not already
+         present under /opt/bin. JQ is necessary for pulling data from the various supported VPN Providers
+         in order to populate VPN host lists for the country you have configured. Thanks to @monakh for
+         noticing this behavior on a fresh install!
+
 v2.22  - (September 21, 2022)
        - CHANGED: The behavior of the "vpnmon-r2 -screen" command, so that when you execute this commandline
          parameter, it first will look for orphaned screens and wipe them... then, it will launch VPNMON-R2
