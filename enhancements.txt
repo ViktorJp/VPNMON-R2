@@ -6,6 +6,7 @@ To-Do:
 * Add the screen -wipe command
 * After executing vpnmon-r2 -screen, execute the screen window instead of dropping back to a prompt with instructions.
 * Look into more granular city control of VPN slots that won't participate in superrandom
+* Look into using the Nordvpn preferred server option
 
 Completed:
 ----------
