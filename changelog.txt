@@ -16,7 +16,8 @@ v2.24  - (TBA)
          script starts up to ensure that all prerequisites are in place before running the script. Thanks
          to @monakh for noticing this behavior with JQ on a fresh install of VPNMON-R2!
        - CHANGED: The behavior of the (R)eset button no longer waits until the timer runs out, and begins
-         the reset function process immediately.
+         the reset function process immediately.  Same goes going to/from the (S)etup menu, and is now
+         exiting directly back into the main VPNMON-R2 UI loop.
 
 v2.22  - (September 21, 2022)
        - CHANGED: The behavior of the "vpnmon-r2 -screen" command, so that when you execute this commandline
