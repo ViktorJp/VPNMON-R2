@@ -21,6 +21,8 @@ v2.24  - (TBA)
          menu, and is now exiting directly back into the main VPNMON-R2 UI loop without waiting.
        - CHANGED: Revamped the reset conditions screens, which now display on a cleared page, instead of
          appending the reset output to the main UI.
+       - FIXED: I "may" have repaired the ellusive unbound operand error that would occasionally appear
+         on the main UI.
 
 v2.22  - (September 21, 2022)
        - CHANGED: The behavior of the "vpnmon-r2 -screen" command, so that when you execute this commandline
