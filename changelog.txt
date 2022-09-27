@@ -19,6 +19,8 @@ v2.24  - (TBA)
        - CHANGED: The behavior of the (R)eset button no longer waits to initiate a reset until the timer
          runs out, and begins the reset function process immediately.  Same goes going to/from the (S)etup
          menu, and is now exiting directly back into the main VPNMON-R2 UI loop without waiting.
+       - CHANGED: Revamped the reset conditions screens, which now display on a cleared page, instead of
+         appending the reset output to the main UI.
 
 v2.22  - (September 21, 2022)
        - CHANGED: The behavior of the "vpnmon-r2 -screen" command, so that when you execute this commandline
