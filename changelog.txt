@@ -21,6 +21,8 @@ v2.24  - (TBA)
          menu, and is now exiting directly back into the main VPNMON-R2 UI loop without waiting.
        - CHANGED: Revamped the reset conditions screens, which now display on a cleared page, instead of
          appending the reset output to the main UI.
+       - CHANGED: Joined the reset condition checks together into their own function in order to allow
+         the (R)eset command to work instantaneously, instead of waiting for a cycle to finish.
        - FIXED: I "may" have repaired the ellusive unbound operand error that would occasionally appear
          on the main UI.
 
