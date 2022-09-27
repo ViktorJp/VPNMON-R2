@@ -1753,7 +1753,7 @@ wancheck() {
           WAN0CITY="$(eval $WAN0CITY)"; if echo $WAN0CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN0 city to $WAN0CITY" >> $LOGFILE
         fi
-        WAN0CITY="Your City"
+        #WAN0CITY="Your City"
         if [ $WAN0PING == "DW-FO" ]; then
           echo -e "${InvGreen} ${CClear}${CGreen}==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN0CITY${CClear}"
         else
