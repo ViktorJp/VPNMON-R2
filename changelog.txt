@@ -1,4 +1,12 @@
-v2.23  - (TBA)
+v2.24  - (TBA)
+       - ADDED: Incluced new functionality for NordVPN users! As with the PC/Mobile app, when hitting the
+         "Quick Connect" button, you are taken to the nearest, most fastest servers to your location. This
+         functionality has now been built into VPNMON-R2, allowing you to fill your 1-N VPN slots with a
+         selection of the closest/fastest NordVPN end points. Thanks to @monakh for the great suggestion!
+         Make sure you go into the config menu -> option #6 -> when selecting NordVPN you will have the
+         option to choose this functionality as long as you do not enable "SuperRandom", as it operates
+         completely opposite from using NordVPN's recommended servers function. NOTE: Recommended servers
+         are chosen from the country you have specified as your home country under the config.
        - CHANGED: Included JQ as part of the prerequisites needed to be installed when VPNMON-R2 is set up
          for the first time. This was my error, thinking that the JQ tool was either already installed by
          default, or came along with an Entware install by default.  Now, when going into Setup -> Config,
@@ -7,13 +15,8 @@ v2.23  - (TBA)
          in order to populate VPN host lists for the country you have configured. Added a check when the
          script starts up to ensure that all prerequisites are in place before running the script. Thanks
          to @monakh for noticing this behavior with JQ on a fresh install of VPNMON-R2!
-       - ADDED: Incluced new functionality for NordVPN users! As with the PC/Mobile app, when hitting the
-         "Quick Connect" button, you are taken to the nearest, most fastest servers to your location. This
-         functionality has now been built into VPNMON-R2, allowing you to fill your 1-N VPN slots with a
-         selection of the closest/fastest NordVPN end points. Thanks to @monakh for the great suggestion!
-         Make sure you go into the config menu -> option #6 -> when selecting NordVPN you will have the
-         option to choose this functionality as long as you do not enable "SuperRandom", as it operates
-         completely opposite from using NordVPN's recommended servers function.
+       - CHANGED: The behavior of the (R)eset button no longer waits until the timer runs out, and begins
+         the reset function process immediately.
 
 v2.22  - (September 21, 2022)
        - CHANGED: The behavior of the "vpnmon-r2 -screen" command, so that when you execute this commandline
