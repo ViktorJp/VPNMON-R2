@@ -23,7 +23,7 @@ v2.24  - (September 30, 2022)
          appending the reset output to the main UI.
        - CHANGED: Joined the reset condition checks together into their own function in order to allow
          the (R)eset command to work instantaneously, instead of waiting for a cycle to finish.
-       - FIXED: I "may" have repaired the ellusive unbound operand error that would occasionally appear
+       - FIXED: I "may" have repaired the elusive unbound operand error that would occasionally appear
          on the main UI.
 
 v2.22  - (September 21, 2022)
