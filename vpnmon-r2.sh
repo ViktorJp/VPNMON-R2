@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.22 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.24 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,14 +43,13 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.22"                                      # Current version of VPNMON-R2
+Version="2.24"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
                                                     # that VPNMON-R2 does not interfere during an external reset
 RSTFILE="/jffs/addons/vpnmon-r2.d/vpnmon-rst.log"   # Logfile containing the last date/time a VPN reset was performed. Else,
                                                     # the latest date/time that VPNMON-R2 restarted will be shown.
-PERSIST="/jffs/addons/vpnmon-r2.d/persist.log"      # Logfile containing a persistence date/time log
 LOGFILE="/jffs/addons/vpnmon-r2.d/vpnmon-r2.log"    # Logfile path/name that captures important date/time events - change
 APPPATH="/jffs/scripts/vpnmon-r2.sh"                # Path to the location of vpnmon-r2.sh
 CFGPATH="/jffs/addons/vpnmon-r2.d/vpnmon-r2.cfg"    # Path to the location of vpnmon-r2.cfg
@@ -70,8 +69,8 @@ USELOWESTSLOT=1                                     # Option to select either ra
 FORCEDRESET=0                                       # Variable tracks whether a forced reset is initiated through the UI
 LOWPINGCOUNT=0                                      # Counter for the number of tries before switching to lower ping server
 PINGCHANCES=5                                       # Number of chances your current connection gets before reconnecting to
-IGNOREHIGHPING=0                                    # Ignore high ping rule if running on WAN1 failover mode
-                                                    # faster server
+IGNOREHIGHPING=0                                    # Ignore high ping rule if running on WAN1 failover mode faster server
+RecommendedServer=0                                 # Tracks NordVPN Closest/lowest latency Recommended Server Option
 SPIN=15                                             # 15-second Spin timer
 state1=0                                            # Initialize the VPN connection states for VPN Clients 1-5
 state2=0
@@ -266,8 +265,8 @@ progressbar() {
 
   if [ $key_press ]; then
       case $key_press in
-          [Ss]) FromUI=1; (vsetup); echo -e "${CGreen} [Returning to the Main UI momentarily]                                    "; FromUI=0;;
-          [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; FORCEDRESET=1;;
+          [Ss]) FromUI=1; (vsetup); echo -e "${CGreen} [Returning to the Main UI momentarily]                                    "; sleep 1; FromUI=0; i=$INTERVAL;;
+          [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; sleep 1; FORCEDRESET=1; i=$INTERVAL; resetcheck;;
           [Bb]) (bossmode);;
           'e') echo -e "${CClear}"; exit 0;;
       esac
@@ -615,6 +614,7 @@ checkwan () {
           echo ""
           echo -e "${CGreen} WAN Link/Modem Detected... waiting 60 seconds to reconnect"
           echo -e "${CGreen} and for general connectivity to stabilize."
+          echo ""
           SPIN=60
           spinner
           echo -e "$(date +%s)" > $RSTFILE
@@ -624,6 +624,188 @@ checkwan () {
       fi
 
   done
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# resetcheck tests for 5 major reset scenarios:
+# (1) Lost connection,
+# (2) Multiple connections,
+# (3) High VPN Server Load,
+# (4) High Ping,
+# (5) VPN Client identified with a lower ping than the current connection
+# ...and reset the VPN connection
+# -------------------------------------------------------------------------------------------------------------------------
+resetcheck () {
+
+# If STATUS remains 0 then we've lost our connection, reset the VPN
+if [ $STATUS -eq 0 ]; then
+    clear
+    logo
+    echo -e "\n${CRed} Connection has failed. Executing VPN Reset${CClear}\n"
+    echo -e "$(date) - VPNMON-R2 ----------> ERROR: Connection failed - Executing VPN Reset" >> $LOGFILE
+
+    vpnreset
+
+    SKIPPROGRESS=1
+
+    echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+    echo -e "$(date +%s)" > $RSTFILE
+    START=$(cat $RSTFILE)
+    PINGLOW=0 # Reset ping time history variables
+    PINGHIGH=0
+    ICANHAZIP=""
+    oldrxbytes=0 # Reset Stats
+    oldtxbytes=0
+    newrxbytes=0
+    newtxbytes=0
+fi
+
+# If VPNCLCNT is greater than 1 there are multiple connections running, reset the VPN
+if [ $VPNCLCNT -gt 1 ]; then
+    clear
+    logo
+    echo -e "\n${CRed} Multiple VPN Client Connections detected. Executing VPN Reset${CClear}\n"
+    echo -e "$(date) - VPNMON-R2 ----------> ERROR: Multiple VPN Client Connections detected - Executing VPN Reset" >> $LOGFILE
+
+    vpnreset
+
+    SKIPPROGRESS=1
+
+    echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+    echo -e "$(date +%s)" > $RSTFILE
+    START=$(cat $RSTFILE)
+    PINGLOW=0 # Reset ping time history variables
+    PINGHIGH=0
+    ICANHAZIP=""
+    oldrxbytes=0 # Reset Stats
+    oldtxbytes=0
+    newrxbytes=0
+    newtxbytes=0
+fi
+
+# If the NordVPN/SurfShark/PP Server load is greater than the set variable, reset the VPN and hopefully find a better server
+if [ $NordVPNLoadReset -le $VPNLOAD ] || [ $SurfSharkLoadReset -le $VPNLOAD ] || [ $PPLoadReset -le $VPNLOAD ]; then
+
+  clear
+  logo
+
+  if [ $UseNordVPN -eq 1 ];then
+    echo -e "\n${CRed} NordVPN Server Load is higher than $NordVPNLoadReset %. Executing VPN Reset."
+    echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
+    echo -e "$(date) - VPNMON-R2 ----------> WARNING: NordVPN Server Load > $NordVPNLoadReset% - Executing VPN Reset" >> $LOGFILE
+  fi
+
+  if [ $UseSurfShark -eq 1 ];then
+    echo -e "\n${CRed} SurfShark Server Load is higher than $SurfSharkLoadReset %. Executing VPN Reset."
+    echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
+    echo -e "$(date) - VPNMON-R2 ----------> WARNING: SurfShark Server Load > $SurfSharkLoadReset% - Executing VPN Reset" >> $LOGFILE
+  fi
+
+  if [ $UsePP -eq 1 ];then
+    echo -e "\n${CRed} Perfect Privacy Server Load is higher than $PPLoadReset %. Executing VPN Reset."
+    echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
+    echo -e "$(date) - VPNMON-R2 ----------> WARNING: Perfect Privacy Server Load > $PPLoadReset% - Executing VPN Reset" >> $LOGFILE
+  fi
+
+  vpnreset
+
+  SKIPPROGRESS=1
+
+  echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+  echo -e "$(date +%s)" > $RSTFILE
+  START=$(cat $RSTFILE)
+  PINGLOW=0 # Reset ping time history variables
+  PINGHIGH=0
+  ICANHAZIP=""
+  oldrxbytes=0 # Reset Stats
+  oldtxbytes=0
+  newrxbytes=0
+  newtxbytes=0
+fi
+
+# If the AVGPING average ping across the tunnel is greater than the set variable, reset the VPN and hopefully land on a server with lesser ping times
+if [ "${AVGPING%.*}" -gt "$MINPING" ] && [ "$IGNOREHIGHPING" == "0" ]; then
+  clear
+  logo
+  echo -e "\n${CRed} Average PING across VPN tunnel is > $MINPING ms. Executing VPN Reset${CClear}\n"
+  echo -e "$(date) - VPNMON-R2 ----------> WARNING: AVG PING across VPN tunnel > $MINPING ms - Executing VPN Reset" >> $LOGFILE
+
+  vpnreset
+
+  SKIPPROGRESS=1
+
+  echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+  echo -e "$(date +%s)" > $RSTFILE
+  START=$(cat $RSTFILE)
+  PINGLOW=0 # Reset ping time history variables
+  PINGHIGH=0
+  ICANHAZIP=""
+  oldrxbytes=0 # Reset Stats
+  oldtxbytes=0
+  newrxbytes=0
+  newtxbytes=0
+else
+  IGNOREHIGHPING=0
+fi
+
+# If a different VPN slot has a lower ping than the current connection, then don't randomize and reset it to that VPN slot with lowest ping value
+if [ "$USELOWESTSLOT" == "1" ]; then
+  if [ "$LOWEST" != "$CURRCLNT" ]; then
+
+    LOWPINGCOUNT=$(($LOWPINGCOUNT+1))
+
+    if [ $LOWPINGCOUNT -le $PINGCHANCES ]; then
+      echo -e "${InvRed} ${CClear}${CRed} WARNING:${CYellow} Switching to faster ${InvDkGray}${CWhite}VPN$LOWEST Client${CClear}${CYellow} after $(($PINGCHANCES-$LOWPINGCOUNT)) more chances"
+    else
+      clear
+      logo
+      echo -e "\n${CRed} Switching to faster VPN$LOWEST Client. Executing VPN Reset${CClear}\n"
+      echo -e "$(date) - VPNMON-R2 ----------> WARNING: Switching to faster VPN$LOWEST Client - Executing VPN Reset" >> $LOGFILE
+
+      vpnresetlowestping
+
+      SKIPPROGRESS=1
+      LOWPINGCOUNT=0
+
+      echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+      echo -e "$(date +%s)" > $RSTFILE
+      START=$(cat $RSTFILE)
+      PINGLOW=0 # Reset ping time history variables
+      PINGHIGH=0
+      ICANHAZIP=""
+      oldrxbytes=0 # Reset Stats
+      oldtxbytes=0
+      newrxbytes=0
+      newtxbytes=0
+    fi
+  else
+    LOWPINGCOUNT=0
+  fi
+fi
+
+# If a force reset command has been received by the UI, then go through a regular reset
+if [ "$FORCEDRESET" == "1" ]; then
+  clear
+  logo
+  echo -e "\n${CRed} Forced reset captured through UI, VPNMON-R2 is executing VPN Reset${CClear}\n"
+  echo -e "$(date) - VPNMON-R2 ----------> INFO: Forced reset captured through UI - Executing VPN Reset" >> $LOGFILE
+
+      vpnreset
+
+      SKIPPROGRESS=1
+      FORCEDRESET=0
+
+      echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+      echo -e "$(date +%s)" > $RSTFILE
+      START=$(cat $RSTFILE)
+      PINGLOW=0 # Reset ping time history variables
+      PINGHIGH=0
+      ICANHAZIP=""
+      oldrxbytes=0 # Reset Stats
+      oldtxbytes=0
+      newrxbytes=0
+      newtxbytes=0
+fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1351,31 +1533,67 @@ vpnreset() {
       fi
     fi
 
+    if [ $RecommendedServer == "1" ]; then
+      UpdateVPNMGR=0 #Override vpnmgr if we're getting NordVPN Recommended Servers
+      NordCountryID=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/countries" | jq --raw-output '.[] | select(.name == "'"$NordVPNRandomCountry"'") | [.name,.id] | "\(.[1])"')
+      curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/recommendations?filters\[country_id\]=$NordCountryID&limit=5" | jq --raw-output '.[].station' > /jffs/scripts/NordVPNRS.txt  #Extract all the closest recommended NordVPN servers to a text file
+      LINES=$(cat /jffs/scripts/NordVPNRS.txt | wc -l) #Check to see how many lines/server IPs are in this file
+
+      if [ $LINES -eq 0 ] #If there are no lines, error out
+      then
+        echo -e "\n${CRed}Error: NordVPNRS.txt recommended servers list is blank!\n${CClear}"
+        echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPNRS.txt recommended servers list is blank!" >> $LOGFILE
+        sleep 3
+        return
+      fi
+
+      printf "${CGreen}\r                                                               "
+      printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES Recommended NordVPN IPs]   "
+      sleep 1
+      echo ""
+
+      i=0
+      while [ $i -ne $N ] #Assign Recommended IPs/Descriptions to VPN Slots 1-N
+        do
+          i=$(($i+1))
+          RECVPNIP=$(sed -n "${i}p" /jffs/scripts/NordVPNRS.txt)
+          RECVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RECVPNIP | jq --raw-output .city"
+          RECVPNCITY="$(eval $RECVPNCITY)"; if echo $RECVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY="$RECVPNIP"; fi
+          nvram set vpn_client"$i"_addr="$RECVPNIP"
+          nvram set vpn_client"$i"_desc="NordVPN - $RECVPNCITY"
+          echo -e "${CCyan}  VPN$i Slot - Recommended IP: $RECVPNIP - City: $RECVPNCITY${CClear}"
+          sleep 1
+      done
+      #echo ""
+      echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES Recommended NordVPN Server Locations" >> $LOGFILE
+    fi
+
   # Clean up API NordVPN Server Extracts
     if [ -f /jffs/scripts/NordVPN.txt ]
     then
-      rm /jffs/scripts/NordVPN.txt  #Cleanup NordVPN temp files
+      rm -f /jffs/scripts/NordVPN.txt  #Cleanup NordVPN temp files
+      rm -f /jffs/scripts/NordVPNRS.txt
     fi
 
   # Clean up API SurfShark Server Extracts
     if [ -f /jffs/scripts/surfshark.txt ]
     then
-      rm /jffs/scripts/surfshark.txt  #Cleanup Surfshark temp files
+      rm -f /jffs/scripts/surfshark.txt  #Cleanup Surfshark temp files
     fi
 
   # Clean up API Perfect Privacy Server Extracts
     if [ -f /jffs/scripts/pp.txt ] || [ -f /jffs/scripts/ppips.txt ]
     then
-      rm /jffs/scripts/pp.txt  #Cleanup Perfect Privacy temp files
-      rm /jffs/scripts/ppips.txt
-      rm /jffs/scripts/ppipscln.txt
-      rm /jffs/scripts/ppipslst.txt
+      rm -f /jffs/scripts/pp.txt  #Cleanup Perfect Privacy temp files
+      rm -f /jffs/scripts/ppips.txt
+      rm -f /jffs/scripts/ppipscln.txt
+      rm -f /jffs/scripts/ppipslst.txt
     fi
 
   # Clean up API SurfShark Server Extracts
     if [ -f /jffs/scripts/wevpn.txt ]
     then
-      rm /jffs/scripts/wevpn.txt  #Cleanup WeVPN temp files
+      rm -f /jffs/scripts/wevpn.txt  #Cleanup WeVPN temp files
     fi
 
   # Call VPNMGR functions to refresh server lists and save their results to the VPN client configs
@@ -1624,14 +1842,14 @@ checkvpn() {
       RC=$?
       ICANHAZIP=$(curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com) # Grab the public IP of the VPN Connection
       IC=$?
-      if [ $RC -eq 0 ] && [ $IC -eq 0 ];then  # If both ping/curl come back successful, then proceed
+      if [ $RC -eq 0 ] && [ $IC -eq 0 ]; then  # If both ping/curl come back successful, then proceed
         STATUS=1
         VPNCLCNT=$((VPNCLCNT+1))
         AVGPING=$(ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
 
         if [ -z "$AVGPING" ]; then AVGPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
-        if [ "$VPNIP" == "Unassigned" ];then # The first time through, use API lookup to get exit VPN city and display
+        if [ "$VPNIP" == "Unassigned" ]; then # The first time through, use API lookup to get exit VPN city and display
           VPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
           VPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$ICANHAZIP | jq --raw-output .city"
           VPNCITY="$(eval $VPNCITY)"; if echo $VPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then VPNCITY="$ICANHAZIP"; fi
@@ -1671,12 +1889,12 @@ checkvpn() {
   if [ $1 -eq 1 ]; then
       LOWEST=$1
       LOWESTPING=${testping%.*}
-    elif [ ${testping%.*} -lt ${LOWESTPING%.*} ]; then
+    elif [ "${testping%.*}" -lt "${LOWESTPING%.*}" ]; then
       LOWEST=$1
       LOWESTPING=${testping%.*}
   fi
 
-  if [ $LOWESTPING -eq 1 ]; then
+  if [ "$LOWESTPING" -eq 1 ]; then
     LOWEST=$CURRCLNT
   fi
 }
@@ -1934,6 +2152,16 @@ vconfig () {
       else printf "Yes"; printf "%s\n";
       fi
 
+      if [ "$UseNordVPN" == "1" ]; then
+        echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Use Recommended Server(s)?   :"$ODISABLED2
+      else
+        echo -en "${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  Use Recommended Server(s)?   :"${CDkGray}
+      fi
+      if [ "$RecommendedServer" == "0" ]; then
+        printf "No"; printf "%s\n";
+      else printf "Yes"; printf "%s\n";
+      fi
+
       echo -en "${InvDkGray}${CWhite}  7 ${CClear}${CCyan}: Perform Daily VPN Reset?      :"${CGreen};
         if [ "$ResetOption" == "0" ]; then
           printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
@@ -2086,7 +2314,10 @@ vconfig () {
               UseNordVPN=1
 
               echo ""
-              echo -e "${CCyan}6a. Would you like to use the NordVPN SuperRandom functionality?"
+              echo -e "${CCyan}6a. Would you like to use the NordVPN SuperRandom functionality? NOTE:"
+              echo -e "${CCyan}Choosing this option will prevent you from using NordVPN Recommended"
+              echo -e "${CCyan}Server functionality, and will instead pick random servers within the"
+              echo -e "${CCyan}country of your choice, without regard to distance or latency."
               echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
                 read -p "Use SuperRandom? (0/1): " NordVPNSuperRandom1
@@ -2097,6 +2328,7 @@ vconfig () {
                     * ) echo -e "\nPlease answer 0 or 1";;
                   esac
               done
+              RecommendedServer=0
               # -----------------------------------------------------------------------------------------
               echo ""
               echo -e "${CCyan}6b. What Country is your country of origin for NordVPN? ${CYellow}(Default = "
@@ -2166,6 +2398,29 @@ vconfig () {
                   esac
               done
               # -----------------------------------------------------------------------------------------
+              if [ $NordVPNSuperRandom == "0" ]; then
+                echo ""
+                echo -e "${CCyan}6f. Would you like to use NordVPN Recommended Servers? Note: Choosing"
+                echo -e "${CCyan}this option will configure your VPN slots with servers that are the"
+                echo -e "${CCyan}closest to your WAN location exit, and have the lowest latency/load."
+                echo -e "${CCyan}This is the same function your NordVPN mobile/pc app has when chosing"
+                echo -e "${CCyan}the default recommended server. This option will override your choices"
+                echo -e "${CCyan}you may have selected for SuperRandom and multiple countries. This"
+                echo -e "${CCyan}is a NordVPN feature only."
+                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                while true; do
+                  read -p "Use Recommended NordVPN Server(s)? (0/1): " RecommendedServer1
+                    case $RecommendedServer1 in
+                      [0] ) RecommendedServer=0; break ;;
+                      [1] ) RecommendedServer=1; break ;;
+                      "" ) echo -e "\nPlease answer 0 or 1";;
+                      * ) echo -e "\nPlease answer 0 or 1";;
+                    esac
+                done
+                NordVPNSuperRandom=0
+                NordVPNMultipleCountries=0
+              fi
+              # -----------------------------------------------------------------------------------------
             else
               UseNordVPN=0
               NordVPNSuperRandom=0
@@ -2175,6 +2430,7 @@ vconfig () {
               NordVPNCountry3=0
               NordVPNLoadReset=50
               UpdateSkynet=0
+              RecommendedServer=0
             fi
 
             # -----------------------------------------------------------------------------------------
@@ -2445,6 +2701,7 @@ vconfig () {
               NordVPNCountry3=0
               NordVPNLoadReset=50
               UpdateSkynet=0
+              RecommendedServer=0
 
               UseSurfShark=0
               SurfSharkSuperRandom=0
@@ -2647,6 +2904,7 @@ vconfig () {
                 echo 'NordVPNCountry2="'"$NordVPNCountry2"'"'
                 echo 'NordVPNCountry3="'"$NordVPNCountry3"'"'
                 echo 'NordVPNLoadReset='$NordVPNLoadReset
+                echo 'RecommendedServer='$RecommendedServer
                 echo 'UseSurfShark='$UseSurfShark
                 echo 'SurfSharkSuperRandom='$SurfSharkSuperRandom
                 echo 'SurfSharkMultipleCountries='$SurfSharkMultipleCountries
@@ -2717,6 +2975,7 @@ vconfig () {
       echo 'NordVPNCountry2=0'
       echo 'NordVPNCountry3=0'
       echo 'NordVPNLoadReset=50'
+      echo 'RecommendedServer=0'
       echo 'UseSurfShark=0'
       echo 'SurfSharkSuperRandom=0'
       echo 'SurfSharkMultipleCountries=0'
@@ -2895,31 +3154,35 @@ vsetup () {
 
           sc) # Check for existence of entware, and if so proceed and install the timeout package, then run vpnmon-r2 -config
             clear
-            if [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ]; then
+            if [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ] && [ -f "/opt/bin/jq" ]; then
               vconfig
             else
               logo
-              echo -e "${CYellow}Installing VPNMON-R2...${CClear}"
+              echo -e "${CYellow}Installing VPNMON-R2 Dependencies...${CClear}"
               echo ""
-              echo -e "${CCyan}Would you like to optionally install the CoreUtils-Timeout${CClear}"
-              echo -e "${CCyan}and Screen utility? These utilities require you to have Entware${CClear}"
-              echo -e "${CCyan}already installed using the AMTM tool. If Entware is present, the ${CClear}"
-              echo -e "${CCyan}Timeout and Screen utilities will be downloaded and installed during${CClear}"
-              echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
+              echo -e "${CCyan}VPNMON-R2 has some dependencies in order to function correctly, namely,${CClear}"
+              echo -e "${CCyan}CoreUtils-Timeout, JQuery and the Screen utility. These utilities ${CClear}"
+              echo -e "${CCyan}require you to have Entware already installed using the AMTM tool. If${CClear}"
+              echo -e "${CCyan}Entware is present, the Timeout, JQ and Screen utilities will ${CClear}"
+              echo -e "${CCyan}automatically be downloaded and installed during this setup process.${CClear}"
               echo ""
               echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
               echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
               echo -e "${CCyan}hang scripts running on this router model.${CClear}"
               echo ""
-              echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone"
-              echo -e "${CCyan}environment directly on the router itself, instead of running your"
-              echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
-              echo -e "${CCyan}provide greater stability due to it running from the router itself."
+              echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone${CClear}"
+              echo -e "${CCyan}environment directly on the router itself, instead of running your${CClear}"
+              echo -e "${CCyan}commands or a script from a network-attached SSH client. This can${CClear}"
+              echo -e "${CCyan}provide greater stability due to it running on the router itself.${CClear}"
+              echo ""
+              echo -e "${CGreen}JQuery${CCyan} is a utility for querying data across the internet through the${CClear}"
+              echo -e "${CCyan}the means of APIs for the purposes of interacting with the various VPN${CClear}"
+              echo -e "${CCyan}providers to get a list of available VPN hosts in the selected country.${CClear}"
               echo ""
               [ -z "$(nvram get odmpid)" ] && RouterModel="$(nvram get productid)" || RouterModel="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
               echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
               echo ""
-              echo -e "${CCyan}Install?${CClear}"
+              echo -e "${CCyan}Ready to install?${CClear}"
               if promptyn "(y/n): "
                 then
                   if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
@@ -2931,11 +3194,19 @@ vsetup () {
                     echo -e "${CGreen}Installing Entware CoreUtils-Timeout Package...${CClear}"
                     echo ""
                     opkg install coreutils-timeout
+                    echo ""
                     echo -e "${CGreen}Installing Entware Screen Package...${CClear}"
                     echo ""
                     opkg install screen
                     echo ""
-                    sleep 1
+                    echo -e "${CGreen}Installing Entware JQuery Package...${CClear}"
+                    echo ""
+                    opkg install jq
+                    echo ""
+                    echo -e "${CGreen}Install completed...${CClear}"
+                    echo ""
+                    read -rsp $'Press any key to continue...\n' -n1 key
+                    echo ""
                     echo -e "${CGreen}Executing Configuration Utility...${CClear}"
                     sleep 2
                     vconfig
@@ -2959,22 +3230,26 @@ vsetup () {
           fr) # Force re-install the CoreUtils timeout/screen package
             clear
             logo
-            echo -e "${CYellow}Force Re-installing CoreUtils-Timeout/Screen Packages...${CClear}"
+            echo -e "${CYellow}Force Re-installing VPNMON-R2 Dependencies...${CClear}"
             echo ""
-            echo -e "${CCyan}Would you like to optionally re-install the CoreUtils-Timeout${CClear}"
-            echo -e "${CCyan}and Screen utility? These utilities require you to have Entware${CClear}"
-            echo -e "${CCyan}already installed using the AMTM tool. If Entware is present, the ${CClear}"
-            echo -e "${CCyan}Timeout and Screen utilities will be downloaded and installed during${CClear}"
-            echo -e "${CCyan}this setup process, and used by VPNMON-R2.${CClear}"
+            echo -e "${CCyan}Would you like to re-install the CoreUtils-Timeout, JQuery and the${CClear}"
+            echo -e "${CCyan}Screen utility? These utilities require you to have Entware already${CClear}"
+            echo -e "${CCyan}installed using the AMTM tool. If Entware is present, the Timeout,${CClear}"
+            echo -e "${CCyan}JQ, and Screen utilities will be uninstalled, downloaded and${CClear}"
+            echo -e "${CCyan}re-installed during this setup process.${CClear}"
             echo ""
             echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
             echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
             echo -e "${CCyan}hang scripts running on this router model.${CClear}"
             echo ""
-            echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone"
-            echo -e "${CCyan}environment directly on the router itself, instead of running your"
-            echo -e "${CCyan}commands or a script from a network-attached SSH client. This can"
-            echo -e "${CCyan}provide greater stability due to it running from the router itself."
+            echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone${CClear}"
+            echo -e "${CCyan}environment directly on the router itself, instead of running your${CClear}"
+            echo -e "${CCyan}commands or a script from a network-attached SSH client. This can${CClear}"
+            echo -e "${CCyan}provide greater stability due to it running on the router itself.${CClear}"
+            echo ""
+            echo -e "${CGreen}JQuery${CCyan} is a utility for querying data across the internet through the${CClear}"
+            echo -e "${CCyan}the means of APIs for the purposes of interacting with the various VPN${CClear}"
+            echo -e "${CCyan}providers to get a list of available VPN hosts in the selected country.${CClear}"
             echo ""
             [ -z "$(nvram get odmpid)" ] && RouterModel="$(nvram get productid)" || RouterModel="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
             echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
@@ -2991,12 +3266,18 @@ vsetup () {
                   echo -e "${CGreen}Force Re-installing Entware CoreUtils-Timeout Package...${CClear}"
                   echo ""
                   opkg install --force-reinstall coreutils-timeout
+                  echo ""
                   echo -e "${CGreen}Force Re-installing Entware Screen Package...${CClear}"
                   echo ""
                   opkg install --force-reinstall screen
                   echo ""
+                  echo -e "${CGreen}Force Re-installing Entware JQuery Package...${CClear}"
+                  echo ""
+                  opkg install --force-reinstall jq
+                  echo ""
                   echo -e "${CGreen}Re-install completed...${CClear}"
-                  sleep 2
+                  echo ""
+                  read -rsp $'Press any key to continue...\n' -n1 key
                 else
                   clear
                   echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
@@ -3161,7 +3442,7 @@ vsetup () {
   if [ "$1" == "-reset" ]
     then
       clear
-      if [ -f $CFGPATH ]; then
+      if [ -f $CFGPATH ] && [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ] && [ -f "/opt/bin/jq" ]; then
         source $CFGPATH
 
           if [ -f "/opt/bin/timeout" ] # If the timeout utility is available then use it and assign variables
@@ -3177,7 +3458,7 @@ vsetup () {
       else
         echo -e "${CRed}Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup' to complete setup${CClear}"
         echo ""
-        echo -e "$(date) - VPNMON-R2 ----------> ERROR: vpnmon-r2.cfg was not found. Please run the setup tool." >> $LOGFILE
+        echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPNMON-R2 is not configured. Please run the setup tool." >> $LOGFILE
         kill 0
       fi
       logo
@@ -3245,7 +3526,7 @@ vsetup () {
   if [ "$1" == "-monitor" ]
     then
       clear
-      if [ -f $CFGPATH ]; then
+      if [ -f $CFGPATH ] && [ -f "/opt/bin/timeout" ] && [ -f "/opt/sbin/screen" ] && [ -f "/opt/bin/jq" ]; then
         source $CFGPATH
 
           # Clean up lockfile
@@ -3269,12 +3550,12 @@ vsetup () {
               spinner
           fi
 
-    else
-      echo -e "${CRed}Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup' to complete setup${CClear}"
-      echo ""
-      echo -e "$(date) - VPNMON-R2 ----------> ERROR: vpnmon-r2.cfg was not found. Please run the setup tool." >> $LOGFILE
-      kill 0
-    fi
+      else
+        echo -e "${CRed}Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup' to complete setup${CClear}"
+        echo ""
+        echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPNMON-R2 is not configured. Please run the setup tool." >> $LOGFILE
+        kill 0
+      fi
   fi
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3296,9 +3577,6 @@ while true; do
       echo -e "$(date +%s)" > $RSTFILE
       START=$(cat $RSTFILE)
   fi
-
-  # Write persistence logfile
-  echo -e "$(date +%s)" > $PERSIST
 
   # Check for external commandline activity
   lockcheck
@@ -3598,171 +3876,7 @@ while true; do
 
   fi
 
-  # -------------------------------------------------------------------------------------------------------------------------
-  # Check for 4 major reset scenarios:
-  # (1) Lost connection,
-  # (2) Multiple connections,
-  # (3) High VPN Server Load, or
-  # (4) High Ping
-  # (5) VPN Client identified with a lower ping than the current connection
-  # ...and reset the VPN connection
-  # -------------------------------------------------------------------------------------------------------------------------
-
-  # If STATUS remains 0 then we've lost our connection, reset the VPN
-  if [ $STATUS -eq 0 ]; then
-      echo -e "\n${CRed} Connection has failed, VPNMON-R2 is executing VPN Reset${CClear}\n"
-      echo -e "$(date) - VPNMON-R2 ----------> ERROR: Connection failed - Executing VPN Reset" >> $LOGFILE
-
-      vpnreset
-
-      SKIPPROGRESS=1
-
-      echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
-      echo -e "$(date +%s)" > $RSTFILE
-      START=$(cat $RSTFILE)
-      PINGLOW=0 # Reset ping time history variables
-      PINGHIGH=0
-      ICANHAZIP=""
-      oldrxbytes=0 # Reset Stats
-      oldtxbytes=0
-      newrxbytes=0
-      newtxbytes=0
-  fi
-
-  # If VPNCLCNT is greater than 1 there are multiple connections running, reset the VPN
-  if [ $VPNCLCNT -gt 1 ]; then
-      echo -e "\n${CRed} Multiple VPN Client Connections detected, VPNMON-R2 is executing VPN Reset${CClear}\n"
-      echo -e "$(date) - VPNMON-R2 ----------> ERROR: Multiple VPN Client Connections detected - Executing VPN Reset" >> $LOGFILE
-
-      vpnreset
-
-      SKIPPROGRESS=1
-
-      echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
-      echo -e "$(date +%s)" > $RSTFILE
-      START=$(cat $RSTFILE)
-      PINGLOW=0 # Reset ping time history variables
-      PINGHIGH=0
-      ICANHAZIP=""
-      oldrxbytes=0 # Reset Stats
-      oldtxbytes=0
-      newrxbytes=0
-      newtxbytes=0
-  fi
-
-  # If the NordVPN/SurfShark/PP Server load is greater than the set variable, reset the VPN and hopefully find a better server
-  if [ $NordVPNLoadReset -le $VPNLOAD ] || [ $SurfSharkLoadReset -le $VPNLOAD ] || [ $PPLoadReset -le $VPNLOAD ]; then
-
-      if [ $UseNordVPN -eq 1 ];then
-        echo -e "\n${CRed} NordVPN Server Load is higher than $NordVPNLoadReset %."
-        echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: NordVPN Server Load > $NordVPNLoadReset% - Executing VPN Reset" >> $LOGFILE
-      fi
-
-      if [ $UseSurfShark -eq 1 ];then
-        echo -e "\n${CRed} SurfShark Server Load is higher than $SurfSharkLoadReset %."
-        echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: SurfShark Server Load > $SurfSharkLoadReset% - Executing VPN Reset" >> $LOGFILE
-      fi
-
-      if [ $UsePP -eq 1 ];then
-        echo -e "\n${CRed} Perfect Privacy Server Load is higher than $PPLoadReset %."
-        echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: Perfect Privacy Server Load > $PPLoadReset% - Executing VPN Reset" >> $LOGFILE
-      fi
-
-      vpnreset
-
-      SKIPPROGRESS=1
-
-      echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
-      echo -e "$(date +%s)" > $RSTFILE
-      START=$(cat $RSTFILE)
-      PINGLOW=0 # Reset ping time history variables
-      PINGHIGH=0
-      ICANHAZIP=""
-      oldrxbytes=0 # Reset Stats
-      oldtxbytes=0
-      newrxbytes=0
-      newtxbytes=0
-  fi
-
-  # If the AVGPING average ping across the tunnel is greater than the set variable, reset the VPN and hopefully land on a server with lesser ping times
-  if [ ${AVGPING%.*} -gt $MINPING ] && [ $IGNOREHIGHPING == "0" ]; then
-    echo -e "\n${CRed} Average PING across VPN tunnel is higher than $MINPING ms, VPNMON-R2 is executing VPN Reset${CClear}\n"
-    echo -e "$(date) - VPNMON-R2 ----------> WARNING: AVG PING across VPN tunnel > $MINPING ms - Executing VPN Reset" >> $LOGFILE
-
-    vpnreset
-
-    SKIPPROGRESS=1
-
-    echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
-    echo -e "$(date +%s)" > $RSTFILE
-    START=$(cat $RSTFILE)
-    PINGLOW=0 # Reset ping time history variables
-    PINGHIGH=0
-    ICANHAZIP=""
-    oldrxbytes=0 # Reset Stats
-    oldtxbytes=0
-    newrxbytes=0
-    newtxbytes=0
-  else
-    IGNOREHIGHPING=0
-  fi
-
-  # If a different VPN slot has a lower ping than the current connection, then don't randomize and reset it to that VPN slot with lowest ping value
-  if [ "$USELOWESTSLOT" == "1" ]; then
-    if [ "$LOWEST" != "$CURRCLNT" ]; then
-
-      LOWPINGCOUNT=$(($LOWPINGCOUNT+1))
-
-      if [ $LOWPINGCOUNT -le $PINGCHANCES ]; then
-        echo -e "${InvRed} ${CClear}${CRed} WARNING:${CYellow} Switching to faster ${InvDkGray}${CWhite}VPN$LOWEST Client${CClear}${CYellow} after $(($PINGCHANCES-$LOWPINGCOUNT)) more chances"
-      else
-        echo -e "$(date) - VPNMON-R2 ----------> WARNING: Switching to faster VPN$LOWEST Client - Executing VPN Reset" >> $LOGFILE
-
-        vpnresetlowestping
-
-        SKIPPROGRESS=1
-        LOWPINGCOUNT=0
-
-        echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
-        echo -e "$(date +%s)" > $RSTFILE
-        START=$(cat $RSTFILE)
-        PINGLOW=0 # Reset ping time history variables
-        PINGHIGH=0
-        ICANHAZIP=""
-        oldrxbytes=0 # Reset Stats
-        oldtxbytes=0
-        newrxbytes=0
-        newtxbytes=0
-      fi
-    else
-      LOWPINGCOUNT=0
-    fi
-  fi
-
-  # If a force reset command has been received by the UI, then go through a regular reset
-  if [ "$FORCEDRESET" == "1" ]; then
-    echo -e "\n${CRed} Forced reset captured through UI, VPNMON-R2 is executing VPN Reset${CClear}\n"
-    echo -e "$(date) - VPNMON-R2 ----------> INFO: Forced reset captured through UI - Executing VPN Reset" >> $LOGFILE
-
-        vpnreset
-
-        SKIPPROGRESS=1
-        FORCEDRESET=0
-
-        echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
-        echo -e "$(date +%s)" > $RSTFILE
-        START=$(cat $RSTFILE)
-        PINGLOW=0 # Reset ping time history variables
-        PINGHIGH=0
-        ICANHAZIP=""
-        oldrxbytes=0 # Reset Stats
-        oldtxbytes=0
-        newrxbytes=0
-        newtxbytes=0
-  fi
+    resetcheck  # Check for all major reset scenarios
 
   # Provide a progressbar to show script activity
   if [ "$SKIPPROGRESS" == "0" ]; then
