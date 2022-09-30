@@ -1,4 +1,4 @@
-v2.24  - (TBA)
+v2.24  - (September 30, 2022)
        - ADDED: Included new "Recommanded Server" functionality for NordVPN users! As with the PC/Mobile
          app, when hitting the "Quick Connect" button, you are taken to the nearest, most fastest servers
          to your location. This functionality has now been built into VPNMON-R2, allowing you to fill your
