@@ -1,3 +1,8 @@
+v2.25  - (TBA)
+       - FIXED: Minor fixes to the VPN reset functionality to ensure it bypasses the interval timer after
+         a reset. Also, revamped the function that kills VPN slots, ensuring it only kills the slots that
+         are allocated to VPNMON-R2, should you be running other VPN connections on other slots.
+
 v2.24  - (September 30, 2022)
        - ADDED: Included new "Recommended Server" functionality for NordVPN users! As with the PC/Mobile
          app, when hitting the "Quick Connect" button, you are taken to the nearest, most fastest servers
