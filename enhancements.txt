@@ -3,13 +3,14 @@ Future Enhancements (Planned)
 
 To-Do:
 ------
-* Add the screen -wipe command
-* After executing vpnmon-r2 -screen, execute the screen window instead of dropping back to a prompt with instructions.
 * Look into more granular city control of VPN slots that won't participate in superrandom
-* Look into using the Nordvpn preferred server option
+* translate IP's back into hostnames for the Address field if the option to update vpnmgr=ON.
 
 Completed:
 ----------
+* Look into using the Nordvpn Recommended servers option
+* After executing vpnmon-r2 -screen, execute the screen window instead of dropping back to a prompt with instructions.
+* Add the screen -wipe command
 * Only kill the number of VPN slots that are actually configured per VPNMON-R2 config.
 * WeVPN integration
 * Other VPN providers that offer API solutions to easier integrate between them and vpnmon-r2, starting with NordVPN
