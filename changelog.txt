@@ -2,9 +2,6 @@ v2.25  - (TBA)
        - FIXED: Minor fixes to the VPN reset functionality to ensure it bypasses the interval timer after
          a reset. Also, revamped the function that kills VPN slots, ensuring it only kills the slots that
          are allocated to VPNMON-R2, should you be running other VPN connections on other slots.
-       - FIXED: Compatility issue with vpnmgr, where the IP address written back to the "Address" field
-         in the VPN Slot UI was causing errors for vpnmgr when it tried to look up the load for that
-         particular server.
 
 v2.24  - (September 30, 2022)
        - ADDED: Included new "Recommended Server" functionality for NordVPN users! As with the PC/Mobile
