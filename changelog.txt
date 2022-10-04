@@ -2,6 +2,8 @@ v2.25  - (TBA)
        - FIXED: Minor fixes to the VPN reset functionality to ensure it bypasses the interval timer after
          a reset. Also, revamped the function that kills VPN slots, ensuring it only kills the slots that
          are allocated to VPNMON-R2, should you be running other VPN connections on other slots.
+       - FIXED: the -wipe SCREEN command is now being checked earlier before the script determines how
+         it is going to initiate a SCREEN session.
 
 v2.24  - (September 30, 2022)
        - ADDED: Included new "Recommended Server" functionality for NordVPN users! As with the PC/Mobile
