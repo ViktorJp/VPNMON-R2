@@ -3,7 +3,7 @@ Future Enhancements (Planned)
 
 To-Do:
 ------
-* Look into more granular city control of VPN slots that won't participate in superrandom
+* Look into more granular city/feature control of VPN slots that won't participate in superrandom
 
 Completed:
 ----------
