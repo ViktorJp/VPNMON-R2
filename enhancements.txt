@@ -4,7 +4,6 @@ Future Enhancements (Planned)
 To-Do:
 ------
 * Look into more granular city control of VPN slots that won't participate in superrandom
-* translate IP's back into hostnames for the Address field if the option to update vpnmgr=ON.
 
 Completed:
 ----------
