@@ -5,6 +5,7 @@ v2.25  - (TBA)
          are allocated to VPNMON-R2, should you be running other VPN connections on other slots.
        - FIXED: the -wipe SCREEN command is now being checked earlier before the script determines how
          it is going to initiate a SCREEN session.
+       - CHANGED: 
 
 v2.24  - (September 30, 2022)
        - ADDED: Included new "Recommended Server" functionality for NordVPN users! As with the PC/Mobile
