@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.25b3 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.25b4 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.25b3"                                    # Current version of VPNMON-R2
+Version="2.25b4"                                    # Current version of VPNMON-R2
 Beta=1                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
