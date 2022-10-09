@@ -1261,7 +1261,7 @@ vpnreset() {
             NORDLINES="$(eval $NORDLINES 2>/dev/null)"; if echo $NORDLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
-            if [ $LINES -ge 1 ]; then break; fi
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [NordVPN Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
             if [ $svrcount -eq 1 ]; then echo ""; fi
             printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
             sleep 1
@@ -1313,7 +1313,7 @@ vpnreset() {
             sed "s/,/\n/g" /jffs/scripts/ppipscln.txt > /jffs/scripts/ppipslst.txt 2>&1
             LINES=$(cat /jffs/scripts/ppipslst.txt | wc -l) >/dev/null 2>&1  #Check to see how many lines/server IPs are in this file
 
-            if [ $LINES -ge 1 ]; then break; fi
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [Perfect Privacy Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
             if [ $svrcount -eq 1 ]; then echo ""; fi
             printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
             sleep 1
@@ -1402,7 +1402,8 @@ vpnreset() {
             NORDLINES="curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == \"$NordVPNRandomCountry\") | .station' > /jffs/scripts/NordVPN.txt"
             NORDLINES="$(eval $NORDLINES 2>/dev/null)"; if echo $NORDLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
-            if [ $LINES -ge 1 ]; then break; fi
+
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [NordVPN Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
             if [ $svrcount -eq 1 ]; then echo ""; fi
             printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
             sleep 1
@@ -1469,7 +1470,7 @@ vpnreset() {
             SURFLINES="$(eval $SURFLINES 2>/dev/null)"; if echo $SURFLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/surfshark.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines are in this file
 
-            if [ $LINES -ge 1 ]; then break; fi
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [SurfShark Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
             if [ $svrcount -eq 1 ]; then echo ""; fi
             printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
             sleep 1
@@ -1530,7 +1531,7 @@ vpnreset() {
             PPLINES="$(eval $PPLINES 2>/dev/null)"; if echo $PPLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/pp.txt | wc -l) >/dev/null 2>&1 #Check to see how many linesare in this file
 
-            if [ $LINES -ge 1 ]; then break; fi
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [Perfect Privacy Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
             if [ $svrcount -eq 1 ]; then echo ""; fi
             printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
             sleep 1
@@ -1591,7 +1592,7 @@ vpnreset() {
             WELINES="$(eval $WELINES 2>/dev/null)"; if echo $WELINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/wevpn.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines are in this file
 
-            if [ $LINES -ge 1 ]; then break; fi
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [WeVPN Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
             if [ $svrcount -eq 1 ]; then echo ""; fi
             printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
             sleep 1
