@@ -1,10 +1,10 @@
 v2.26  - (TBA)
-       - CHANGED: Added some additional error checking and logic on VPN provider API calls to help
-         eliminate any errors from showing on the screen when connectivity might possibly be interfering
-         with results being returned, resulting in parse error messages getting displayed on screen. This
-         behavior was especially evident in Dual WAN failover situations. HUGE thanks to @Stephen
-         Harrington for his patience and willingness to help test VPNMON-R2 during these failovers! You
-         have helped make this script better and better over time, much thanks to you!  :)
+       - CHANGED: Added some additional layers of error checking and logic pertaining to VPN provider API
+         calls to help eliminate any errors from showing on the screen when connectivity might possibly be
+         interfering with results being returned, resulting in parse error messages from CURL and JQ being
+         displayed on screen. This behavior was particularly evident in Dual WAN failover situations. HUGE
+         thanks to @Stephen Harrington for his patience and willingness to help test VPNMON-R2 during these
+         failovers! You have helped make this script better and better over time, much thanks to you!  :)
        - FIXED: Minor fixes to the VPN reset functionality to ensure it bypasses the interval timer after
          a reset. 
        - FIXED: Also, revamped the function that kills VPN slots, ensuring it only kills the slots that
