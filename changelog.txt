@@ -1,4 +1,4 @@
-v2.26  - (TBA)
+v2.26  - (October 10, 2022)
        - CHANGED: Added some additional layers of error checking and logic pertaining to VPN provider API
          calls to help eliminate any errors from showing on the screen when connectivity might possibly be
          interfering with results being returned, resulting in parse error messages from CURL and JQ being
