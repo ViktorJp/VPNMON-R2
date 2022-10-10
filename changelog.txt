@@ -1,13 +1,16 @@
-v2.25  - (TBA)
+v2.26  - (TBA)
+       - CHANGED: Added some additional error checking and logic on VPN provider API calls to help
+         eliminate any errors from showing on the screen when connectivity might possibly be interfering
+         with results being returned, resulting in parse error messages getting displayed on screen. This
+         behavior was especially evident in Dual WAN failover situations. HUGE thanks to @Stephen
+         Harrington for his patience and willingness to help test VPNMON-R2 during these failovers! You
+         have helped make this script better and better over time, much thanks to you!  :)
        - FIXED: Minor fixes to the VPN reset functionality to ensure it bypasses the interval timer after
          a reset. 
        - FIXED: Also, revamped the function that kills VPN slots, ensuring it only kills the slots that
          are allocated to VPNMON-R2, should you be running other VPN connections on other slots.
        - FIXED: the -wipe SCREEN command is now being checked earlier before the script determines how
          it is going to initiate a SCREEN session.
-       - CHANGED: Added some additional error checking on API calls to help eliminate any errors when
-         connectivity might possibly be interfering with results being returned, resulting in parse
-         error messages getting displayed on screen.
 
 v2.24  - (September 30, 2022)
        - ADDED: Included new "Recommended Server" functionality for NordVPN users! As with the PC/Mobile
