@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.24 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.26 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.24"                                      # Current version of VPNMON-R2
+Version="2.26"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -619,7 +619,7 @@ checkwan () {
           spinner
           echo -e "$(date +%s)" > $RSTFILE
           START=$(cat $RSTFILE)
-          clear
+          echo ""
           vpnreset
       fi
 
@@ -835,35 +835,24 @@ vpnresetlowestping() {
 
     # Wait for confirmation that all VPN client slots are at 0 (disconnected)
       vpncount=0
-      while true; do
-        # Check the VPN States
-        state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
-        state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
-        state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
-        state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
-        state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
+      i=0
+      while [ $i -ne $N ]
+        do
+          state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
+          state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
+          state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
+          state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
+          state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
 
-        printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
-
-        if [ "$state1" == "0" ] && [ "$state2" == "0" ] && [ "$state3" == "0" ] && [ "$state4" == "0" ] && [ "$state5" == "0" ]; then
-          break
-        else
+          printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
           sleep 1
-          vpncount=$(($vpncount+1))
-          if [ "$vpncount" = "60" ]; then
+          i=$(($i+1))
+          if [ $((state$i)) -ne 0 ]; then
             printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...         "
-
+            service stop_vpnclient$i >/dev/null 2>&1
+            sleep 1
             i=0
-            while [ $i -ne $N ]
-              do
-                i=$(($i+1))
-                service stop_vpnclient$i >/dev/null 2>&1
-            done
-
-            vpncount=0
           fi
-        fi
-
       done
 
       echo -e "$(date) - VPNMON-R2 - Killed all VPN Client Connections" >> $LOGFILE
@@ -1001,37 +990,26 @@ vpnreset() {
     done
 
   # Wait for confirmation that all VPN client slots are at 0 (disconnected)
-    vpncount=0
-    while true; do
-      # Check the VPN States
-      state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
-      state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
-      state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
-      state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
-      state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
 
-      printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
+      i=0
+      while [ $i -ne $N ]
+        do
+          state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
+          state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
+          state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
+          state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
+          state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
 
-      if [ "$state1" == "0" ] && [ "$state2" == "0" ] && [ "$state3" == "0" ] && [ "$state4" == "0" ] && [ "$state5" == "0" ]; then
-        break
-      else
-        sleep 1
-        vpncount=$(($vpncount+1))
-        if [ "$vpncount" = "60" ]; then
-          printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...         "
-
-          i=0
-          while [ $i -ne $N ]
-            do
-              i=$(($i+1))
-              service stop_vpnclient$i >/dev/null 2>&1
-          done
-
-          vpncount=0
-        fi
-      fi
-
-    done
+          printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
+          sleep 1
+          i=$(($i+1))
+          if [ $((state$i)) -ne 0 ]; then
+            printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...         "
+            service stop_vpnclient$i >/dev/null 2>&1
+            sleep 1
+            i=0
+          fi
+      done
 
     echo -e "$(date) - VPNMON-R2 - Killed all VPN Client Connections" >> $LOGFILE
 
@@ -1269,13 +1247,40 @@ vpnreset() {
 
       if [ $UseNordVPN -eq 1 ]
       then
-        curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == "'"$NordVPNRandomCountry"'") | .station' > /jffs/scripts/NordVPN.txt
-        LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l)  #Check to see how many lines/server IPs are in this file
+
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Reaching out to NordVPN API to download Server IPs]          "
+        sleep 1
+
+        svrcount=0
+        while [ $svrcount -ne 60 ]
+          do
+            svrcount=$(($svrcount+1))
+            #curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == "'"$NordVPNRandomCountry"'") | .station' > /jffs/scripts/NordVPN.txt
+            NORDLINES="curl --silent --retry 3 https://api.nordvpn.com/v1/servers?limit=16384 | jq --raw-output '.[] | select(.locations[].country.name == \"$NordVPNRandomCountry\") | .station' > /jffs/scripts/NordVPN.txt"
+            NORDLINES="$(eval $NORDLINES 2>/dev/null)"; if echo $NORDLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
+            LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
+
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [NordVPN Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
+            if [ $svrcount -eq 1 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
+            sleep 1
+
+            if [ $svrcount -eq 60 ]; then
+              echo ""
+              echo -e "\n${CRed} Error: Unable to reach NordVPN API! Check NordVPN service or"
+              echo -e " Country Name specified in the configuration.${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API!" >> $LOGFILE
+              sleep 1
+              break
+            fi
+        done
 
         if [ $LINES -eq 0 ] # If there are no lines, error out
         then
-          echo -e "\n${CRed}Error: NordVPN.txt list is blank! Check NordVPN service or config's Country Name.\n${CClear}"
-          echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPN.txt list is blank!" >> $LOGFILE
+          echo -e "\n${CRed} Error: NordVPN.txt VPN Server list is blank! Skipping import into "
+          echo -e " Skynet Firewall.\n${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPN.txt VPN Server list is blank! Skipping Skynet Firewall import." >> $LOGFILE
         else
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Updating Skynet whitelist with NordVPN Server IPs]           "
@@ -1287,7 +1292,7 @@ vpnreset() {
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r  [Letting Skynet import and settle for $SPIN seconds]         "
 
-            spinner
+          spinner
 
           echo -e "$(date) - VPNMON-R2 - Updated Skynet Whitelist" >> $LOGFILE
         fi
@@ -1295,15 +1300,35 @@ vpnreset() {
 
       if [ $UsePP -eq 1 ]
       then
-        curl --silent --retry 3 "https://www.perfect-privacy.com/api/serverips" > /jffs/scripts/ppips.txt
-        awk -F' ' '{print $2}' /jffs/scripts/ppips.txt > /jffs/scripts/ppipscln.txt
-        sed "s/,/\n/g" /jffs/scripts/ppipscln.txt > /jffs/scripts/ppipslst.txt
-        LINES=$(cat /jffs/scripts/ppipslst.txt | wc -l)  #Check to see how many lines/server IPs are in this file
+
+        svrcount=0
+        while [ $svrcount -ne 60 ]
+          do
+            svrcount=$(($svrcount+1))
+            #curl --silent --retry 3 "https://www.perfect-privacy.com/api/serverips" > /jffs/scripts/ppips.txt
+            PPLINES="curl --silent --retry 3 https://www.perfect-privacy.com/api/serverips > /jffs/scripts/ppips.txt"
+            PPLINES="$(eval $PPLINES 2>/dev/null)"; if echo $PPLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
+            awk -F' ' '{print $2}' /jffs/scripts/ppips.txt > /jffs/scripts/ppipscln.txt 2>&1
+            sed "s/,/\n/g" /jffs/scripts/ppipscln.txt > /jffs/scripts/ppipslst.txt 2>&1
+            LINES=$(cat /jffs/scripts/ppipslst.txt | wc -l) >/dev/null 2>&1  #Check to see how many lines/server IPs are in this file
+
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [Perfect Privacy Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
+            if [ $svrcount -eq 1 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
+            sleep 1
+
+            if [ $svrcount -eq 60 ]; then
+              echo -e "\n${CRed} Error: Unable to reach Perfect Privacy API! Check PP service or"
+              echo -e " Country Name specified in the configuration.${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach Perfect Privacy API!" >> $LOGFILE
+              break
+            fi
+        done
 
         if [ $LINES -eq 0 ] # If there are no lines, error out
         then
-          echo -e "\n${CRed}Error: ppipslst.txt list is blank! Check Perfect Privacy service.\n${CClear}"
-          echo -e "$(date) - VPNMON-R2 ----------> ERROR: ppipslst.txt Perfect Privacy VPN list is blank!" >> $LOGFILE
+          echo -e "\n${CRed}Error: ppipslst.txt VPN Server list is blank! Skipping import into Skynet Firewall.\n${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: ppipslst.txt VPN Server list is blank! Skipping import into Skynet Firewall." >> $LOGFILE
         else
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Updating Skynet whitelist with Perfect Privacy Server IPs]   "
@@ -1315,7 +1340,7 @@ vpnreset() {
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r  [Letting Skynet import and settle for $SPIN seconds]         "
 
-            spinner
+          spinner
 
           echo -e "$(date) - VPNMON-R2 - Updated Skynet Whitelist" >> $LOGFILE
         fi
@@ -1329,72 +1354,97 @@ vpnreset() {
 
       if [ -f /jffs/scripts/NordVPN.txt ] # Check to see if NordVPN file exists from UpdateSkynet
       then
-        LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l)  # Check to see how many lines/server IPs are in this file
+        LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 # Check to see how many lines/server IPs are in this file
 
         if [ $LINES -eq 0 ] # If there are no lines, error out
         then
-          echo -e "${CRed}Error: NordVPN.txt list is blank! Check NordVPN service or config's Country Name.\n${CClear}"
-          echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPN.txt list is blank!" >> $LOGFILE
-          return
+          echo -e "\n${CRed} Error: NordVPN.txt VPN Server list is blank! Skipping SuperRandom "
+          echo -e " assignment process.\n${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPN.txt VPN Server list is blank! Skipping SuperRandom assignment process." >> $LOGFILE
+        else
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs] "
+          sleep 1
+          echo ""
+
+          i=0
+          while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
+            do
+              i=$(($i+1))
+              RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+              R_LINE=$(( RANDOM % LINES + 1 ))
+              RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
+              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
+              nvram set vpn_client"$i"_addr="$RNDVPNIP"
+              nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+              sleep 1
+          done
+          #echo ""
+          echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom NordVPN Server Locations" >> $LOGFILE
         fi
-
-        printf "${CGreen}\r                                                               "
-        printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs] "
-        sleep 1
-        echo ""
-
-        i=0
-        while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
-          do
-            i=$(($i+1))
-            RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
-            R_LINE=$(( RANDOM % LINES + 1 ))
-            RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
-            RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
-            RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
-            nvram set vpn_client"$i"_addr="$RNDVPNIP"
-            nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-            echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
-            sleep 1
-        done
-        #echo ""
-        echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom NordVPN Server Locations" >> $LOGFILE
 
       else
 
         # NordVPN.txt must not exist and/or UpdateSkynet is turned off, so run API to get full server list from NordVPN
-        curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == "'"$NordVPNRandomCountry"'") | .station' > /jffs/scripts/NordVPN.txt
-        LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) #Check to see how many lines/server IPs are in this file
+
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Reaching out to NordVPN API to download Server IPs]          "
+        sleep 1
+
+        svrcount=0
+        while [ $svrcount -ne 60 ]
+          do
+            svrcount=$(($svrcount+1))
+            #curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == "'"$NordVPNRandomCountry"'") | .station' > /jffs/scripts/NordVPN.txt
+            NORDLINES="curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == \"$NordVPNRandomCountry\") | .station' > /jffs/scripts/NordVPN.txt"
+            NORDLINES="$(eval $NORDLINES 2>/dev/null)"; if echo $NORDLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
+            LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
+
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [NordVPN Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
+            if [ $svrcount -eq 1 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
+            sleep 1
+
+            if [ $svrcount -eq 60 ]; then
+              echo ""
+              echo -e "\n${CRed} Error: Unable to reach NordVPN API! Check NordVPN service or"
+              echo -e " Country Name specified in the configuration.${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API! Check NordVPN service or config's Country Name." >> $LOGFILE
+              break
+            fi
+        done
 
         if [ $LINES -eq 0 ] #If there are no lines, error out
         then
-          echo -e "\n${CRed}Error: NordVPN.txt list is blank! Check NordVPN service or config's Country Name.\n${CClear}"
-          echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPN.txt list is blank!" >> $LOGFILE
-          sleep 3
-          return
+          echo -e "\n${CRed} Error: NordVPN.txt VPN Server list is blank! Skipping SuperRandom"
+          echo -e " assignment process.${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPN.txt VPN Server list is blank! Skipping SuperRandom assignment process" >> $LOGFILE
+          sleep 1
+        else
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs]   "
+          sleep 1
+          echo ""
+
+          i=0
+          while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
+            do
+              i=$(($i+1))
+              RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+              R_LINE=$(( RANDOM % LINES + 1 ))
+              RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
+              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
+              nvram set vpn_client"$i"_addr="$RNDVPNIP"
+              nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+              sleep 1
+          done
+          #echo ""
+          echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom NordVPN Server Locations" >> $LOGFILE
         fi
-
-        printf "${CGreen}\r                                                               "
-        printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs]   "
-        sleep 1
-        echo ""
-
-        i=0
-        while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
-          do
-            i=$(($i+1))
-            RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
-            R_LINE=$(( RANDOM % LINES + 1 ))
-            RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
-            RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
-            RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
-            nvram set vpn_client"$i"_addr="$RNDVPNIP"
-            nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-            echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
-            sleep 1
-        done
-        #echo ""
-        echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom NordVPN Server Locations" >> $LOGFILE
       fi
     fi
 
@@ -1405,19 +1455,39 @@ vpnreset() {
       then
         UpdateVPNMGR=0 # Failsafe to make sure VPNMGR doesn't overwrite values written by the SuperRandom function
 
-          # Run SurfShark API to get full server list from SurfShark
-          curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.country == "'"$SurfSharkRandomCountry"'") | .connectionName' > /jffs/scripts/surfshark.txt
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Reaching out to SurfShark API to download Server IPs]          "
+        sleep 1
 
-          LINES=$(cat /jffs/scripts/surfshark.txt | wc -l) #Check to see how many lines are in this file
+        svrcount=0
+        while [ $svrcount -ne 60 ]
+          do
+            svrcount=$(($svrcount+1))
+            # Run SurfShark API to get full server list from SurfShark
+            #curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.country == "'"$SurfSharkRandomCountry"'") | .connectionName' > /jffs/scripts/surfshark.txt
+            SURFLINES="curl --silent --retry 3 https://api.surfshark.com/v3/server/clusters | jq --raw-output '.[] | select(.country == \"$SurfSharkRandomCountry\") | .connectionName' > /jffs/scripts/surfshark.txt"
+            SURFLINES="$(eval $SURFLINES 2>/dev/null)"; if echo $SURFLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
+            LINES=$(cat /jffs/scripts/surfshark.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines are in this file
 
-          if [ $LINES -eq 0 ] #If there are no lines, error out
-          then
-            echo -e "\n${CRed}Error: surfshark.txt list is blank! Check SurfShark service or config's Country Name.\n${CClear}"
-            echo -e "$(date) - VPNMON-R2 ----------> ERROR: surfshark.txt list is blank!" >> $LOGFILE
-            sleep 3
-            return
-          fi
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [SurfShark Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
+            if [ $svrcount -eq 1 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
+            sleep 1
 
+            if [ $svrcount -eq 60 ]; then
+              echo -e "\n${CRed}Error: Unable to reach SurfShark API! Check SurfShark service or config's Country Name.\n${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach SurfShark API! Check SurfShark service or config's Country Name." >> $LOGFILE
+              break
+            fi
+        done
+
+        if [ $LINES -eq 0 ] #If there are no lines, error out
+        then
+          echo -e "\n${CRed}Error: surfshark.txt VPN Serverlist is blank! Skipping SuperRandom "
+          echo -e " assignment process.\n${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: surfshark.txt VPN Server list is blank! Skipping SuperRandom assignment process." >> $LOGFILE
+          sleep 1
+        else
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom SurfShark IPs] "
           sleep 1
@@ -1440,52 +1510,71 @@ vpnreset() {
           done
           #echo ""
           echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom SurfShark Server Locations" >> $LOGFILE
+        fi
       fi
     fi
 
     if [ $UsePP -eq 1 ]
       then
-        # Randomly select VPN Client slots against entire field of available Perfect Privacy server IPs for selected country
-        if [ $PPSuperRandom -eq 1 ]
-        then
-          UpdateVPNMGR=0 # Failsafe to make sure VPNMGR doesn't overwrite values written by the SuperRandom function
+      # Randomly select VPN Client slots against entire field of available Perfect Privacy server IPs for selected country
+      if [ $PPSuperRandom -eq 1 ]
+      then
+        UpdateVPNMGR=0 # Failsafe to make sure VPNMGR doesn't overwrite values written by the SuperRandom function
 
+        svrcount=0
+        while [ $svrcount -ne 60 ]
+          do
+            svrcount=$(($svrcount+1))
             # Run Perfect Privacy API to get full server list from Perfect Privacy VPN
-            curl --silent --retry 3 "https://www.perfect-privacy.com/api/serverlocations.json" | jq -r 'path(.[] | select(.country =="'"$PPRandomCountry"'"))[0]' > /jffs/scripts/pp.txt
+            #curl --silent --retry 3 "https://www.perfect-privacy.com/api/serverlocations.json" | jq -r 'path(.[] | select(.country =="'"$PPRandomCountry"'"))[0]' > /jffs/scripts/pp.txt
+            PPLINES="curl --silent --retry 3 https://www.perfect-privacy.com/api/serverlocations.json | jq -r 'path(.[] | select(.country ==\"$PPRandomCountry\"))[0]' > /jffs/scripts/pp.txt"
+            PPLINES="$(eval $PPLINES 2>/dev/null)"; if echo $PPLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
+            LINES=$(cat /jffs/scripts/pp.txt | wc -l) >/dev/null 2>&1 #Check to see how many linesare in this file
 
-            LINES=$(cat /jffs/scripts/pp.txt | wc -l) #Check to see how many linesare in this file
-
-            if [ $LINES -eq 0 ] #If there are no lines, error out
-            then
-              echo -e "\n${CRed}Error: pp.txt VPN server list is blank! Check Perfect Privacy VPN service or config's Country Name.\n${CClear}"
-              echo -e "$(date) - VPNMON-R2 ----------> ERROR: pp.txt Perfect Privacy VPN list is blank!" >> $LOGFILE
-              sleep 3
-              return
-            fi
-
-            printf "${CGreen}\r                                                               "
-            printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom PerfPriv IPs]  "
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [Perfect Privacy Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
+            if [ $svrcount -eq 1 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
             sleep 1
-            echo ""
 
-            i=0
-            while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
-              do
-                i=$(($i+1))
-                RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
-                R_LINE=$(( RANDOM % LINES + 1 ))
-                RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/pp.txt)
-                RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
-                RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
-                RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
-                nvram set vpn_client"$i"_addr="$RNDVPNHOST"
-                nvram set vpn_client"$i"_desc="Perfect Privacy - $RNDVPNCITY"
-                echo -e "${CCyan}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY\n${CClear}"
-                sleep 1
-            done
-            #echo ""
-            echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom Perfect Privacy Server Locations" >> $LOGFILE
+            if [ $svrcount -eq 60 ]; then
+              echo -e "\n${CRed}Error: Unable to reach Perfect Privacy API! Check Perfect Privacy"
+              echo -e " service or Country Name specified in the configuration.\n${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach Perfect Privacy API! Check Perfect Privacy service or config's Country Name." >> $LOGFILE
+              break
+            fi
+        done
+
+        if [ $LINES -eq 0 ] #If there are no lines, error out
+        then
+          echo -e "\n${CRed}Error: pp.txt VPN server list is blank! Skipping SuperRandom"
+          echo -e " assignment process.\n${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: pp.txt VPN server list is blank! Skipping SuperRandom assignment process." >> $LOGFILE
+          sleep 1
+        else
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom PerfPriv IPs]  "
+          sleep 1
+          echo ""
+
+          i=0
+          while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
+            do
+              i=$(($i+1))
+              RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+              R_LINE=$(( RANDOM % LINES + 1 ))
+              RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/pp.txt)
+              RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
+              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
+              nvram set vpn_client"$i"_addr="$RNDVPNHOST"
+              nvram set vpn_client"$i"_desc="Perfect Privacy - $RNDVPNCITY"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom Host: $RNDVPNHOST - City: $RNDVPNCITY\n${CClear}"
+              sleep 1
+          done
+          #echo ""
+          echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom Perfect Privacy Server Locations" >> $LOGFILE
         fi
+      fi
     fi
 
     if [ $UseWeVPN -eq 1 ]
@@ -1495,19 +1584,36 @@ vpnreset() {
       then
         UpdateVPNMGR=0 # Failsafe to make sure VPNMGR doesn't overwrite values written by the SuperRandom function
 
-          # Run WeVPN API to get full server list from SurfShark
-          curl --silent --retry 3 "https://client.wevpn.com/api/v3/locations" | jq --raw-output '.data[] | select(.country.name == "'"$WeVPNRandomCountry"'" ) | .hostname' > /jffs/scripts/wevpn.txt
+        svrcount=0
+        while [ $svrcount -ne 60 ]
+          do
+            svrcount=$(($svrcount+1))
+            # Run WeVPN API to get full server list from WeVPN
+            #curl --silent --retry 3 "https://client.wevpn.com/api/v3/locations" | jq --raw-output '.data[] | select(.country.name == "'"$WeVPNRandomCountry"'" ) | .hostname' > /jffs/scripts/wevpn.txt
+            WELINES="curl --silent --retry 3 https://client.wevpn.com/api/v3/locations | jq --raw-output '.data[] | select(.country.name == \"$WeVPNRandomCountry\" ) | .hostname' > /jffs/scripts/wevpn.txt"
+            WELINES="$(eval $WELINES 2>/dev/null)"; if echo $WELINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
+            LINES=$(cat /jffs/scripts/wevpn.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines are in this file
 
-          LINES=$(cat /jffs/scripts/wevpn.txt | wc -l) #Check to see how many lines are in this file
+            if [ $LINES -ge 1 ]; then printf "${CGreen}\r [WeVPN Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
+            if [ $svrcount -eq 1 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
+            sleep 1
 
-          if [ $LINES -eq 0 ] #If there are no lines, error out
-          then
-            echo -e "\n${CRed}Error: wevpn.txt list is blank! Check WeVPN service or config's Country Name.\n${CClear}"
-            echo -e "$(date) - VPNMON-R2 ----------> ERROR: wevpn.txt list is blank!" >> $LOGFILE
-            sleep 3
-            return
-          fi
+            if [ $svrcount -eq 60 ]; then
+              echo -e "\n${CRed}Error: Unable to reach WeVPN API! Check WeVPN service or"
+              echo -e " Country Name specified in the configuration.\n${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach WeVPN API! Check WeVPN service or config's Country Name." >> $LOGFILE
+              break
+            fi
+        done
 
+        if [ $LINES -eq 0 ] #If there are no lines, error out
+        then
+          echo -e "\n${CRed}Error: wevpn.txt list is blank! Skipping SuperRandom"
+          echo -e " assignment process.\n${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: wevpn.txt list is blank! Skipping SuperRandom assignment process." >> $LOGFILE
+          sleep 1
+        else
           printf "${CGreen}\r                                                                 "
           printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom WeVPN Hostnames] "
           sleep 1
@@ -1530,6 +1636,7 @@ vpnreset() {
           done
           #echo ""
           echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom WeVPN Server Locations" >> $LOGFILE
+        fi
       fi
     fi
 
@@ -1537,11 +1644,12 @@ vpnreset() {
       UpdateVPNMGR=0 #Override vpnmgr if we're getting NordVPN Recommended Servers
       NordCountryID=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/countries" | jq --raw-output '.[] | select(.name == "'"$NordVPNRandomCountry"'") | [.name,.id] | "\(.[1])"')
       curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/recommendations?filters\[country_id\]=$NordCountryID&limit=5" | jq --raw-output '.[].station' > /jffs/scripts/NordVPNRS.txt  #Extract all the closest recommended NordVPN servers to a text file
-      LINES=$(cat /jffs/scripts/NordVPNRS.txt | wc -l) #Check to see how many lines/server IPs are in this file
+      LINES=$(cat /jffs/scripts/NordVPNRS.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
       if [ $LINES -eq 0 ] #If there are no lines, error out
       then
-        echo -e "\n${CRed}Error: NordVPNRS.txt recommended servers list is blank!\n${CClear}"
+        echo -e "\n${CRed}Error: NordVPNRS.txt recommended servers list is blank! Check"
+        echo -e " NordVPN Service or Country Name specified in the configuration.${CClear}"
         echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPNRS.txt recommended servers list is blank!" >> $LOGFILE
         sleep 3
         return
@@ -1597,9 +1705,8 @@ vpnreset() {
     fi
 
   # Call VPNMGR functions to refresh server lists and save their results to the VPN client configs
-    if [ $UpdateVPNMGR -eq 1 ]
-    then
-
+    if [ $UpdateVPNMGR -eq 1 ]; then
+      # Refresh VPNMGR cache, locations & servernames
       echo ""
       printf "${CGreen}\r                                                               "
       printf "${CGreen}\r [Refresh VPNMGRs NordVPN/PIA/WeVPN Server Locations]          "
@@ -1806,6 +1913,8 @@ vpnreset() {
     # Clean up lockfile
     rm $LOCKFILE >/dev/null 2>&1
 
+    i=$INTERVAL # Skip the timer interval
+
     # Returning from a WAN Down situation or scheduled reset, restart VPNMON-R2 with -monitor switch, or return
     if [ "$RESETSWITCH" == "1" ]
       then
@@ -2006,6 +2115,7 @@ lockcheck () {
     spinner
 
     # Reset the VPN IP/Locations after a reset occurred
+    i=60
     WAN0IP="Unassigned" # Look for an updated WAN IP/Location
     WAN1IP="Unassigned" # Look for an updated WAN IP/Location
     VPNIP="Unassigned" # Look for a new VPN IP/Location
@@ -3482,6 +3592,8 @@ vsetup () {
   # Check to see if the screen option is being called and run operations normally using the screen utility
   if [ "$1" == "-screen" ]
     then
+      screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
+      sleep 1
       ScreenSess=$(screen -ls | grep "vpnmon-r2" | awk '{print $1}' | cut -d . -f 1)
       if [ -z $ScreenSess ]; then
         clear
@@ -3491,8 +3603,6 @@ vsetup () {
         echo -e "${CCyan}In order to keep VPNMON-R2 running in the background,${CClear}"
         echo -e "${CCyan}properly exit the SCREEN session by using: CTRL-A + D${CClear}"
         echo ""
-        screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
-        sleep 1
         screen -dmS "vpnmon-r2" $APPPATH -monitor
         sleep 2
         if [ ! -f /jffs/addons/vpnmon-r2.d/titanspeed.txt ]; then
@@ -3765,7 +3875,26 @@ while true; do
         # Get the NordVPN server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
         printf "\r${InvYellow} ${CClear}${CYellow} [Checking NordVPN Server Load]..."
-        VPNLOAD=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16354" | jq '.[] | select(.station == "'"$VPNIP"'") | .load')
+
+        loadcount=0
+        while [ $loadcount -ne 60 ]
+          do
+            loadcount=$(($loadcount+1))
+            #VPNLOAD=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq '.[] | select(.station == "'"$VPNIP"'") | .load') >/dev/null 2>&1
+            VPNLOAD="curl --silent --retry 3 https://api.nordvpn.com/v1/servers?limit=16384 | jq '.[] | select(.station == \"$VPNIP\") | .load' 2>&1"
+            VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
+
+            if [ -z $VPNLOAD ]; then break; fi
+            if [ $VPNLOAD -gt 0 ]; then break; fi
+            sleep 1
+
+            if [ $loadcount -eq 60 ]; then
+              echo -e "\n${CRed}Error: Unable to reach NordVPN API! Load reading is not possible.\n${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API! Load reading is not possible." >> $LOGFILE
+              break
+            fi
+        done
+
         printf "\r"
         LOAD_END_TIME=$(date +%s)
         LOAD_ELAPSED_TIME=$(( LOAD_END_TIME - LOAD_START_TIME ))
@@ -3776,7 +3905,26 @@ while true; do
         # Get the SurfShark server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
         printf "\r${InvYellow} ${CClear}${CYellow}  [Checking SurfShark Server Load]..."
-        VPNLOAD=$(curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.connectionName == "'"$VPNIP"'") | .load')
+
+        loadcount=0
+        while [ $loadcount -ne 60 ]
+          do
+            loadcount=$(($loadcount+1))
+            #VPNLOAD=$(curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.connectionName == "'"$VPNIP"'") | .load') >/dev/null 2>&1
+            VPNLOAD="curl --silent --retry 3 https://api.surfshark.com/v3/server/clusters | jq --raw-output '.[] | select(.connectionName == \"$VPNIP\") | .load' >/dev/null 2>&1"
+            VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
+
+            if [ -z $VPNLOAD ]; then break; fi
+            if [ $VPNLOAD -gt 0 ]; then break; fi
+            sleep 1
+
+            if [ $loadcount -eq 60 ]; then
+              echo -e "\n${CRed}Error: Unable to reach SurfShark API! Load reading is not possible.\n${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach SurfShark API! Load reading is not possible." >> $LOGFILE
+              break
+            fi
+        done
+
         printf "\r"
         LOAD_END_TIME=$(date +%s)
         LOAD_ELAPSED_TIME=$(( LOAD_END_TIME - LOAD_START_TIME ))
@@ -3787,15 +3935,34 @@ while true; do
         # Get the Perfect Privacy server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
         LOAD_START_TIME=$(date +%s)
         printf "\r${InvYellow} ${CClear}${CYellow}  [Checking Perfect Privacy Server Load]..."
-        PPcurl=$(curl --silent --retry 3 "https://www.perfect-privacy.com/api/traffic.json")
-        PP_in=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_in"')
-        PP_out=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_out"')
-        PP_max=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_max"')
-        max1=$PP_in
-        if [ $PP_out -gt $PP_in ]; then max1=$PP_out; fi
-        max2=$PP_max
-        if [ $PP_in -gt $PP_max ]; then max2=$PP_in; elif [ $PP_out -gt $PP_max ]; then max2=$PP_out; fi
-        VPNLOAD=$(awk -v m1=$max1 -v m2=$max2 'BEGIN{printf "%0.0f\n", 100*m1/m2}')
+
+        loadcount=0
+        while [ $loadcount -ne 60 ]
+          do
+            loadcount=$(($loadcount+1))
+            #PPcurl=$(curl --silent --retry 3 "https://www.perfect-privacy.com/api/traffic.json") >/dev/null 2>&1
+            PPcurl="curl --silent --retry 3 https://www.perfect-privacy.com/api/traffic.json >/dev/null 2>&1"
+            PPcurl="$(eval $PPcurl 2>/dev/null)"; if echo $PPcurl | grep -qoE '\berror.*\b'; then PPcurl=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
+            PP_in=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_in"') 2>&1
+            PP_out=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_out"') 2>&1
+            PP_max=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_max"') 2>&1
+            max1=$PP_in
+            if [ $PP_out -gt $PP_in ]; then max1=$PP_out; fi
+            max2=$PP_max
+            if [ $PP_in -gt $PP_max ]; then max2=$PP_in; elif [ $PP_out -gt $PP_max ]; then max2=$PP_out; fi
+            VPNLOAD=$(awk -v m1=$max1 -v m2=$max2 'BEGIN{printf "%0.0f\n", 100*m1/m2}') 2>&1
+
+            if [ -z $VPNLOAD ]; then break; fi
+            if [ $VPNLOAD -gt 0 ]; then break; fi
+            sleep 1
+
+            if [ $loadcount -eq 60 ]; then
+              echo -e "\n${CRed}Error: Unable to reach PerfectPrivacy API! Load reading is not possible.\n${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach PerfectPrivacy API! Load reading is not possible." >> $LOGFILE
+              break
+            fi
+        done
+
         printf "\r"
         LOAD_END_TIME=$(date +%s)
         LOAD_ELAPSED_TIME=$(( LOAD_END_TIME - LOAD_START_TIME ))
