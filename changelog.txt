@@ -1,3 +1,7 @@
+v2.27  - (TBA)
+       - FIXED: Minor code improvements and optimizations. Eliminated some inefficient code from v0.1 that
+         has been nagging my OCD for quite a while.
+
 v2.26  - (October 10, 2022)
        - CHANGED: Added some additional layers of error checking and logic pertaining to VPN provider API
          calls to help eliminate any errors from showing on the screen when connectivity might possibly be
