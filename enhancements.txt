@@ -4,6 +4,7 @@ Future Enhancements (Planned)
 To-Do:
 ------
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
+* round robin vpn slots
 
 Completed:
 ----------
