@@ -3,7 +3,8 @@ v2.27  - (TBA)
          Robin" method. Instead of randomly picking slots, VPNMON-R2 will pick the next VPN slot in line.
          Ex: If you are using VPN Slot #1 and it fails, it will connect to VPN Slot #2, then 3, etc.
          VPNMON-R2 will keep track of the slot last used, and will survive a reboot, so that it will
-         correctly pick that next slot in line. Thanks @ComputerSteve for asking to include this!
+         correctly pick that next slot in line. Under setup->config, please choose option 5 - how you want
+         your VPN slots chosen, select "Round Robin". Thanks @ComputerSteve for asking to include this!
        - ADDED: Now includes logic to PAUSE, RESUME and inquire about a current STATUS of VPNMON-R2. With
          thanks to @ComputerSteve for the suggestion.  When running the command "vpnmon-r2 -pause", the
          currently running instance of VPNMON-R2 will enter a "paused" state.  Entering the command
