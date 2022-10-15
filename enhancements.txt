@@ -6,6 +6,7 @@ To-Do:
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * round robin vpn slots
 * Restart script after config changes are made so you don't have to exit & restart
+* Include stats row: method of slot selection, % load threshold, ms ping reset
 
 Completed:
 ----------
