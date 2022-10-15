@@ -7,10 +7,15 @@ v2.27  - (TBA)
          your VPN slots chosen, select "Round Robin". Thanks @ComputerSteve for asking to include this!
        - ADDED: Now includes logic to PAUSE, RESUME and inquire about a current STATUS of VPNMON-R2. With
          thanks to @ComputerSteve for the suggestion.  When running the command "vpnmon-r2 -pause", the
-         currently running instance of VPNMON-R2 will enter a "paused" state.  Entering the command
+         currently running instance of VPNMON-R2 will enter a "paused" state. While in this paused state,
+         it will not check for any VPN anomalies until it is resumed once again. Entering the command
          "vpnmon-r2 -resume" will allow the currently running instance to resume normal operations. Last,
          using the "vpnmon-r2 -status" command gives an indication what state VPNMON-R2 is currently
          operating in, along with the last known VPN slot being used.
+       - CHANGED: When bringing up the setup/config menu from within the UI, the UI will now refresh and
+         use the changes that were made to the config. This prevents you from having to stop and restart
+         the script to accept changes. Been needing to do this for a while, so thanks again to
+         @ComputerSteve for lighting a fire under my butt. ;)
        - FIXED: Minor code improvements and optimizations. Eliminated some inefficient code from v0.1 that
          has been nagging my OCD for quite a while.
 
