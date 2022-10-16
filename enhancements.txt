@@ -7,6 +7,7 @@ To-Do:
 * round robin vpn slots
 * Restart script after config changes are made so you don't have to exit & restart
 * Include stats row: method of slot selection, % load threshold, ms ping reset
+* Include a halt-type of command that goes into pause mode, and kills all vpn connections, when resumed, resumes killed vpn slot
 
 Completed:
 ----------
