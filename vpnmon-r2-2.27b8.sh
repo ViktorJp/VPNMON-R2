@@ -3786,16 +3786,16 @@ vsetup () {
       ScreenSess=$(screen -ls | grep "vpnmon-r2" | awk '{print $1}' | cut -d . -f 1)
       if [ -z $ScreenSess ]; then
         clear
-        echo -e "${CGreen}Executing VPNMON-R2 $Version using the SCREEN utility...${CClear}"
+        echo -e "${CGreen} Executing VPNMON-R2 $Version using the SCREEN utility...${CClear}"
         echo ""
-        echo -e "${CCyan}IMPORTANT:${CClear}"
-        echo -e "${CCyan}In order to keep VPNMON-R2 running in the background,${CClear}"
-        echo -e "${CCyan}properly exit the SCREEN session by using: CTRL-A + D${CClear}"
+        echo -e "${CCyan} IMPORTANT:${CClear}"
+        echo -e "${CCyan} In order to keep VPNMON-R2 running in the background,${CClear}"
+        echo -e "${CCyan} properly exit the SCREEN session by using: CTRL-A + D${CClear}"
         echo ""
         screen -dmS "vpnmon-r2" $APPPATH -monitor
         sleep 2
         if [ ! -f /jffs/addons/vpnmon-r2.d/titanspeed.txt ]; then
-          echo -e "${CGreen}Switching to the SCREEN session in T-5 sec...${CClear}"
+          echo -e "${CGreen} Switching to the SCREEN session in T-5 sec...${CClear}"
           echo -e "${CClear}"
           SPIN=5
           spinner
@@ -3805,13 +3805,13 @@ vsetup () {
       else
         clear
         if [ ! -f /jffs/addons/vpnmon-r2.d/titanspeed.txt ]; then
-          echo -e "${CGreen}Connecting to existing VPNMON-R2 $Version SCREEN session...${CClear}"
+          echo -e "${CGreen} Connecting to existing VPNMON-R2 $Version SCREEN session...${CClear}"
           echo ""
-          echo -e "${CCyan}IMPORTANT:${CClear}"
-          echo -e "${CCyan}In order to keep VPNMON-R2 running in the background,${CClear}"
-          echo -e "${CCyan}properly exit the SCREEN session by using: CTRL-A + D${CClear}"
+          echo -e "${CCyan} IMPORTANT:${CClear}"
+          echo -e "${CCyan} In order to keep VPNMON-R2 running in the background,${CClear}"
+          echo -e "${CCyan} properly exit the SCREEN session by using: CTRL-A + D${CClear}"
           echo ""
-          echo -e "${CGreen}Switching to the SCREEN session in T-5 sec...${CClear}"
+          echo -e "${CGreen} Switching to the SCREEN session in T-5 sec...${CClear}"
           echo -e "${CClear}"
           SPIN=5
           spinner
@@ -3853,12 +3853,31 @@ vsetup () {
           if [ "$DelayStartup" != "0" ]
             then
               SPIN=$DelayStartup
-              echo -e "${CGreen}Delaying VPNMON-R2 start-up for $DelayStartup seconds..."
+              echo -e "${CGreen} Delaying VPNMON-R2 start-up for $DelayStartup seconds..."
+              echo ""
               spinner
           fi
 
+          screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
+          sleep 1
+          ScreenSess=$(screen -ls | grep "vpnmon-r2" | awk '{print $1}' | cut -d . -f 1)
+          if [ ! -z $ScreenSess ]; then
+            echo ""
+            echo -e "${CWhite} ${InvRed}WARNING:${CClear}"
+            echo -e "${CRed} You already have a VPNMON-R2 session running under ${CCyan}Screen -- Session ID: $ScreenSess"
+            echo -e "${CRed} Please know that running 2 sessions of VPNMON-R2 at the same time is not"
+            echo -e "${CRed} advisable and may introduce a conflict.  Please use command ${CCyan}'vpnmon-r2 -screen'"
+            echo -e "${CRed} to connect to your existing VPNMON-R2 session running under Screen.${CClear}"
+            echo ""
+            echo -e "${CGreen} [Continuing in 5 seconds...]${CClear}"
+            echo ""
+            SPIN=5
+            spinner
+          fi
+
       else
-        echo -e "${CRed}Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup' to complete setup${CClear}"
+        echo -e "${CRed} Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup'"
+        echo -e "${CRed} to complete setup${CClear}"
         echo ""
         echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPNMON-R2 is not configured. Please run the setup tool." >> $LOGFILE
         kill 0
