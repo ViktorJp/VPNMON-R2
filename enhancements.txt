@@ -6,8 +6,9 @@ To-Do:
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * round robin vpn slots
 * Restart script after config changes are made so you don't have to exit & restart
-* Include stats row: method of slot selection, % load threshold, ms ping reset
+* Include stats row: method of slot selection, # of tries, # of pings before reset, ms ping reset
 * Include a halt-type of command that goes into pause mode, and kills all vpn connections, when resumed, resumes killed vpn slot
+* Include another menu option "Allow VPN Connection on WAN1?". This would prevent vpnmon-r2 from making a vpn connection if WAN1 became active.
 
 Completed:
 ----------
