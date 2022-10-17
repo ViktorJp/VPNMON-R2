@@ -16,6 +16,9 @@ v2.27  - (TBA)
          use the changes that were made to the config. This prevents you from having to stop and restart
          the script to accept changes. Been needing to do this for a while, so thanks again to
          @ComputerSteve for lighting a fire under my butt. ;)
+       - CHANGED: Increased the timeout value for netcat when doing a WAN check from 1s to 3s. This should
+         help alleviate instances of false WAN-down detection during times of high bandwidth load.  Thanks
+         to @salvo for reporting this!
        - FIXED: Minor code improvements and optimizations. Eliminated some inefficient code from v0.1 that
          has been nagging my OCD for quite a while.
 
