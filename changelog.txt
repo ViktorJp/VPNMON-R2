@@ -15,6 +15,10 @@ v2.27  - (TBA)
        - ADDED: Another stats row, containing information regarding the VPN Slot Selection Method, the
          number of chances it gets (in case it's set for the Lowest PING method), the number of PING
          retries before reset, and the minimum PING allowable across the VPN tunnel before a reset.
+       - ADDED: A check when executing 'vpnmon-r2 -monitor' to display a warning message if an existing
+         session running vpnmon-r2 is already running under the Screen utility. Please know, that running
+         the -monitor command will not prevent you from running 2 instances of vpnmon-r2 at the same time,
+         but it will warn you that conflict can very likely occur.
        - CHANGED: When bringing up the setup/config menu from within the UI, the UI will now refresh and
          use the changes that were made to the config. This prevents you from having to stop and restart
          the script to accept changes. Been needing to do this for a while, so thanks again to
