@@ -592,7 +592,7 @@ checkwan () {
       then
 
         # Test the active WAN connection using 443 and verifying a handshake... if this fails, then the WAN connection is most likely down... or Google is down ;)
-        if ($timeoutcmd$timeoutlng nc -w1 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 |awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }') >/dev/null 2>&1
+        if ($timeoutcmd$timeoutlng nc -w3 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 |awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }') >/dev/null 2>&1
           then
             if [ "$1" == "Loop" ]
             then
@@ -2105,7 +2105,7 @@ wancheck() {
           WAN0CITY="$(eval $WAN0CITY)"; if echo $WAN0CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN0 city to $WAN0CITY" >> $LOGFILE
         fi
-        #WAN0CITY="Your City"
+        #WAN0CITY="Atlanta"
         if [ $WAN0PING == "DW-FO" ]; then
           echo -e "${InvGreen} ${CClear}${CGreen}==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN0CITY${CClear}"
         else
@@ -3666,7 +3666,7 @@ vsetup () {
       exit 0
   fi
 
-  # Check to see if the resume option is being called, and write a status file indicating "PAUSED"
+  # Check to see if the resume option is being called, and write a status file indicating "NORMAL"
   if [ "$1" == "-resume" ]
     then
       clear
@@ -4242,8 +4242,7 @@ while true; do
 
   else
 
-    echo ""
-    checkwan Loop # Check the WAN connectivity to determine if we need to keep looping until WAN connection is re-established
+    Sleep 2
 
     # Check for external commandline activity
     lockcheck
