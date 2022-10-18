@@ -6,6 +6,13 @@ To-Do:
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * Include a halt-type of command that goes into pause mode, and kills all vpn connections, when resumed, resumes killed vpn slot
 * Include another menu option "Allow VPN Connection on WAN1?". This would prevent vpnmon-r2 from making a vpn connection if WAN1 became active.
+* Add detected ping value, which VPN tunel has been reseted and what was WAN link ping to logging file (@salvo)
+Tue Oct 18 10:19:45 CEST 2022 - VPNMON-R2 ----------> WARNING: AVG PING across VPN tunnel > 100 ms - Executing VPN Reset
+* Add detected ping value to WAN link to logging file (@salvo)
+Mon Oct 17 07:26:33 CEST 2022 - VPNMON-R2 - WAN Link Detected -- Trying to reconnect/Reset VPN
+* Scheduling the start & stop screening i.e. auto cron list management (@salvo)
+* include more info on why "Lowest Ping" switched to a different client (@salvo)
+Tue Oct 18 13:59:55 CEST 2022 - VPNMON-R2 ----------> WARNING: Switching to faster VPN2 Client - Executing VPN Reset
 
 Completed:
 ----------
