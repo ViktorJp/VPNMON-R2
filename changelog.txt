@@ -1,4 +1,4 @@
-v2.30  - (October 17, 2022)
+v2.30  - (October 18, 2022)
        - MAJOR: Another method of picking VPN slots has been introduced to the mix, namely, the "Round 
          Robin" method. Instead of randomly picking slots, VPNMON-R2 will pick the next VPN slot in line.
          Ex: If you are using VPN Slot #1 and it fails, it will connect to VPN Slot #2, then 3, etc.
