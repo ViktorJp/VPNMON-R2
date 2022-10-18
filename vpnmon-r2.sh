@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.26 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.30 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.26"                                      # Current version of VPNMON-R2
+Version="2.30"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -55,6 +55,9 @@ APPPATH="/jffs/scripts/vpnmon-r2.sh"                # Path to the location of vp
 CFGPATH="/jffs/addons/vpnmon-r2.d/vpnmon-r2.cfg"    # Path to the location of vpnmon-r2.cfg
 DLVERPATH="/jffs/addons/vpnmon-r2.d/version.txt"    # Path to downloaded version from the source repository
 YAZFI_CONFIG_PATH="/jffs/addons/YazFi.d/config"     # Path to the YazFi guest network(s) config file
+APPSTATUS="/jffs/addons/vpnmon-r2.d/appstatus.txt"  # Path to the current status of VPNMON-R2
+LockFound=0                                         # Lockfile variable for VPN resets
+PauseLockFound=0                                    # Lockfile variable for pause and resumes
 connState="2"                                       # Status = 2 means VPN is connected, 1 = connecting, 0 = not connected
 BASE=1                                              # Random numbers start at BASE up to N, ie. 1..3
 STATUS=0                                            # Tracks whether or not a ping was successful
@@ -265,10 +268,16 @@ progressbar() {
 
   if [ $key_press ]; then
       case $key_press in
-          [Ss]) FromUI=1; (vsetup); echo -e "${CGreen} [Returning to the Main UI momentarily]                                    "; sleep 1; FromUI=0; i=$INTERVAL;;
+          [Ss]) FromUI=1; (vsetup); source $CFGPATH; echo -e "${CGreen} [Returning to the Main UI momentarily]                                    "; sleep 1; FromUI=0; i=$INTERVAL;;
           [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; sleep 1; FORCEDRESET=1; i=$INTERVAL; resetcheck;;
           [Bb]) (bossmode);;
-          'e') echo -e "${CClear}"; exit 0;;
+          'e')  # Exit gracefully
+                echo -e "${CClear}"
+                  { echo 'STOPPED'
+                    echo $LastSlotUsed
+                  } > $APPSTATUS
+                exit 0
+                ;;
       esac
   fi
 }
@@ -340,6 +349,64 @@ trimlogs() {
       fi
 
   fi
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# FnLastSlotUsed is a function that determines lastslot used for roundrobin and appstatus.txt reporting
+FnLastSlotUsed() {
+
+  LastSlotUsed=$(cat $APPSTATUS | sed -n '2p') 2>&1
+
+  if [ -z $LastSlotUsed ]; then LastSlotUsed=$N; fi
+
+  if [ $N == "1" ]; then
+    NextSlotUsed=1
+  fi
+
+  if [ $N == "2" ]; then
+    if [ "$LastSlotUsed" == "1" ]; then
+      NextSlotUsed=2
+    elif [ "$LastSlotUsed" == "2" ]; then
+      NextSlotUsed=1
+    fi
+  fi
+
+  if [ $N == "3" ]; then
+    if [ "$LastSlotUsed" == "1" ]; then
+      NextSlotUsed=2
+    elif [ "$LastSlotUsed" == "2" ]; then
+      NextSlotUsed=3
+    elif [ "$LastSlotUsed" == "3" ]; then
+      NextSlotUsed=1
+    fi
+  fi
+
+  if [ $N == "4" ]; then
+    if [ "$LastSlotUsed" == "1" ]; then
+      NextSlotUsed=2
+    elif [ "$LastSlotUsed" == "2" ]; then
+      NextSlotUsed=3
+    elif [ "$LastSlotUsed" == "3" ]; then
+      NextSlotUsed=4
+    elif [ "$LastSlotUsed" == "4" ]; then
+      NextSlotUsed=1
+    fi
+  fi
+
+  if [ $N == "5" ]; then
+    if [ "$LastSlotUsed" == "1" ]; then
+      NextSlotUsed=2
+    elif [ "$LastSlotUsed" == "2" ]; then
+      NextSlotUsed=3
+    elif [ "$LastSlotUsed" == "3" ]; then
+      NextSlotUsed=4
+    elif [ "$LastSlotUsed" == "4" ]; then
+      NextSlotUsed=5
+    elif [ "$LastSlotUsed" == "5" ]; then
+      NextSlotUsed=1
+    fi
+  fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -525,7 +592,7 @@ checkwan () {
       then
 
         # Test the active WAN connection using 443 and verifying a handshake... if this fails, then the WAN connection is most likely down... or Google is down ;)
-        if ($timeoutcmd$timeoutlng nc -w1 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 |awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }') >/dev/null 2>&1
+        if ($timeoutcmd$timeoutlng nc -w3 $testssl 443 >/dev/null 2>&1 && echo | $timeoutcmd$timeoutlng openssl s_client -connect $testssl:443 >/dev/null 2>&1 |awk 'handshake && $1 == "Verification" { if ($2=="OK") exit; exit 1 } $1 $2 == "SSLhandshake" { handshake = 1 }') >/dev/null 2>&1
           then
             if [ "$1" == "Loop" ]
             then
@@ -633,6 +700,7 @@ checkwan () {
 # (3) High VPN Server Load,
 # (4) High Ping,
 # (5) VPN Client identified with a lower ping than the current connection
+# (6) Force reset through the UI
 # ...and reset the VPN connection
 # -------------------------------------------------------------------------------------------------------------------------
 resetcheck () {
@@ -862,11 +930,16 @@ vpnresetlowestping() {
         checkwan Reset
 
       # Reset VPN connection to one with lowest PING
+        echo ""
         service start_vpnclient$LOWEST >/dev/null 2>&1
         logger -t VPN Client$LOWEST "Active" >/dev/null 2>&1
         printf "${CGreen}\r [VPN$LOWEST Client ON]                                        "
-        sleep 2
         echo -e "$(date) - VPNMON-R2 - VPN$LOWEST Client ON - Lowest PING of $N VPN slots" >> $LOGFILE
+        sleep 2
+        echo ""
+        { echo 'NORMAL'
+          echo $LOWEST
+        } > $APPSTATUS
 
       # Reset the VPN Director Rules
         printf "${CGreen}\r                                                               "
@@ -968,6 +1041,9 @@ vpnresetlowestping() {
 
 # VPNReset is a function based on my VPNON.SH script to kill connections and reconnect to a clean VPN state
 vpnreset() {
+
+  # Load the latest config file values
+    source $CFGPATH
 
   # Create a rudimentary lockfile so that VPNMON-R2 doesn't interfere during the reset
     echo -n > $LOCKFILE
@@ -1288,11 +1364,9 @@ vpnreset() {
 
           firewall import whitelist /jffs/scripts/NordVPN.txt "NordVPN - $NordVPNRandomCountry" >/dev/null 2>&1
 
-          SPIN=15
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r  [Letting Skynet import and settle for $SPIN seconds]         "
-
-          spinner
+          printf "${CGreen}\r [Letting Skynet import and settle for 15 seconds]             "
+          sleep 15
 
           echo -e "$(date) - VPNMON-R2 - Updated Skynet Whitelist" >> $LOGFILE
         fi
@@ -1336,11 +1410,9 @@ vpnreset() {
 
           firewall import whitelist /jffs/scripts/ppipslst.txt "Perfect Privacy VPN" >/dev/null 2>&1
 
-          SPIN=15
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r  [Letting Skynet import and settle for $SPIN seconds]         "
-
-          spinner
+          printf "${CGreen}\r [Letting Skynet import and settle for 15 seconds]             "
+          sleep 15
 
           echo -e "$(date) - VPNMON-R2 - Updated Skynet Whitelist" >> $LOGFILE
         fi
@@ -1736,56 +1808,19 @@ vpnreset() {
       fi
 
     # Start the selected VPN Client
-      case ${option} in
-
-        1)
-          service start_vpnclient1 >/dev/null 2>&1
-          logger -t VPN Client1 "Active"
-          printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN1 Client ON]                                              "
-          echo -e "$(date) - VPNMON-R2 - Randomly selected VPN1 Client ON" >> $LOGFILE
-          sleep 1
-        ;;
-
-        2)
-          service start_vpnclient2 >/dev/null 2>&1
-          logger -t VPN Client2 "Active"
-          printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN2 Client ON]                                              "
-          echo -e "$(date) - VPNMON-R2 - Randomly selected VPN2 Client ON" >> $LOGFILE
-          sleep 1
-        ;;
-
-        3)
-          service start_vpnclient3 >/dev/null 2>&1
-          logger -t VPN Client3 "Active"
-          printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN3 Client ON]                                              "
-          echo -e "$(date) - VPNMON-R2 - Randomly selected VPN3 Client ON" >> $LOGFILE
-          sleep 1
-        ;;
-
-        4)
-          service start_vpnclient4 >/dev/null 2>&1
-          logger -t VPN Client4 "Active"
-          printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN4 Client ON]                                              "
-          echo -e "$(date) - VPNMON-R2 - Randomly selected VPN4 Client ON" >> $LOGFILE
-          sleep 1
-        ;;
-
-        5)
-          service start_vpnclient5 >/dev/null 2>&1
-          logger -t VPN Client5 "Active"
-          printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [VPN5 Client ON]                                              "
-          echo -e "$(date) - VPNMON-R2 - Randomly selected VPN5 Client ON" >> $LOGFILE
-          sleep 1
-        ;;
-      esac
-      sleep 1
       echo ""
-    else
+      service start_vpnclient$option >/dev/null 2>&1
+      logger -t VPN Client $option "Active"
+      printf "${CGreen}\r                                                               "
+      printf "${CGreen}\r [Random VPN$option Client ON]                                       "
+      echo -e "$(date) - VPNMON-R2 - Randomly selected VPN$option Client ON" >> $LOGFILE
+      sleep 2
+      echo ""
+      { echo 'NORMAL'
+        echo $option
+      } > $APPSTATUS
+
+    elif [ "$USELOWESTSLOT" == "1" ]; then
       i=0
       WANIFNAME=$(get_wan_setting ifname)
       while [ $i -ne $N ] # Determine which connection has the fastest ping
@@ -1809,15 +1844,38 @@ vpnreset() {
           fi
       done
 
-      echo ""
       printf "${CGreen}\r                                                               "
-      printf "${CGreen}\r [Starting fastest PING VPN$LOWEST Client ON]                  "
+      printf "${CGreen}\r [Fastest PING VPN$LOWEST Client ON]                                 "
       service start_vpnclient$LOWEST >/dev/null 2>&1
-      logger -t VPN Client$LOWEST "Active" >/dev/null 2>&1
+      logger -t VPN Client $LOWEST "Active" >/dev/null 2>&1
       echo -e "$(date) - VPNMON-R2 - VPN$LOWEST Client ON - Lowest PING of $N VPN slots" >> $LOGFILE
       option=$LOWEST
       CURRCLNT=$LOWEST
       sleep 2
+      echo ""
+      { echo 'NORMAL'
+        echo $LOWEST
+      } > $APPSTATUS
+
+    # Use a Round Robin configuration to pick the next VPN slot
+    elif [ "$USELOWESTSLOT" == "2" ]; then
+
+      FnLastSlotUsed
+
+      # Start the selected VPN Client using Round Robin results
+        echo ""
+        service start_vpnclient$NextSlotUsed >/dev/null 2>&1
+        logger -t VPN Client $NextSlotUsed "Active"
+        LastSlotUsed=$NextSlotUsed
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Round Robin VPN$NextSlotUsed Client ON]                                  "
+        echo -e "$(date) - VPNMON-R2 - Round-Robin selected VPN$NextSlotUsed Client ON" >> $LOGFILE
+        sleep 2
+        echo ""
+        { echo 'NORMAL'
+          echo $LastSlotUsed
+        } > $APPSTATUS
+
     fi
 
     # Reset the VPN Director Rules
@@ -1970,6 +2028,10 @@ checkvpn() {
 
         echo -e "${InvGreen} ${CClear}${CGreen}==VPN$1 Tunnel Active | ||${CWhite}${InvGreen} $AVGPING ms ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$VPNCITY${CClear}"
         CURRCLNT=$1
+        LastSlotUsed=$1
+          { echo 'NORMAL'
+            echo $LastSlotUsed
+          } > $APPSTATUS
         break
       else
         sleep 1 # Giving the VPN a chance to recover a certain number of times
@@ -2043,7 +2105,7 @@ wancheck() {
           WAN0CITY="$(eval $WAN0CITY)"; if echo $WAN0CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN0 city to $WAN0CITY" >> $LOGFILE
         fi
-        #WAN0CITY="Your City"
+        #WAN0CITY="Atlanta"
         if [ $WAN0PING == "DW-FO" ]; then
           echo -e "${InvGreen} ${CClear}${CGreen}==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN0CITY${CClear}"
         else
@@ -2098,6 +2160,7 @@ wancheck() {
 
 lockcheck () {
   # Testing to see if VPNMON-R2 external reset is currently running, and if so, hold off until it finishes
+  LockFound=0
   while [ -f "$LOCKFILE" ]; do
     # clear screen
     clear
@@ -2113,9 +2176,10 @@ lockcheck () {
     echo -e "$(date +%s)" > $RSTFILE
     START=$(cat $RSTFILE)
     spinner
+    LockFound=1
 
-    # Reset the VPN IP/Locations after a reset occurred
-    i=60
+    # Reset the VPN IP/Locations and othe variables
+    i=$INTERVAL
     WAN0IP="Unassigned" # Look for an updated WAN IP/Location
     WAN1IP="Unassigned" # Look for an updated WAN IP/Location
     VPNIP="Unassigned" # Look for a new VPN IP/Location
@@ -2127,6 +2191,52 @@ lockcheck () {
     newrxbytes=0
     newtxbytes=0
   done
+
+  if [ ! -f "$LOCKFILE" ] && [ "$LockFound" == "1" ]; then
+    #reset the script
+    sh $APPPATH -monitor
+  fi
+
+  PauseLockFound=0
+  if [ -f $APPSTATUS ]; then
+    STATE=$(cat $APPSTATUS | sed -n '1p')
+    while [ $STATE == "PAUSED" ]; do
+      # clear screen
+      clear
+      SPIN=15
+      logo
+      echo -e "${CGreen} -----------> NOTICE: VPNMON-R2 OPERATIONS PAUSED <-----------"
+      echo ""
+      echo -e "${CGreen} VPNMON-R2 is currently operating in a PAUSED state. Please use"
+      echo -e "${CGreen} the 'vpnmon-r2 -resume' commandline to return to a NORMAL"
+      echo -e "${CGreen} operations mode."
+      echo ""
+      echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
+      echo -e "$(date +%s)" > $RSTFILE
+      START=$(cat $RSTFILE)
+      STATE=$(cat $APPSTATUS | sed -n '1p')
+      spinner
+      PauseLockFound=1
+
+      # Reset the VPN IP/Locations and othe variables
+      i=$INTERVAL
+      WAN0IP="Unassigned" # Look for an updated WAN IP/Location
+      WAN1IP="Unassigned" # Look for an updated WAN IP/Location
+      VPNIP="Unassigned" # Look for a new VPN IP/Location
+      ICANHAZIP="" # Reset Public VPN IP
+      PINGLOW=0 # Reset ping time history variables
+      PINGHIGH=0
+      oldrxbytes=0 # Reset Stats
+      oldtxbytes=0
+      newrxbytes=0
+      newtxbytes=0
+    done
+  fi
+
+  if [ "$PauseLockFound" == "1" ]; then
+    #reset the script
+    sh $APPPATH -monitor
+  fi
 
 }
 
@@ -2155,7 +2265,11 @@ vconfig () {
       echo -en "${InvDkGray}${CWhite}  5 ${CClear}${CCyan}: How VPN Slots are Chosen?     :"${CGreen};
         if [ "$USELOWESTSLOT" == "0" ]; then
           printf "Random"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
-        else printf "Lowest PING"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
+        elif [ "$USELOWESTSLOT" == "1" ]; then
+          printf "Lowest PING"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
+        elif [ "$USELOWESTSLOT" == "2" ]; then
+          printf "Round Robin"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
+        fi
       echo -e "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Chances before Reset?        :"$ODISABLED2$PINGCHANCES
 
       echo -en "${InvDkGray}${CWhite}  6 ${CClear}${CCyan}: Current VPN Provider?         :"${CGreen};
@@ -2366,19 +2480,23 @@ vconfig () {
             5) # -----------------------------------------------------------------------------------------
                echo ""
                echo -e "${CCyan}5. In what manner should VPNMON-R2 activate a selected VPN slot?"
-               echo -e "${CCyan}There are 2 options to consider: ${CYellow}Random or Lowest PING.${CCyan} The 'Random'"
-               echo -e "${CCyan}option will randomly pick one of your configured VPN slots to connect"
-               echo -e "${CCyan}to, while the 'Lowest PING' option will continually test each of your"
-               echo -e "${CCyan}VPN slots through each interval see which one has the lowest PING,"
-               echo -e "${CCyan}which most likely will be your fastest connection, and will always"
-               echo -e "${CCyan}force a connection to it.${CYellow}(Random=0, Lowest PING=1) (Default = 0)${CClear}"
+               echo -e "${CCyan}There are 3 options to consider: ${CYellow}Random, Lowest PING, or Round-"
+               echo -e "${CYellow}Robin.${CCyan} The 'Random' option will randomly pick one of your configured"
+               echo -e "${CCyan}VPN slots to connect to, while the 'Lowest PING' option will"
+               echo -e "${CCyan}continually test each of your VPN slots through each interval to"
+               echo -e "${CCyan}see which one has the lowest PING, which most likely will be your"
+               echo -e "${CCyan}fastest connection, and will always force a connection to it. The"
+               echo -e "${CCyan}'Round Robin' option will connect to the next VPN slot in line,"
+               echo -e "${CCyan}so if VPN Slot #1 was in use, it will connect to VPN Slot #2 next."
+               echo -e "${CYellow}(Random=0, Lowest PING=1, Round Robin=2) (Default = 0)${CClear}"
                   while true; do
-                    read -p "Random or Lowest PING? (0/1): " USELOWESTSLOT1
+                    read -p "Random, Lowest PING or Round-Robin? (0/1/2): " USELOWESTSLOT1
                       case $USELOWESTSLOT1 in
                         [0] ) USELOWESTSLOT=0;break ;;
                         [1] ) USELOWESTSLOT=1;break ;;
-                        "" ) echo -e "\nPlease answer 0 or 1" ;;
-                        * ) echo -e "\nPlease answer 0 or 1" ;;
+                        [2] ) USELOWESTSLOT=2;break ;;
+                        "" ) echo -e "\nPlease answer 0, 1 or 2" ;;
+                        * ) echo -e "\nPlease answer 0, 1 or 2" ;;
                       esac
                   done
                # -----------------------------------------------------------------------------------------
@@ -2386,7 +2504,7 @@ vconfig () {
                  echo ""
                  echo -e "${CCyan}5a. When using the 'Lowest PING' method, there is a greater chance that"
                  echo -e "${CCyan}your connections will reset at a higher rate, due to competing servers"
-                 echo -e "${CCyan}giving slighly lower pings.  To combat this, a counter is available to"
+                 echo -e "${CCyan}giving slighly lower pings. To combat this, a counter is available to"
                  echo -e "${CCyan}help give your connection a chance to recover and regain its status as"
                  echo -e "${CCyan}the connection with the lowest ping.  How many chances would you like"
                  echo -e "${CCyan}to give your connection before reconnecting to a faster VPN server?"
@@ -3056,8 +3174,7 @@ vconfig () {
                 echo 'YF52GN2='$YF52GN2
                 echo 'YF52GN3='$YF52GN3
               } > $CFGPATH
-            echo ""
-            echo -e "${CGreen}Please restart VPNMON-R2 to apply your changes..."
+            echo -e "${CCyan}Applying config changes to VPNMON-R2..."
             echo -e "$(date) - VPNMON-R2 - Successfully wrote a new config file" >> $LOGFILE
             sleep 3
             return
@@ -3473,7 +3590,7 @@ vsetup () {
   fi
 
   # Check and see if an invalid commandline option is being used
-  if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-config" ] || [ "$1" == "-monitor" ] || [ "$1" == "-log" ] || [ "$1" == "-update" ] || [ "$1" == "-setup" ] || [ "$1" == "-uninstall" ] || [ "$1" == "-screen" ] || [ "$1" == "-reset" ]
+  if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-config" ] || [ "$1" == "-monitor" ] || [ "$1" == "-log" ] || [ "$1" == "-update" ] || [ "$1" == "-setup" ] || [ "$1" == "-uninstall" ] || [ "$1" == "-screen" ] || [ "$1" == "-reset" ] || [ "$1" == "-pause" ] || [ "$1" == "-resume" ] || [ "$1" == "-status" ]
     then
       clear
     else
@@ -3495,15 +3612,18 @@ vsetup () {
     echo ""
     echo "VPNMON-R2 v$Version Commandline Option Usage:"
     echo ""
-    echo "vpnmon-r2.sh -h | -help"
-    echo "vpnmon-r2.sh -log"
-    echo "vpnmon-r2.sh -config"
-    echo "vpnmon-r2.sh -update"
-    echo "vpnmon-r2.sh -setup"
-    echo "vpnmon-r2.sh -reset"
-    echo "vpnmon-r2.sh -uninstall"
-    echo "vpnmon-r2.sh -screen"
-    echo "vpnmon-r2.sh -monitor"
+    echo "vpnmon-r2 -h | -help"
+    echo "vpnmon-r2 -log"
+    echo "vpnmon-r2 -config"
+    echo "vpnmon-r2 -update"
+    echo "vpnmon-r2 -setup"
+    echo "vpnmon-r2 -reset"
+    echo "vpnmon-r2 -pause"
+    echo "vpnmon-r2 -resume"
+    echo "vpnmon-r2 -status"
+    echo "vpnmon-r2 -uninstall"
+    echo "vpnmon-r2 -screen"
+    echo "vpnmon-r2 -monitor"
     echo ""
     echo " -h | -help (this output)"
     echo " -log (display the current log contents)"
@@ -3511,12 +3631,81 @@ vsetup () {
     echo " -update (script update utility)"
     echo " -setup (setup/dependencies utility)"
     echo " -reset (initiate a VPN reset)"
+    echo " -pause (pauses all operations)"
+    echo " -resume (resumes normal operations)"
+    echo " -status (displays current operating state)"
     echo " -uninstall (uninstall utility)"
     echo " -screen (normal VPN monitoring using the screen utility)"
     echo " -monitor (normal VPN monitoring operations)"
     echo ""
     echo -e "${CClear}"
     exit 0
+  fi
+
+  # Check to see if the pause option is being called, and write a status file indicating "PAUSED"
+  if [ "$1" == "-pause" ]
+    then
+      clear
+
+      STATE=$(cat $APPSTATUS | sed -n '1p') 2>&1
+      LASTSLOT=$(cat $APPSTATUS | sed -n '2p') 2>&1
+      if [ -z $STATE ]; then STATE="UNKNOWN"; fi
+      if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
+
+      { echo 'PAUSED'
+        echo $LASTSLOT
+      } > $APPSTATUS
+
+      echo ""
+      echo -e "${CYellow} STATUS:${CClear}"
+      echo -e "${CGreen} VPNMON-R2 is entering a ${CCyan}PAUSED ${CGreen}state...${CClear}"
+      echo -e "${CGreen} Last known VPN Client slot used:${CCyan} $LASTSLOT ${CClear}"
+      echo -e "${CGreen} Use ${CCyan}'vpnmon-r2 -resume'${CGreen} to return to normal operations.${CClear}"
+      echo -e "$(date) - VPNMON-R2 ----------> INFO: Entering a PAUSED state" >> $LOGFILE
+      echo ""
+      exit 0
+  fi
+
+  # Check to see if the resume option is being called, and write a status file indicating "NORMAL"
+  if [ "$1" == "-resume" ]
+    then
+      clear
+
+      STATE=$(cat $APPSTATUS | sed -n '1p') 2>&1
+      LASTSLOT=$(cat $APPSTATUS | sed -n '2p') 2>&1
+      if [ -z $STATE ]; then STATE="UNKNOWN"; fi
+      if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
+
+      { echo 'NORMAL'
+        echo $LASTSLOT
+      } > $APPSTATUS
+
+      echo ""
+      echo -e "${CYellow} STATUS:${CClear}"
+      echo -e "${CGreen} VPNMON-R2 is returning to a ${CCyan}NORMAL ${CGreen}operations state...${CClear}"
+      echo -e "${CGreen} Last known VPN Client slot used:${CCyan} $LASTSLOT ${CClear}"
+      echo -e "$(date) - VPNMON-R2 ----------> INFO: Returning to a NORMAL operations state" >> $LOGFILE
+      echo ""
+      exit 0
+  fi
+
+  # Check to see if the status option is being called, and indicate the current status
+  if [ "$1" == "-status" ]
+    then
+      clear
+
+      STATE=$(cat $APPSTATUS | sed -n '1p') 2>&1
+      LASTSLOT=$(cat $APPSTATUS | sed -n '2p') 2>&1
+      if [ -z $STATE ]; then STATE="UNKNOWN"; fi
+      if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
+
+      echo ""
+      echo -e "${CYellow} STATUS:${CClear}"
+      echo -e "${CGreen} VPNMON-R2 is currently in a ${CCyan}$STATE ${CGreen}state...${CClear}"
+      echo -e "${CGreen} Last known VPN Client slot used:${CCyan} $LASTSLOT ${CClear}"
+      echo -e "$(date) - VPNMON-R2 ----------> STATUS: $STATE -- SLOT: $LASTSLOT" >> $LOGFILE
+      echo ""
+      exit 0
   fi
 
   # Check to see if the log option is being called, and display through nano
@@ -3597,16 +3786,16 @@ vsetup () {
       ScreenSess=$(screen -ls | grep "vpnmon-r2" | awk '{print $1}' | cut -d . -f 1)
       if [ -z $ScreenSess ]; then
         clear
-        echo -e "${CGreen}Executing VPNMON-R2 using the SCREEN utility...${CClear}"
+        echo -e "${CGreen} Executing VPNMON-R2 v$Version using the SCREEN utility...${CClear}"
         echo ""
-        echo -e "${CCyan}IMPORTANT:${CClear}"
-        echo -e "${CCyan}In order to keep VPNMON-R2 running in the background,${CClear}"
-        echo -e "${CCyan}properly exit the SCREEN session by using: CTRL-A + D${CClear}"
+        echo -e "${CCyan} IMPORTANT:${CClear}"
+        echo -e "${CCyan} In order to keep VPNMON-R2 running in the background,${CClear}"
+        echo -e "${CCyan} properly exit the SCREEN session by using: CTRL-A + D${CClear}"
         echo ""
         screen -dmS "vpnmon-r2" $APPPATH -monitor
         sleep 2
         if [ ! -f /jffs/addons/vpnmon-r2.d/titanspeed.txt ]; then
-          echo -e "${CGreen}Switching to the SCREEN session in T-5 sec...${CClear}"
+          echo -e "${CGreen} Switching to the SCREEN session in T-5 sec...${CClear}"
           echo -e "${CClear}"
           SPIN=5
           spinner
@@ -3616,13 +3805,13 @@ vsetup () {
       else
         clear
         if [ ! -f /jffs/addons/vpnmon-r2.d/titanspeed.txt ]; then
-          echo -e "${CGreen}Connecting to existing VPNMON-R2 SCREEN session...${CClear}"
+          echo -e "${CGreen} Connecting to existing VPNMON-R2 v$Version SCREEN session...${CClear}"
           echo ""
-          echo -e "${CCyan}IMPORTANT:${CClear}"
-          echo -e "${CCyan}In order to keep VPNMON-R2 running in the background,${CClear}"
-          echo -e "${CCyan}properly exit the SCREEN session by using: CTRL-A + D${CClear}"
+          echo -e "${CCyan} IMPORTANT:${CClear}"
+          echo -e "${CCyan} In order to keep VPNMON-R2 running in the background,${CClear}"
+          echo -e "${CCyan} properly exit the SCREEN session by using: CTRL-A + D${CClear}"
           echo ""
-          echo -e "${CGreen}Switching to the SCREEN session in T-5 sec...${CClear}"
+          echo -e "${CGreen} Switching to the SCREEN session in T-5 sec...${CClear}"
           echo -e "${CClear}"
           SPIN=5
           spinner
@@ -3642,6 +3831,14 @@ vsetup () {
           # Clean up lockfile
           rm $LOCKFILE >/dev/null 2>&1
 
+          # Write Status file
+          LASTSLOT=$(cat $APPSTATUS | sed -n '2p') 2>&1
+          if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
+
+          { echo 'NORMAL'
+            echo $LASTSLOT
+          } > $APPSTATUS
+
           if [ -f "/opt/bin/timeout" ] # If the timeout utility is available then use it and assign variables
             then
               timeoutcmd="timeout "
@@ -3656,12 +3853,31 @@ vsetup () {
           if [ "$DelayStartup" != "0" ]
             then
               SPIN=$DelayStartup
-              echo -e "${CGreen}Delaying VPNMON-R2 start-up for $DelayStartup seconds..."
+              echo -e "${CGreen} Delaying VPNMON-R2 start-up for $DelayStartup seconds..."
+              echo ""
               spinner
           fi
 
+          screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
+          sleep 1
+          ScreenSess=$(screen -ls | grep "vpnmon-r2" | awk '{print $1}' | cut -d . -f 1)
+          if [ ! -z $ScreenSess ]; then
+            echo ""
+            echo -e "${CWhite} ${InvRed}WARNING:${CClear}"
+            echo -e "${CRed} You already have a VPNMON-R2 session running under ${CCyan}Screen -- Session ID: $ScreenSess"
+            echo -e "${CRed} Please know that running 2 sessions of VPNMON-R2 at the same time is not"
+            echo -e "${CRed} advisable and may introduce a conflict.  Please use command ${CCyan}'vpnmon-r2 -screen'"
+            echo -e "${CRed} to connect to your existing VPNMON-R2 session running under Screen.${CClear}"
+            echo ""
+            echo -e "${CGreen} [Continuing in 5 seconds...]${CClear}"
+            echo ""
+            SPIN=5
+            spinner
+          fi
+
       else
-        echo -e "${CRed}Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup' to complete setup${CClear}"
+        echo -e "${CRed} Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup'"
+        echo -e "${CRed} to complete setup${CClear}"
         echo ""
         echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPNMON-R2 is not configured. Please run the setup tool." >> $LOGFILE
         kill 0
@@ -3989,8 +4205,18 @@ while true; do
     vpnport=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_port)
     vpnproto=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_proto)
 
+    # Display row of stats re: crypto, proto, port and authdigest
     if [ -z "$vpncrypto" ]; then vpncrypto=""; elif [ "$vpncrypto" == "tcp-client" ]; then vpncrypto="tcp"; fi
     echo -e "${InvGreen} ${CClear}${CGreen} Proto: ${CWhite}${InvDkGray}$vpnproto${CClear}${CGreen} | Port: ${CWhite}${InvDkGray}$vpnport${CClear}${CGreen} | Crypto: ${CWhite}${InvDkGray}$vpncrypto${CClear}${CGreen} | AuthDigest: ${CWhite}${InvDkGray}$vpndigest${CClear}"
+
+    # Display row of stats re: method, chances, ping retries + min ping before reset
+    if [ $USELOWESTSLOT == "0" ]; then
+      echo -e "${InvGreen} ${CClear}${CGreen} Method: ${CWhite}${InvDkGray}Random${CClear}${CGreen} | ${CDkGray}Chances: $PINGCHANCES${CClear}${CGreen} | PING > ${CWhite}${InvDkGray}${TRIES}x${CClear}${CGreen} | Reset > ${CWhite}${InvDkGray}$MINPING${CClear}${CGreen} ms${CClear}"
+    elif [ $USELOWESTSLOT == "1" ]; then
+      echo -e "${InvGreen} ${CClear}${CGreen} Method: ${CWhite}${InvDkGray}Lowest PING${CClear}${CGreen} | Chances: ${CWhite}${InvDkGray}$PINGCHANCES${CClear}${CGreen} | PING > ${CWhite}${InvDkGray}${TRIES}x${CClear}${CGreen} | Reset > ${CWhite}${InvDkGray}$MINPING${CClear}${CGreen} ms${CClear}"
+    elif [ $USELOWESTSLOT == "2" ]; then
+      echo -e "${InvGreen} ${CClear}${CGreen} Method: ${CWhite}${InvDkGray}Round Robin${CClear}${CGreen} | ${CDkGray}Chances: $PINGCHANCES${CClear}${CGreen} | PING > ${CWhite}${InvDkGray}${TRIES}x${CClear}${CGreen} | Reset > ${CWhite}${InvDkGray}$MINPING${CClear}${CGreen} ms${CClear}"
+    fi
 
     # Grab total bytes VPN Traffic Measurement
     txrxbytes=$(awk -F',' '1 == /TUN\/TAP read bytes/ {print $2} 1 == /TUN\/TAP write bytes/ {print $2}' /tmp/etc/openvpn/client$CURRCLNT/status 2>/dev/null)
@@ -4035,8 +4261,7 @@ while true; do
 
   else
 
-    echo ""
-    checkwan Loop # Check the WAN connectivity to determine if we need to keep looping until WAN connection is re-established
+    Sleep 2
 
     # Check for external commandline activity
     lockcheck
