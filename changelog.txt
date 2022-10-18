@@ -1,3 +1,6 @@
+v2.33  - (Beta TBA)
+       - CHANGED: Fixed some of the text indents across the board to give it a more uniform look/feel.
+
 v2.32  - (October 18, 2022)
        - HOTFIX2: I have backed out this code to determine concurrent sessions for further testing in the
          next round of betas. v2.32 is the new stable version.
