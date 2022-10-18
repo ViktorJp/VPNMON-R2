@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.31 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.32 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.31"                                      # Current version of VPNMON-R2
+Version="2.32"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -58,7 +58,6 @@ YAZFI_CONFIG_PATH="/jffs/addons/YazFi.d/config"     # Path to the YazFi guest ne
 APPSTATUS="/jffs/addons/vpnmon-r2.d/appstatus.txt"  # Path to the current status of VPNMON-R2
 LockFound=0                                         # Lockfile variable for VPN resets
 PauseLockFound=0                                    # Lockfile variable for pause and resumes
-NewScreen=0                                         # Screen variable to determine if it's new or reused
 connState="2"                                       # Status = 2 means VPN is connected, 1 = connecting, 0 = not connected
 BASE=1                                              # Random numbers start at BASE up to N, ie. 1..3
 STATUS=0                                            # Tracks whether or not a ping was successful
@@ -3793,7 +3792,6 @@ vsetup () {
         echo -e "${CCyan} In order to keep VPNMON-R2 running in the background,${CClear}"
         echo -e "${CCyan} properly exit the SCREEN session by using: CTRL-A + D${CClear}"
         echo ""
-        NewScreen=1
         screen -dmS "vpnmon-r2" $APPPATH -monitor
         sleep 2
         if [ ! -f /jffs/addons/vpnmon-r2.d/titanspeed.txt ]; then
@@ -3858,25 +3856,6 @@ vsetup () {
               echo -e "${CGreen} Delaying VPNMON-R2 start-up for $DelayStartup seconds..."
               echo ""
               spinner
-          fi
-
-          if [ $NewScreen != "1" ]; then
-            screen -wipe >/dev/null 2>&1 # Kill any dead screen sessions
-            sleep 1
-            ScreenSess=$(screen -ls | grep "vpnmon-r2" | awk '{print $1}' | cut -d . -f 1)
-            if [ ! -z $ScreenSess ]; then
-              echo ""
-              echo -e "${CWhite} ${InvRed}WARNING:${CClear}"
-              echo -e "${CRed} You already have a VPNMON-R2 session running under ${CCyan}Screen -- Session ID: $ScreenSess"
-              echo -e "${CRed} Please know that running 2 sessions of VPNMON-R2 at the same time is not"
-              echo -e "${CRed} advisable and may introduce a conflict.  Please use command ${CCyan}'vpnmon-r2 -screen'"
-              echo -e "${CRed} to connect to your existing VPNMON-R2 session running under Screen.${CClear}"
-              echo ""
-              echo -e "${CGreen} [Continuing in 5 seconds...]${CClear}"
-              echo ""
-              SPIN=5
-              spinner
-            fi
           fi
 
       else
