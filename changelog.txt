@@ -1,7 +1,7 @@
 v2.31  - (October 18, 2022)
        - HOTFIX: The logic to determine whether or not a -screen session was already running after 
-         executing a -monitor command wasn't working out correctly. This was fixed.  Thanks much to
-         @Stephen Harrington for his keen eye on this!
+         executing a concurrent -monitor command wasn't working out correctly. This was fixed.  Thanks
+         much to @Stephen Harrington for his keen eye on this!
        
 v2.30  - (October 18, 2022)
        - MAJOR: Another method of picking VPN slots has been introduced to the mix, namely, the "Round 
