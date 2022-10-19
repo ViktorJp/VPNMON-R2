@@ -5,8 +5,7 @@ To-Do:
 ------
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * Scheduling the start & stop screening i.e. auto cron list management (@salvo)
-* Suggest to name the connection which failed i.e. WAN or VPNX (@salvo)
-Wed Oct 19 10:22:07 CEST 2022 - VPNMON-R2 ----------> ERROR: Connection failed - Executing VPN Reset
+
 
 Temp Completed:
 ---------------
@@ -17,6 +16,8 @@ Temp Completed:
 Tue Oct 18 10:19:45 CEST 2022 - VPNMON-R2 ----------> WARNING: AVG PING across VPN tunnel > 100 ms - Executing VPN Reset
 * include more info on why "Lowest Ping" switched to a different client (@salvo)
 Tue Oct 18 13:59:55 CEST 2022 - VPNMON-R2 ----------> WARNING: Switching to faster VPN2 Client - Executing VPN Reset
+* Suggest to name the connection which failed i.e. WAN or VPNX (@salvo)
+Wed Oct 19 10:22:07 CEST 2022 - VPNMON-R2 ----------> ERROR: Connection failed - Executing VPN Reset
 
 
 Completed:
