@@ -3,6 +3,16 @@ v2.33  - (Beta TBA)
          @Stephen Harrington! This parameter, much like -pause, will cause VPNMON-R2 to retreat to a
          loop waiting for a -resume command. The difference here is that unlike with -pause, the -stop
          command will kill all VPN connections, and will re-establish the VPN once resumed.
+       - ADDED: Another -config menu item #14 - "Allow WAN1 VPN Connections?". This item determines if
+         you want to allow VPN connections across your WAN1 connection in Dual-WAN situations where you
+         have failed over from your primary WAN connection. In the case of WAN1 connections, these are
+         typically USB devices with limited bandwidth and cost, thus trying to limit the amount of
+         traffic going over these devices. If this option is set, and WAN fails over to WAN1, VPNMON-R2
+         will kill all VPN connetions, loop and wait for WAN0 to become active again before connecting
+         back to your VPN provider. Thanks to @Stephen Harrington for the great suggestion!
+       - CHANGED: Some of the feedback you receive when VPN resets, to include more granular information
+         about VPN slots or PING values that were under scrutiny before reconnecting. Thanks to @salvo
+         for noting this!
        - CHANGED: Fixed some of the text indents across the board to give it a more uniform look/feel.
 
 v2.32  - (October 18, 2022)
