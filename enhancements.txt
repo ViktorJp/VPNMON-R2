@@ -7,8 +7,8 @@ To-Do:
 * Scheduling the start & stop screening i.e. auto cron list management (@salvo)
 
 
-Temp Completed:
----------------
+Completed:
+----------
 * Allow for the update menu to (F)orce download an existing version, even if versions match.
 * Include a halt-type of command that goes into pause mode, and kills all vpn connections, when resumed, resumes killed vpn slot
 * Include another menu option "Allow VPN Connection on WAN1?". This would prevent vpnmon-r2 from making a vpn connection if WAN1 became active.
@@ -18,11 +18,7 @@ Tue Oct 18 10:19:45 CEST 2022 - VPNMON-R2 ----------> WARNING: AVG PING across V
 Tue Oct 18 13:59:55 CEST 2022 - VPNMON-R2 ----------> WARNING: Switching to faster VPN2 Client - Executing VPN Reset
 * Suggest to name the connection which failed i.e. WAN or VPNX (@salvo)
 Wed Oct 19 10:22:07 CEST 2022 - VPNMON-R2 ----------> ERROR: Connection failed - Executing VPN Reset
-
-
-Completed:
-----------
-# round robin vpn slots
+* round robin vpn slots
 * Restart script after config changes are made so you don't have to exit & restart
 * Include stats row: method of slot selection, # of tries, # of pings before reset, ms ping reset
 * Look into using the Nordvpn Recommended servers option
