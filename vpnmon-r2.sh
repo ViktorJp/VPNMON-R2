@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.32 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.35 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -15,12 +15,12 @@
 # Usage and configuration Guide - *UPDATED*
 # -------------------------------------------------------------------------------------------------------------------------
 # All previous user-selectable options are now available through the Configuration Utility.  You may access and run this
-# utility by running "vpnmon-r2.sh -setup".  Once configured, a "vpnmon-r2.cfg" file will be written to your
+# utility by running "vpnmon-r2 -setup".  Once configured, a "vpnmon-r2.cfg" file will be written to your
 # /jffs/addons/vpnmon-r2.d/ folder containing the options you have selected. Once everything looks good, you are able to
-# run VPNMON-R2 for under normal monitoring conditions using this command: "vpnmon-r2.sh -monitor". Please note this change
-# for any current automations you may have in place.  To easily view the log file, enter: "vpnmon-r2.sh -log".  You will be
-# prompted as new updates become available going forward with v1.2.  Use "vpnmon-r2.sh -update" to update the script. If
-# you want to learn about other functions, use "vpnmon-r2.sh -h or -help".
+# run VPNMON-R2 for under normal monitoring conditions using this command: "vpnmon-r2 -monitor". Please note this change
+# for any current automations you may have in place.  To easily view the log file, enter: "vpnmon-r2 -log".  You will be
+# prompted as new updates become available going forward with v1.2.  Use "vpnmon-r2 -update" to update the script. If
+# you want to learn about other functions, use "vpnmon-r2 -h or -help".
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Shellcheck exclusions
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.32"                                      # Current version of VPNMON-R2
+Version="2.35"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -58,6 +58,9 @@ YAZFI_CONFIG_PATH="/jffs/addons/YazFi.d/config"     # Path to the YazFi guest ne
 APPSTATUS="/jffs/addons/vpnmon-r2.d/appstatus.txt"  # Path to the current status of VPNMON-R2
 LockFound=0                                         # Lockfile variable for VPN resets
 PauseLockFound=0                                    # Lockfile variable for pause and resumes
+StopLockFound=0                                     # Lockfile variable for stops
+WAN1OverrideLock=0                                  # Lockfile variable for WAN1 vpn connection overrides
+NewScreen=0                                         # Screen variable to determine if it's new or reused
 connState="2"                                       # Status = 2 means VPN is connected, 1 = connecting, 0 = not connected
 BASE=1                                              # Random numbers start at BASE up to N, ie. 1..3
 STATUS=0                                            # Tracks whether or not a ping was successful
@@ -74,6 +77,7 @@ LOWPINGCOUNT=0                                      # Counter for the number of 
 PINGCHANCES=5                                       # Number of chances your current connection gets before reconnecting to
 IGNOREHIGHPING=0                                    # Ignore high ping rule if running on WAN1 failover mode faster server
 RecommendedServer=0                                 # Tracks NordVPN Closest/lowest latency Recommended Server Option
+WAN1Override=1                                      # Tracks WAN1 Overrides preventing VPN connections while WAN1 is active
 SPIN=15                                             # 15-second Spin timer
 state1=0                                            # Initialize the VPN connection states for VPN Clients 1-5
 state2=0
@@ -182,35 +186,35 @@ logo () {
 # Promptyn is a function that helps return a 0 or 1 from a Y/N question from the configuration utility.
 promptYesn () {   # Enter defaults Yes
   while true; do
-    read -p "[Y/n]? " yn
+    read -p " [Y/n]? " yn
       case $yn in
-        [Yy] ) echo -e "${CGreen}Using: Yes${CClear}";return 0 ;;
-        [Nn] ) echo -e "${CGreen}Using: No${CClear}";return 1 ;;
-        "" ) echo -e "${CGreen}Using: Yes${CClear}";return 0 ;;
-        * ) echo -e "\nPlease answer y or n, or Enter to accept default value.";;
+        [Yy] ) echo -e "${CGreen} Using: Yes${CClear}";return 0 ;;
+        [Nn] ) echo -e "${CGreen} Using: No${CClear}";return 1 ;;
+        "" ) echo -e "${CGreen} Using: Yes${CClear}";return 0 ;;
+        * ) echo -e "\n Please answer y or n, or Enter to accept default value.";;
       esac
   done
 }
 
 promptyNo () {   # Enter defaults No
   while true; do
-    read -p "[y/N]? " yn
+    read -p " [y/N]? " yn
       case $yn in
-        [Yy] ) echo -e "${CGreen}Using: Yes${CClear}";return 0 ;;
-        [Nn] ) echo -e "${CGreen}Using: No${CClear}";return 1 ;;
-        "" ) echo -e "${CGreen}Using: No${CClear}";return 1 ;;
-        * ) echo -e "\nPlease answer y or n, or Enter to accept default value.";;
+        [Yy] ) echo -e "${CGreen} Using: Yes${CClear}";return 0 ;;
+        [Nn] ) echo -e "${CGreen} Using: No${CClear}";return 1 ;;
+        "" ) echo -e "${CGreen} Using: No${CClear}";return 1 ;;
+        * ) echo -e "\n Please answer y or n, or Enter to accept default value.";;
       esac
   done
 }
 
 promptyn () {   # No defaults, just y or n
   while true; do
-    read -p "[y/n]? " -n 1 -r yn
+    read -p " [y/n]? " -n 1 -r yn
       case "${yn}" in
         [Yy]* ) return 0 ;;
         [Nn]* ) return 1 ;;
-        * ) echo -e "\nPlease answer y or n.";;
+        * ) echo -e "\n Please answer y or n.";;
       esac
   done
 }
@@ -224,7 +228,7 @@ spinner() {
   j=$((SPIN / 4))
   while [ $i -le $j ]; do
     for s in / - \\ \|; do
-      printf "\r$s"
+      printf "\r $s"
       sleep 1
     done
     i=$((i+1))
@@ -326,7 +330,7 @@ bossmode() {
 
     if [ $key_press ]; then
         case $key_press in
-            [Ee]) echo -e "${InvBlack}${CCyan}The boss is gone!  Stealthily returning to VPNMON-R2..."; echo -e "${CClear}"; exit 0;;
+            [Ee]) echo -e "${InvBlack}${CCyan} [The boss is gone!  Stealthily returning to VPNMON-R2...]"; echo -e "${CClear}"; exit 0;;
         esac
     fi
   done
@@ -709,8 +713,8 @@ resetcheck () {
 if [ $STATUS -eq 0 ]; then
     clear
     logo
-    echo -e "\n${CRed} Connection has failed. Executing VPN Reset${CClear}\n"
-    echo -e "$(date) - VPNMON-R2 ----------> ERROR: Connection failed - Executing VPN Reset" >> $LOGFILE
+    echo -e "\n${CRed} VPN$CURRCLNT Connection has failed. Executing VPN Reset${CClear}\n"
+    echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPN$CURRCLNT Connection failed - Executing VPN Reset" >> $LOGFILE
 
     vpnreset
 
@@ -795,8 +799,8 @@ fi
 if [ "${AVGPING%.*}" -gt "$MINPING" ] && [ "$IGNOREHIGHPING" == "0" ]; then
   clear
   logo
-  echo -e "\n${CRed} Average PING across VPN tunnel is > $MINPING ms. Executing VPN Reset${CClear}\n"
-  echo -e "$(date) - VPNMON-R2 ----------> WARNING: AVG PING across VPN tunnel > $MINPING ms - Executing VPN Reset" >> $LOGFILE
+  echo -e "\n${CRed} Average PING $AVGPING ms across VPN tunnel $CURRCLNT is > $MINPING ms. Executing VPN Reset${CClear}\n"
+  echo -e "$(date) - VPNMON-R2 ----------> WARNING: Average PING of $AVGPING ms across VPN tunnel $CURRCLNT > $MINPING ms - Executing VPN Reset" >> $LOGFILE
 
   vpnreset
 
@@ -827,8 +831,8 @@ if [ "$USELOWESTSLOT" == "1" ]; then
     else
       clear
       logo
-      echo -e "\n${CRed} Switching to faster VPN$LOWEST Client. Executing VPN Reset${CClear}\n"
-      echo -e "$(date) - VPNMON-R2 ----------> WARNING: Switching to faster VPN$LOWEST Client - Executing VPN Reset" >> $LOGFILE
+      echo -e "\n${CRed} Switching to faster VPN$LOWEST Client with PING $LOWESTPING ms. Executing VPN Reset${CClear}\n"
+      echo -e "$(date) - VPNMON-R2 ----------> WARNING: Switching to faster VPN$LOWEST Client with PING $LOWESTPING ms- Executing VPN Reset" >> $LOGFILE
 
       vpnresetlowestping
 
@@ -1401,7 +1405,7 @@ vpnreset() {
 
         if [ $LINES -eq 0 ] # If there are no lines, error out
         then
-          echo -e "\n${CRed}Error: ppipslst.txt VPN Server list is blank! Skipping import into Skynet Firewall.\n${CClear}"
+          echo -e "\n${CRed} Error: ppipslst.txt VPN Server list is blank! Skipping import into Skynet Firewall.\n${CClear}"
           echo -e "$(date) - VPNMON-R2 ----------> ERROR: ppipslst.txt VPN Server list is blank! Skipping import into Skynet Firewall." >> $LOGFILE
         else
           printf "${CGreen}\r                                                               "
@@ -1547,7 +1551,7 @@ vpnreset() {
             sleep 1
 
             if [ $svrcount -eq 60 ]; then
-              echo -e "\n${CRed}Error: Unable to reach SurfShark API! Check SurfShark service or config's Country Name.\n${CClear}"
+              echo -e "\n${CRed} Error: Unable to reach SurfShark API! Check SurfShark service or config's Country Name.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach SurfShark API! Check SurfShark service or config's Country Name." >> $LOGFILE
               break
             fi
@@ -1555,7 +1559,7 @@ vpnreset() {
 
         if [ $LINES -eq 0 ] #If there are no lines, error out
         then
-          echo -e "\n${CRed}Error: surfshark.txt VPN Serverlist is blank! Skipping SuperRandom "
+          echo -e "\n${CRed} Error: surfshark.txt VPN Serverlist is blank! Skipping SuperRandom "
           echo -e " assignment process.\n${CClear}"
           echo -e "$(date) - VPNMON-R2 ----------> ERROR: surfshark.txt VPN Server list is blank! Skipping SuperRandom assignment process." >> $LOGFILE
           sleep 1
@@ -1609,7 +1613,7 @@ vpnreset() {
             sleep 1
 
             if [ $svrcount -eq 60 ]; then
-              echo -e "\n${CRed}Error: Unable to reach Perfect Privacy API! Check Perfect Privacy"
+              echo -e "\n${CRed} Error: Unable to reach Perfect Privacy API! Check Perfect Privacy"
               echo -e " service or Country Name specified in the configuration.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach Perfect Privacy API! Check Perfect Privacy service or config's Country Name." >> $LOGFILE
               break
@@ -1672,7 +1676,7 @@ vpnreset() {
             sleep 1
 
             if [ $svrcount -eq 60 ]; then
-              echo -e "\n${CRed}Error: Unable to reach WeVPN API! Check WeVPN service or"
+              echo -e "\n${CRed} Error: Unable to reach WeVPN API! Check WeVPN service or"
               echo -e " Country Name specified in the configuration.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach WeVPN API! Check WeVPN service or config's Country Name." >> $LOGFILE
               break
@@ -1681,7 +1685,7 @@ vpnreset() {
 
         if [ $LINES -eq 0 ] #If there are no lines, error out
         then
-          echo -e "\n${CRed}Error: wevpn.txt list is blank! Skipping SuperRandom"
+          echo -e "\n${CRed} Error: wevpn.txt list is blank! Skipping SuperRandom"
           echo -e " assignment process.\n${CClear}"
           echo -e "$(date) - VPNMON-R2 ----------> ERROR: wevpn.txt list is blank! Skipping SuperRandom assignment process." >> $LOGFILE
           sleep 1
@@ -1720,7 +1724,7 @@ vpnreset() {
 
       if [ $LINES -eq 0 ] #If there are no lines, error out
       then
-        echo -e "\n${CRed}Error: NordVPNRS.txt recommended servers list is blank! Check"
+        echo -e "\n${CRed} Error: NordVPNRS.txt recommended servers list is blank! Check"
         echo -e " NordVPN Service or Country Name specified in the configuration.${CClear}"
         echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPNRS.txt recommended servers list is blank!" >> $LOGFILE
         sleep 3
@@ -1896,7 +1900,7 @@ vpnreset() {
       if [ ! -f $YAZFI_CONFIG_PATH ]
         then
           echo ""
-          echo -e "\n${CRed}Error: YazFi config was not located or YazFi is not installed. Unable to Proceed.\n${CClear}"
+          echo -e "\n${CRed} Error: YazFi config was not located or YazFi is not installed. Unable to Proceed.\n${CClear}"
           echo -e "$(date) - VPNMON-R2 ----------> ERROR: YazFi config was not located or YazFi is not installed!" >> $LOGFILE
           sleep 3
         else
@@ -2238,6 +2242,137 @@ lockcheck () {
     sh $APPPATH -monitor
   fi
 
+  StopLockFound=0
+  if [ -f $APPSTATUS ]; then
+    STATE=$(cat $APPSTATUS | sed -n '1p')
+    while [ $STATE == "STOPPED" ]; do
+      # clear screen
+      clear
+      SPIN=15
+      logo
+      echo -e "${CGreen} -----------> NOTICE: VPNMON-R2 OPERATIONS STOPPED <-----------"
+      echo ""
+      echo -e "${CGreen} VPNMON-R2 is currently operating in a STOPPED state. All VPN"
+      echo -e "${CGreen} Connections will be stopped while in this state. Please use"
+      echo -e "${CGreen} the 'vpnmon-r2 -resume' commandline to return to a NORMAL"
+      echo -e "${CGreen} operations mode."
+      echo ""
+      # Wait for confirmation that all VPN client slots are at 0 (disconnected)
+        i=0
+        while [ $i -ne $N ]
+          do
+            state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
+            state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
+            state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
+            state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
+            state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
+
+            printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
+            sleep 1
+            i=$(($i+1))
+            if [ $((state$i)) -ne 0 ]; then
+              printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...              "
+              service stop_vpnclient$i >/dev/null 2>&1
+              sleep 1
+              i=0
+            fi
+        done
+
+      echo ""
+      echo ""
+      echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
+      echo -e "$(date +%s)" > $RSTFILE
+      START=$(cat $RSTFILE)
+      STATE=$(cat $APPSTATUS | sed -n '1p')
+      spinner
+      StopLockFound=1
+
+      # Reset the VPN IP/Locations and othe variables
+      i=$INTERVAL
+      WAN0IP="Unassigned" # Look for an updated WAN IP/Location
+      WAN1IP="Unassigned" # Look for an updated WAN IP/Location
+      VPNIP="Unassigned" # Look for a new VPN IP/Location
+      ICANHAZIP="" # Reset Public VPN IP
+      PINGLOW=0 # Reset ping time history variables
+      PINGHIGH=0
+      oldrxbytes=0 # Reset Stats
+      oldtxbytes=0
+      newrxbytes=0
+      newtxbytes=0
+    done
+  fi
+
+  if [ "$StopLockFound" == "1" ]; then
+    #reset the script
+    sh $APPPATH -monitor
+  fi
+
+  WAN1OverrideLock=0
+  WAN0PrimaryCheck=$($timeoutcmd$timeoutsec nvram get wan0_primary)
+  while [ $WAN1Override == "0" ] && [ $WAN0PrimaryCheck -eq 0 ]
+    do
+      # clear screen
+      clear
+      SPIN=15
+      logo
+      echo -e "${CGreen} -----------> NOTICE: WAN1 OVERRIDE - VPN STOPPED <-----------"
+      echo ""
+      echo -e "${CGreen} VPNMON-R2 is currently operating in a STOPPED state due to"
+      echo -e "${CGreen} WAN1 being overridden. VPN Connections will be stopped while"
+      echo -e "${CGreen} in this state. Checking WAN0 state every $SPIN seconds to return"
+      echo -e "${CGreen} to normal operations mode."
+      echo ""
+      # Wait for confirmation that all VPN client slots are at 0 (disconnected)
+        i=0
+        while [ $i -ne $N ]
+          do
+            state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
+            state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
+            state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
+            state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
+            state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
+
+            printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
+            sleep 1
+            i=$(($i+1))
+            if [ $((state$i)) -ne 0 ]; then
+              printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...              "
+              service stop_vpnclient$i >/dev/null 2>&1
+              sleep 1
+              i=0
+            fi
+        done
+
+      echo ""
+      echo ""
+      echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
+
+      WAN0PrimaryCheck=$($timeoutcmd$timeoutsec nvram get wan0_primary)
+
+      echo -e "$(date +%s)" > $RSTFILE
+      START=$(cat $RSTFILE)
+      spinner
+      WAN1OverrideLock=1
+
+      # Reset the VPN IP/Locations and othe variables
+      i=$INTERVAL
+      WAN0IP="Unassigned" # Look for an updated WAN IP/Location
+      WAN1IP="Unassigned" # Look for an updated WAN IP/Location
+      VPNIP="Unassigned" # Look for a new VPN IP/Location
+      ICANHAZIP="" # Reset Public VPN IP
+      PINGLOW=0 # Reset ping time history variables
+      PINGHIGH=0
+      oldrxbytes=0 # Reset Stats
+      oldtxbytes=0
+      newrxbytes=0
+      newtxbytes=0
+  done
+
+  if [ "$WAN1OverrideLock" == "1" ]; then
+    #reset the script
+    sh $APPPATH -monitor
+  fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2251,18 +2386,18 @@ vconfig () {
     while true; do
       clear
       logo
-      echo -e "${CGreen}----------------------------------------------------------------"
-      echo -e "${CGreen}Configuration Utility Options"
-      echo -e "${CGreen}----------------------------------------------------------------"
-      echo -e "${InvDkGray}${CWhite}  1 ${CClear}${CCyan}: Ping Retries Before Reset?    :"${CGreen}$TRIES
-      echo -e "${InvDkGray}${CWhite}  2 ${CClear}${CCyan}: Timer Interval to Check VPN?  :"${CGreen}$INTERVAL
-      echo -e "${InvDkGray}${CWhite}  3 ${CClear}${CCyan}: Host IP to PING against?      :"${CGreen}$PINGHOST
-      echo -en "${InvDkGray}${CWhite}  4 ${CClear}${CCyan}: Update VPNMGR?                :"${CGreen};
+      echo -e "${CGreen} ----------------------------------------------------------------"
+      echo -e "${CGreen} Configuration Utility Options"
+      echo -e "${CGreen} ----------------------------------------------------------------"
+      echo -e " ${InvDkGray}${CWhite}  1 ${CClear}${CCyan}: Ping Retries Before Reset?    :"${CGreen}$TRIES
+      echo -e " ${InvDkGray}${CWhite}  2 ${CClear}${CCyan}: Timer Interval to Check VPN?  :"${CGreen}$INTERVAL
+      echo -e " ${InvDkGray}${CWhite}  3 ${CClear}${CCyan}: Host IP to PING against?      :"${CGreen}$PINGHOST
+      echo -en " ${InvDkGray}${CWhite}  4 ${CClear}${CCyan}: Update VPNMGR?                :"${CGreen};
         if [ "$UpdateVPNMGR" == "0" ]; then
           printf "No"; printf "%s\n";
         else printf "Yes"; printf "%s\n"; fi
 
-      echo -en "${InvDkGray}${CWhite}  5 ${CClear}${CCyan}: How VPN Slots are Chosen?     :"${CGreen};
+      echo -en " ${InvDkGray}${CWhite}  5 ${CClear}${CCyan}: How VPN Slots are Chosen?     :"${CGreen};
         if [ "$USELOWESTSLOT" == "0" ]; then
           printf "Random"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
         elif [ "$USELOWESTSLOT" == "1" ]; then
@@ -2270,9 +2405,9 @@ vconfig () {
         elif [ "$USELOWESTSLOT" == "2" ]; then
           printf "Round Robin"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
         fi
-      echo -e "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Chances before Reset?        :"$ODISABLED2$PINGCHANCES
+      echo -e " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Chances before Reset?        :"$ODISABLED2$PINGCHANCES
 
-      echo -en "${InvDkGray}${CWhite}  6 ${CClear}${CCyan}: Current VPN Provider?         :"${CGreen};
+      echo -en " ${InvDkGray}${CWhite}  6 ${CClear}${CCyan}: Current VPN Provider?         :"${CGreen};
         if [ "$UseNordVPN" == "1" ]; then
           printf "NordVPN"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
         elif [ "$UseSurfShark" == "1" ]; then
@@ -2285,7 +2420,7 @@ vconfig () {
           printf "Other"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n"
         fi
 
-      echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Enable SuperRandom?          :"$ODISABLED2
+      echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Enable SuperRandom?          :"$ODISABLED2
       if [ "$UseNordVPN" == "1" ] && [ "$NordVPNSuperRandom" == "0" ]; then
         printf "No"; printf "%s\n";
       elif [ "$UseNordVPN" == "1" ] && [ "$NordVPNSuperRandom" == "1" ]; then
@@ -2306,7 +2441,7 @@ vconfig () {
         printf "No"; printf "%s\n";
       fi
 
-      echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  VPN Country (Multi?)         :"$ODISABLED2
+      echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  VPN Country (Multi?)         :"$ODISABLED2
       if [ "$UseNordVPN" == "1" ]; then
         if [ "$NordVPNCountry2" != "0" ] && [ "$NordVPNCountry3" == "0" ]; then
           printf "$NordVPNCountry, $NordVPNCountry2"; printf "%s\n";
@@ -2352,9 +2487,9 @@ vconfig () {
       fi
 
       if [ "$UseWeVPN" == "1" ]; then
-        echo -en "${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  % Server Load Threshold?     :"${CDkGray}
+        echo -en " ${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  % Server Load Threshold?     :"${CDkGray}
       else
-        echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  % Server Load Threshold?     :"$ODISABLED2
+        echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  % Server Load Threshold?     :"$ODISABLED2
       fi
       if [ "$UseNordVPN" == "1" ]; then
         printf "$NordVPNLoadReset"; printf "%s\n";
@@ -2367,9 +2502,9 @@ vconfig () {
       fi
 
       if [ "$UseSurfShark" == "1" ] || [ "$UseWeVPN" == "1" ]; then
-        echo -en "${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  Update Skynet?               :"${CDkGray}
+        echo -en " ${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  Update Skynet?               :"${CDkGray}
       else
-        echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Update Skynet?               :"$ODISABLED2
+        echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Update Skynet?               :"$ODISABLED2
       fi
       if [ "$UpdateSkynet" == "0" ]; then
         printf "No"; printf "%s\n";
@@ -2377,37 +2512,37 @@ vconfig () {
       fi
 
       if [ "$UseNordVPN" == "1" ]; then
-        echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Use Recommended Server(s)?   :"$ODISABLED2
+        echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Use Recommended Server(s)?   :"$ODISABLED2
       else
-        echo -en "${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  Use Recommended Server(s)?   :"${CDkGray}
+        echo -en " ${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  Use Recommended Server(s)?   :"${CDkGray}
       fi
       if [ "$RecommendedServer" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n";
       fi
 
-      echo -en "${InvDkGray}${CWhite}  7 ${CClear}${CCyan}: Perform Daily VPN Reset?      :"${CGreen};
+      echo -en " ${InvDkGray}${CWhite}  7 ${CClear}${CCyan}: Perform Daily VPN Reset?      :"${CGreen};
         if [ "$ResetOption" == "0" ]; then
           printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
         else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
-      echo -e "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Daily Reset Time?            :"$ODISABLED2$DailyResetTime
+      echo -e " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Daily Reset Time?            :"$ODISABLED2$DailyResetTime
 
-      echo -e "${InvDkGray}${CWhite}  8 ${CClear}${CCyan}: Minimum PING Before Reset?    :"${CGreen}$MINPING
-      echo -e "${InvDkGray}${CWhite}  9 ${CClear}${CCyan}: VPN Client Slots Configured?  :"${CGreen}$N
-      echo -en "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Show Near-Realtime Stats?     :"${CGreen}
+      echo -e " ${InvDkGray}${CWhite}  8 ${CClear}${CCyan}: Minimum PING Before Reset?    :"${CGreen}$MINPING
+      echo -e " ${InvDkGray}${CWhite}  9 ${CClear}${CCyan}: VPN Client Slots Configured?  :"${CGreen}$N
+      echo -en " ${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Show Near-Realtime Stats?     :"${CGreen}
       if [ "$SHOWSTATS" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n";
       fi
 
-      echo -e "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Delay Script Startup?         :"${CGreen}$DelayStartup
-      echo -en "${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Trim Logs Daily?              :"${CGreen};
+      echo -e " ${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Delay Script Startup?         :"${CGreen}$DelayStartup
+      echo -en " ${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Trim Logs Daily?              :"${CGreen};
         if [ "$TRIMLOGS" == "0" ]; then
           printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
         else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
-      echo -e "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Max Log File Size?           :"$ODISABLED2$MAXLOGSIZE
+      echo -e " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Max Log File Size?           :"$ODISABLED2$MAXLOGSIZE
 
-      echo -en "${InvDkGray}${CWhite} 13 ${CClear}${CCyan}: Sync Current VPN with Yazfi?  :"${CGreen};
+      echo -en " ${InvDkGray}${CWhite} 13 ${CClear}${CCyan}: Sync Current VPN with Yazfi?  :"${CGreen};
         if [ "$SyncYazFi" == "0" ]; then
           printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
         else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
@@ -2422,16 +2557,20 @@ vconfig () {
       if [ $YF52GN2 == "1" ]; then YF52GN2Disp="${CGreen}Y${CClear}"; else YF52GN2Disp="${CRed}N${CClear}"; fi
       if [ $YF52GN3 == "1" ]; then YF52GN3Disp="${CGreen}Y${CClear}"; else YF52GN3Disp="${CRed}N${CClear}"; fi
 
-      echo -en "${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  YazFi Slots 1-9 Synced       :"$ODISABLED2
+      echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  YazFi Slots 1-9 Synced       :"$ODISABLED2
         if [ "$SyncYazFi" == "0" ]; then
           printf "Disabled"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
         else printf "$YF24GN1Disp$YF24GN2Disp$YF24GN3Disp$YF5GN1Disp$YF5GN2Disp$YF5GN3Disp$YF52GN1Disp$YF52GN2Disp$YF52GN3Disp"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
-      echo -e "${InvDkGray}${CWhite}  | ${CClear}"
-      echo -e "${InvDkGray}${CWhite}  s ${CClear}${CCyan}: Save & Exit"
-      echo -e "${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit & Discard Changes"
-      echo -e "${CGreen}----------------------------------------------------------------"
+      echo -en " ${InvDkGray}${CWhite} 14 ${CClear}${CCyan}: Allow WAN1 VPN Connections?   :"${CGreen};
+        if [ "$WAN1Override" == "0" ]; then
+          printf "No"; printf "%s\n";
+        else printf "Yes"; printf "%s\n"; fi
+      echo -e " ${InvDkGray}${CWhite}  | ${CClear}"
+      echo -e " ${InvDkGray}${CWhite}  s ${CClear}${CCyan}: Save & Exit"
+      echo -e " ${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit & Discard Changes"
+      echo -e "${CGreen} ----------------------------------------------------------------"
       echo ""
-      printf "Selection: "
+      printf " Selection: "
       read -r ConfigSelection
 
       # Execute chosen selections
@@ -2439,77 +2578,77 @@ vconfig () {
 
             1) # -----------------------------------------------------------------------------------------
                echo ""
-               echo -e "${CCyan}1. How many times would you like a ping to retry your VPN tunnel before"
-               echo -e "${CCyan}resetting? ${CYellow}(Default = 3)${CClear}"
-               read -p 'Ping Retries (#): ' TRIES1
+               echo -e "${CCyan} 1. How many times would you like a ping to retry your VPN tunnel before"
+               echo -e "${CCyan} resetting? ${CYellow}(Default = 3)${CClear}"
+               read -p ' Ping Retries (#): ' TRIES1
                if [ "$TRIES1" == "" ] || [ -z "$TRIES1" ]; then TRIES=3; else TRIES="$TRIES1"; fi # Using default value on enter keypress
             ;;
 
             2) # -----------------------------------------------------------------------------------------
                echo ""
-               echo -e "${CCyan}2. What interval (in seconds) would you like to check your VPN tunnel"
-               echo -e "${CCyan}to ensure the connection is healthy? ${CYellow}(Default = 60)${CClear}"
-               read -p 'Interval (seconds): ' INTERVAL1
+               echo -e "${CCyan} 2. What interval (in seconds) would you like to check your VPN tunnel"
+               echo -e "${CCyan} to ensure the connection is healthy? ${CYellow}(Default = 60)${CClear}"
+               read -p ' Interval (seconds): ' INTERVAL1
                if [ -z "$INTERVAL1" ]; then INTERVAL=60; else INTERVAL=$INTERVAL1; fi # Using default value on enter keypress
             ;;
 
             3) # -----------------------------------------------------------------------------------------
                echo ""
-               echo -e "${CCyan}3. What host IP would you like to ping to determine the health of your "
-               echo -e "${CCyan}VPN tunnel? ${CYellow}(Default = 8.8.8.8)${CClear}"
-               read -p 'Host IP: ' PINGHOST1
+               echo -e "${CCyan} 3. What host IP would you like to ping to determine the health of your "
+               echo -e "${CCyan} VPN tunnel? ${CYellow}(Default = 8.8.8.8)${CClear}"
+               read -p ' Host IP: ' PINGHOST1
                if [ -z "$PINGHOST1" ]; then PINGHOST="8.8.8.8"; else PINGHOST=$PINGHOST1; fi # Using default value on enter keypress
             ;;
 
             4) # -----------------------------------------------------------------------------------------
                echo ""
-               echo -e "${CCyan}4. Would you like to update VPNMGR? (Note: must be already installed "
-               echo -e "${CCyan}and you must be a NordVPN/PIA/WeVPN subscriber) ${CYellow}(No=0, Yes=1)${CClear}"
-               echo -e "${CYellow}(Default = 0)${CClear}"
+               echo -e "${CCyan} 4. Would you like to update VPNMGR? (Note: must be already installed "
+               echo -e "${CCyan} and you must be a NordVPN/PIA/WeVPN subscriber) ${CYellow}(No=0, Yes=1)${CClear}"
+               echo -e "${CYellow} (Default = 0)${CClear}"
                   while true; do
-                    read -p "Update VPNMGR? (0/1): " UpdateVPNMGR1
+                    read -p " Update VPNMGR? (0/1): " UpdateVPNMGR1
                       case $UpdateVPNMGR1 in
                         [0] ) UpdateVPNMGR=0;break ;;
                         [1] ) UpdateVPNMGR=1;break ;;
-                        "" ) echo -e "\nPlease answer 0 or 1" ;;
-                        * ) echo -e "\nPlease answer 0 or 1" ;;
+                        "" ) echo -e "\n Please answer 0 or 1" ;;
+                        * ) echo -e "\n Please answer 0 or 1" ;;
                       esac
                   done
             ;;
 
             5) # -----------------------------------------------------------------------------------------
                echo ""
-               echo -e "${CCyan}5. In what manner should VPNMON-R2 activate a selected VPN slot?"
-               echo -e "${CCyan}There are 3 options to consider: ${CYellow}Random, Lowest PING, or Round-"
-               echo -e "${CYellow}Robin.${CCyan} The 'Random' option will randomly pick one of your configured"
-               echo -e "${CCyan}VPN slots to connect to, while the 'Lowest PING' option will"
-               echo -e "${CCyan}continually test each of your VPN slots through each interval to"
-               echo -e "${CCyan}see which one has the lowest PING, which most likely will be your"
-               echo -e "${CCyan}fastest connection, and will always force a connection to it. The"
-               echo -e "${CCyan}'Round Robin' option will connect to the next VPN slot in line,"
-               echo -e "${CCyan}so if VPN Slot #1 was in use, it will connect to VPN Slot #2 next."
-               echo -e "${CYellow}(Random=0, Lowest PING=1, Round Robin=2) (Default = 0)${CClear}"
+               echo -e "${CCyan} 5. In what manner should VPNMON-R2 activate a selected VPN slot?"
+               echo -e "${CCyan} There are 3 options to consider: ${CYellow}Random, Lowest PING, or Round-"
+               echo -e "${CYellow} Robin.${CCyan} The 'Random' option will randomly pick one of your configured"
+               echo -e "${CCyan} VPN slots to connect to, while the 'Lowest PING' option will"
+               echo -e "${CCyan} continually test each of your VPN slots through each interval to"
+               echo -e "${CCyan} see which one has the lowest PING, which most likely will be your"
+               echo -e "${CCyan} fastest connection, and will always force a connection to it. The"
+               echo -e "${CCyan} 'Round Robin' option will connect to the next VPN slot in line,"
+               echo -e "${CCyan} so if VPN Slot #1 was in use, it will connect to VPN Slot #2 next."
+               echo -e "${CYellow} (Random=0, Lowest PING=1, Round Robin=2) (Default = 0)${CClear}"
                   while true; do
-                    read -p "Random, Lowest PING or Round-Robin? (0/1/2): " USELOWESTSLOT1
+                    read -p " Random, Lowest PING or Round-Robin? (0/1/2): " USELOWESTSLOT1
                       case $USELOWESTSLOT1 in
                         [0] ) USELOWESTSLOT=0;break ;;
                         [1] ) USELOWESTSLOT=1;break ;;
                         [2] ) USELOWESTSLOT=2;break ;;
-                        "" ) echo -e "\nPlease answer 0, 1 or 2" ;;
-                        * ) echo -e "\nPlease answer 0, 1 or 2" ;;
+                        "" ) echo -e "\n Please answer 0, 1 or 2" ;;
+                        * ) echo -e "\n Please answer 0, 1 or 2" ;;
                       esac
                   done
                # -----------------------------------------------------------------------------------------
                if [ "$USELOWESTSLOT" == "1" ]; then
                  echo ""
-                 echo -e "${CCyan}5a. When using the 'Lowest PING' method, there is a greater chance that"
-                 echo -e "${CCyan}your connections will reset at a higher rate, due to competing servers"
-                 echo -e "${CCyan}giving slighly lower pings. To combat this, a counter is available to"
-                 echo -e "${CCyan}help give your connection a chance to recover and regain its status as"
-                 echo -e "${CCyan}the connection with the lowest ping.  How many chances would you like"
-                 echo -e "${CCyan}to give your connection before reconnecting to a faster VPN server?"
-                 echo -e "${CYellow}(Default = 5)${CClear}"
-                 read -p 'Number of Chances?: ' PINGCHANCES1
+                 echo -e "${CCyan} 5a. When using the 'Lowest PING' method, there is a greater chance that"
+                 echo -e "${CCyan} your connections will reset at a higher rate, due to competing servers"
+                 echo -e "${CCyan} giving slighly lower pings. To combat this, a counter is available to"
+                 echo -e "${CCyan} help give your connection a chance to recover and regain its status as"
+                 echo -e "${CCyan} the connection with the lowest ping.  How many chances would you like"
+                 echo -e "${CCyan} to give your connection before reconnecting to a faster VPN server?"
+                 echo -e "${CYellow} (Default = 5)${CClear}"
+                 read -p ' Number of Chances?: ' PINGCHANCES1
                  if [ -z "$PINGCHANCES1" ]; then PINGCHANCES=5; else PINGCHANCES=$PINGCHANCES1; fi # Using default value on enter keypress
                else
                  PINGCHANCES=5
@@ -2518,19 +2657,19 @@ vconfig () {
 
             6) # -----------------------------------------------------------------------------------------
                echo ""
-               echo -e "${CCyan}6. Which service is your default VPN Provider? ${CYellow}(NordVPN = 1,"
-               echo -e "${CYellow}Surfshark = 2, Perfect Privacy = 3, WeVPN = 4, Other = 5)"
-               echo -e "${CYellow}(Default = Other)${CClear}"
+               echo -e "${CCyan} 6. Which service is your default VPN Provider? ${CYellow}(NordVPN = 1,"
+               echo -e "${CYellow} Surfshark = 2, Perfect Privacy = 3, WeVPN = 4, Other = 5)"
+               echo -e "${CYellow} (Default = Other)${CClear}"
                while true; do
-                read -p "VPN Provider (1/2/3/4/5): " VPNProvider1
+                read -p " VPN Provider (1/2/3/4/5): " VPNProvider1
                   case $VPNProvider1 in
                     [1] ) VPNProvider=1; break ;;
                     [2] ) VPNProvider=2; break ;;
                     [3] ) VPNProvider=3; break ;;
                     [4] ) VPNProvider=4; break ;;
                     [5] ) VPNProvider=5; break ;;
-                    "" ) echo -e "\nPlease answer 1/2/3/4/5";;
-                    * ) echo -e "\nPlease answer 1/2/3/4/5";;
+                    "" ) echo -e "\n Please answer 1/2/3/4/5";;
+                    * ) echo -e "\n Please answer 1/2/3/4/5";;
                   esac
                done
 
@@ -2542,58 +2681,58 @@ vconfig () {
               UseNordVPN=1
 
               echo ""
-              echo -e "${CCyan}6a. Would you like to use the NordVPN SuperRandom functionality? NOTE:"
-              echo -e "${CCyan}Choosing this option will prevent you from using NordVPN Recommended"
-              echo -e "${CCyan}Server functionality, and will instead pick random servers within the"
-              echo -e "${CCyan}country of your choice, without regard to distance or latency."
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              echo -e "${CCyan} 6a. Would you like to use the NordVPN SuperRandom functionality? NOTE:"
+              echo -e "${CCyan} Choosing this option will prevent you from using NordVPN Recommended"
+              echo -e "${CCyan} Server functionality, and will instead pick random servers within the"
+              echo -e "${CCyan} country of your choice, without regard to distance or latency."
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
-                read -p "Use SuperRandom? (0/1): " NordVPNSuperRandom1
+                read -p " Use SuperRandom? (0/1): " NordVPNSuperRandom1
                   case $NordVPNSuperRandom1 in
                     [0] ) NordVPNSuperRandom=0; break ;;
                     [1] ) NordVPNSuperRandom=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
               RecommendedServer=0
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6b. What Country is your country of origin for NordVPN? ${CYellow}(Default = "
-              echo -e "${CYellow}United States). NOTE: Country names must be spelled correctly as below!"
-              echo -e "${CCyan}Valid country names as follows: Albania, Argentina, Australia, Austria,"
-              echo -e "${CCyan}Belgium, Bosnia and Herzegovina, Brazil, Bulgaria, Canada, Chile,"
-              echo -e "${CCyan}Costa Rica, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland,"
-              echo -e "${CCyan}France, Georgia, Germany, Greece, Hong Kong, Hungary, Iceland, Indonesia,"
-              echo -e "${CCyan}Ireland, Israel, Italy, Japan, Latvia, Lithuania, Luxembourg, Malaysia,"
-              echo -e "${CCyan}Mexico, Moldova, Netherlands, New Zealand, North Macedonia, Norway, Poland,"
-              echo -e "${CCyan}Portugal, Romania, Serbia, Singapore, Slovakia, Slovenia, South Africa,"
-              echo -e "${CCyan}South Korea, Spain, Sweden, Switzerland, Taiwan, Thailand, Turkey, Ukraine,"
-              echo -e "${CCyan}United Arab Emirates, United Kingdom, United States, Vietnam.${CClear}"
-              read -p 'NordVPN Country: ' NordVPNCountry1
+              echo -e "${CCyan} 6b. What Country is your country of origin for NordVPN? ${CYellow}(Default = "
+              echo -e "${CYellow} United States). NOTE: Country names must be spelled correctly as below!"
+              echo -e "${CCyan} Valid country names as follows: Albania, Argentina, Australia, Austria,"
+              echo -e "${CCyan} Belgium, Bosnia and Herzegovina, Brazil, Bulgaria, Canada, Chile,"
+              echo -e "${CCyan} Costa Rica, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland,"
+              echo -e "${CCyan} France, Georgia, Germany, Greece, Hong Kong, Hungary, Iceland, Indonesia,"
+              echo -e "${CCyan} Ireland, Israel, Italy, Japan, Latvia, Lithuania, Luxembourg, Malaysia,"
+              echo -e "${CCyan} Mexico, Moldova, Netherlands, New Zealand, North Macedonia, Norway, Poland,"
+              echo -e "${CCyan} Portugal, Romania, Serbia, Singapore, Slovakia, Slovenia, South Africa,"
+              echo -e "${CCyan} South Korea, Spain, Sweden, Switzerland, Taiwan, Thailand, Turkey, Ukraine,"
+              echo -e "${CCyan} United Arab Emirates, United Kingdom, United States, Vietnam.${CClear}"
+              read -p " NordVPN Country: " NordVPNCountry1
               if [ -z "$NordVPNCountry1" ]; then NordVPNCountry="United States"; else NordVPNCountry=$NordVPNCountry1; fi # Using default value on enter keypress
               # -----------------------------------------------------------------------------------------
               if [ "$NordVPNSuperRandom" == "1" ]; then
                 echo ""
-                echo -e "${CCyan}6c. Would you like to randomize connections across multiple countries?"
-                echo -e "${CCyan}NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
-                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                echo -e "${CCyan} 6c. Would you like to randomize connections across multiple countries?"
+                echo -e "${CCyan} NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
+                echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
                 while true; do
-                  read -p "Use Multiple Countries? (0/1): " NordVPNMultipleCountries1
+                  read -p " Use Multiple Countries? (0/1): " NordVPNMultipleCountries1
                     case $NordVPNMultipleCountries1 in
                       [0] ) NordVPNMultipleCountries=0; break ;;
                       [1] ) NordVPNMultipleCountries=1; break ;;
-                      "" ) echo -e "\nPlease answer 0 or 1";;
-                      * ) echo -e "\nPlease answer 0 or 1";;
+                      "" ) echo -e "\n Please answer 0 or 1";;
+                      * ) echo -e "\n Please answer 0 or 1";;
                     esac
                 done
 
                 if [ "$NordVPNMultipleCountries" == "1" ]; then
                     echo -e "${CCyan}"
-                    read -p "$(echo -e "Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" NordVPNCountry21
+                    read -p "$(echo -e " Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" NordVPNCountry21
                     if [ -z "$NordVPNCountry21" ]; then NordVPNCountry2=0; else NordVPNCountry2="$NordVPNCountry21"; fi
                     echo -e "${CCyan}"
-                    read -p "$(echo -e "Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" NordVPNCountry31
+                    read -p "$(echo -e " Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" NordVPNCountry31
                     if [ -z "$NordVPNCountry31" ]; then NordVPNCountry3=0; else NordVPNCountry3="$NordVPNCountry31"; fi
                 else
                   NordVPNMultipleCountries=0
@@ -2608,41 +2747,41 @@ vconfig () {
               fi
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6d. At what % VPN server load would you like to reconnect to a different"
-              echo -e "${CCyan}NordVPN Server? ${CYellow}(Default = 50)${CClear}"
-              read -p "% Server Load Threshold: " NordVPNLoadReset1
+              echo -e "${CCyan} 6d. At what % VPN server load would you like to reconnect to a different"
+              echo -e "${CCyan} NordVPN Server? ${CYellow}(Default = 50)${CClear}"
+              read -p " % Server Load Threshold: " NordVPNLoadReset1
               if [ -z "$NordVPNLoadReset1" ]; then NordVPNLoadReset=50; else NordVPNLoadReset=$NordVPNLoadReset1; fi # Using default value on enter keypress
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6e. Would you like to whitelist NordVPN servers in the Skynet Firewall?"
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              echo -e "${CCyan} 6e. Would you like to whitelist NordVPN servers in the Skynet Firewall?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
-                read -p "Update Skynet? (0/1): " UpdateSkynet1
+                read -p " Update Skynet? (0/1): " UpdateSkynet1
                   case $UpdateSkynet1 in
                     [0] ) UpdateSkynet=0; break ;;
                     [1] ) UpdateSkynet=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
               # -----------------------------------------------------------------------------------------
               if [ $NordVPNSuperRandom == "0" ]; then
                 echo ""
-                echo -e "${CCyan}6f. Would you like to use NordVPN Recommended Servers? Note: Choosing"
-                echo -e "${CCyan}this option will configure your VPN slots with servers that are the"
-                echo -e "${CCyan}closest to your WAN location exit, and have the lowest latency/load."
-                echo -e "${CCyan}This is the same function your NordVPN mobile/pc app has when chosing"
-                echo -e "${CCyan}the default recommended server. This option will override your choices"
-                echo -e "${CCyan}you may have selected for SuperRandom and multiple countries. This"
-                echo -e "${CCyan}is a NordVPN feature only."
-                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                echo -e "${CCyan} 6f. Would you like to use NordVPN Recommended Servers? Note: Choosing"
+                echo -e "${CCyan} this option will configure your VPN slots with servers that are the"
+                echo -e "${CCyan} closest to your WAN location exit, and have the lowest latency/load."
+                echo -e "${CCyan} This is the same function your NordVPN mobile/pc app has when chosing"
+                echo -e "${CCyan} the default recommended server. This option will override your choices"
+                echo -e "${CCyan} you may have selected for SuperRandom and multiple countries. This"
+                echo -e "${CCyan} is a NordVPN feature only."
+                echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
                 while true; do
-                  read -p "Use Recommended NordVPN Server(s)? (0/1): " RecommendedServer1
+                  read -p " Use Recommended NordVPN Server(s)? (0/1): " RecommendedServer1
                     case $RecommendedServer1 in
                       [0] ) RecommendedServer=0; break ;;
                       [1] ) RecommendedServer=1; break ;;
-                      "" ) echo -e "\nPlease answer 0 or 1";;
-                      * ) echo -e "\nPlease answer 0 or 1";;
+                      "" ) echo -e "\n Please answer 0 or 1";;
+                      * ) echo -e "\n Please answer 0 or 1";;
                     esac
                 done
                 NordVPNSuperRandom=0
@@ -2669,58 +2808,58 @@ vconfig () {
               UseSurfShark=1
 
               echo ""
-              echo -e "${CCyan}6a. Would you like to use the SurfShark SuperRandom functionality?"
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              echo -e "${CCyan} 6a. Would you like to use the SurfShark SuperRandom functionality?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
-                read -p "Use SuperRandom? (0/1): " SurfSharkSuperRandom1
+                read -p " Use SuperRandom? (0/1): " SurfSharkSuperRandom1
                   case $SurfSharkSuperRandom1 in
                     [0] ) SurfSharkSuperRandom=0; break ;;
                     [1] ) SurfSharkSuperRandom=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6b. What Country is your country of origin for SurfShark? ${CYellow}(Default = "
-              echo -e "${CYellow}United States). NOTE: Country names must be spelled correctly as below!"
-              echo -e "${CCyan}Valid country names as follows: Albania, Algeria, Andorra, Argentina,"
-              echo -e "${CCyan}Armenia, Australia, Austria, Azerbaijan, Bahamas, Belgium Belize Bhutan,"
-              echo -e "${CCyan}Bolivia, Bosnia and Herzegovina, Brazil, Brunei, Bulgaria, Canada, Chile,"
-              echo -e "${CCyan}Colombia, Combodia, Costa Rica, Croatia, Cyprus, Czech Republic, Denmark,"
-              echo -e "${CCyan}Ecuador, Egypt, Estonia, Finland, France, Georgia, Germany, Greece,"
-              echo -e "${CCyan}Hong Kong, Hungary, Iceland, India, Indonesia, Ireland, Israel, Italy, Japan,"
-              echo -e "${CCyan}Kazakhstan, Laos, Latvia, Liechtenstein, Lithuania, Luxembourg, Malaysia,"
-              echo -e "${CCyan}Malta, Marocco, Mexico, Moldova, Monaco, Mongolia, Montenegro, Myanmar,"
-              echo -e "${CCyan}Nepal, Netherlands, New Zealand, Nigeria, North Macedonia, Norway, Panama,"
-              echo -e "${CCyan}Paraguay, Peru, Philippines, Poland, Portugal, Romania, Serbia, Singapore,"
-              echo -e "${CCyan}Slovakia, Slovenia, South Africa, South Korea, Spain, Sri Lanka, Sweden,"
-              echo -e "${CCyan}Switzerland, Taiwan, Thailand, Turkey, Ukraine, United Arab Emirates,"
-              echo -e "${CCyan}United Kingdom, United States, Uruguay, Uzbekistan, Venezuela, Vietnam${CClear}"
-              read -p 'SurfShark Country: ' SurfSharkCountry1
+              echo -e "${CCyan} 6b. What Country is your country of origin for SurfShark? ${CYellow}(Default = "
+              echo -e "${CYellow} United States). NOTE: Country names must be spelled correctly as below!"
+              echo -e "${CCyan} Valid country names as follows: Albania, Algeria, Andorra, Argentina,"
+              echo -e "${CCyan} Armenia, Australia, Austria, Azerbaijan, Bahamas, Belgium Belize Bhutan,"
+              echo -e "${CCyan} Bolivia, Bosnia and Herzegovina, Brazil, Brunei, Bulgaria, Canada, Chile,"
+              echo -e "${CCyan} Colombia, Combodia, Costa Rica, Croatia, Cyprus, Czech Republic, Denmark,"
+              echo -e "${CCyan} Ecuador, Egypt, Estonia, Finland, France, Georgia, Germany, Greece,"
+              echo -e "${CCyan} Hong Kong, Hungary, Iceland, India, Indonesia, Ireland, Israel, Italy, Japan,"
+              echo -e "${CCyan} Kazakhstan, Laos, Latvia, Liechtenstein, Lithuania, Luxembourg, Malaysia,"
+              echo -e "${CCyan} Malta, Marocco, Mexico, Moldova, Monaco, Mongolia, Montenegro, Myanmar,"
+              echo -e "${CCyan} Nepal, Netherlands, New Zealand, Nigeria, North Macedonia, Norway, Panama,"
+              echo -e "${CCyan} Paraguay, Peru, Philippines, Poland, Portugal, Romania, Serbia, Singapore,"
+              echo -e "${CCyan} Slovakia, Slovenia, South Africa, South Korea, Spain, Sri Lanka, Sweden,"
+              echo -e "${CCyan} Switzerland, Taiwan, Thailand, Turkey, Ukraine, United Arab Emirates,"
+              echo -e "${CCyan} United Kingdom, United States, Uruguay, Uzbekistan, Venezuela, Vietnam${CClear}"
+              read -p " SurfShark Country: " SurfSharkCountry1
               if [ -z "$SurfSharkCountry1" ]; then SurfSharkCountry="United States"; else SurfSharkCountry=$SurfSharkCountry1; fi # Using default value on enter keypress
               # -----------------------------------------------------------------------------------------
               if [ "$SurfSharkSuperRandom" == "1" ]; then
                 echo ""
-                echo -e "${CCyan}6c. Would you like to randomize connections across multiple countries?"
-                echo -e "${CCyan}NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
-                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                echo -e "${CCyan} 6c. Would you like to randomize connections across multiple countries?"
+                echo -e "${CCyan} NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
+                echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
                 while true; do
-                  read -p "Use Multiple Countries? (0/1): " SurfSharkMultipleCountries1
+                  read -p " Use Multiple Countries? (0/1): " SurfSharkMultipleCountries1
                     case $SurfSharkMultipleCountries1 in
                       [0] ) SurfSharkMultipleCountries=0; break ;;
                       [1] ) SurfSharkMultipleCountries=1; break ;;
-                      "" ) echo -e "\nPlease answer 0 or 1";;
-                      * ) echo -e "\nPlease answer 0 or 1";;
+                      "" ) echo -e "\n Please answer 0 or 1";;
+                      * ) echo -e "\n Please answer 0 or 1";;
                     esac
                 done
 
                 if [ "$SurfSharkMultipleCountries" == "1" ]; then
                     echo -e "${CCyan}"
-                    read -p "$(echo -e "Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" SurfSharkCountry21
+                    read -p "$(echo -e " Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" SurfSharkCountry21
                     if [ -z "$SurfSharkCountry21" ]; then SurfSharkCountry2=0; else SurfSharkCountry2="$SurfSharkCountry21"; fi
                     echo -e "${CCyan}"
-                    read -p "$(echo -e "Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" SurfSharkCountry31
+                    read -p "$(echo -e " Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" SurfSharkCountry31
                     if [ -z "$SurfSharkCountry31" ]; then SurfSharkCountry3=0; else SurfSharkCountry3="$SurfSharkCountry31"; fi
                 else
                   SurfSharkMultipleCountries=0
@@ -2734,9 +2873,9 @@ vconfig () {
               fi
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6d. At what % VPN server load would you like to reconnect to a different"
-              echo -e "${CCyan}SurfShark Server? ${CYellow}(Default = 50)${CClear}"
-              read -p "% Server Load Threshold: " SurfSharkLoadReset1
+              echo -e "${CCyan} 6d. At what % VPN server load would you like to reconnect to a different"
+              echo -e "${CCyan} SurfShark Server? ${CYellow}(Default = 50)${CClear}"
+              read -p " % Server Load Threshold: " SurfSharkLoadReset1
               if [ -z "$SurfSharkLoadReset1" ]; then SurfSharkLoadReset=50; else SurfSharkLoadReset=$SurfSharkLoadReset1; fi # Using default value on enter keypress
               # -----------------------------------------------------------------------------------------
             else
@@ -2757,48 +2896,48 @@ vconfig () {
               UsePP=1
 
               echo ""
-              echo -e "${CCyan}6a. Would you like to use the Perfect Privacy SuperRandom functionality?"
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              echo -e "${CCyan} 6a. Would you like to use the Perfect Privacy SuperRandom functionality?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
-                read -p "Use SuperRandom? (0/1): " PPSuperRandom1
+                read -p " Use SuperRandom? (0/1): " PPSuperRandom1
                   case $PPSuperRandom1 in
                     [0] ) PPSuperRandom=0; break ;;
                     [1] ) PPSuperRandom=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6b. What Country is your country of origin for Perfect Privacy? ${CYellow}(Default = "
-              echo -e "${CYellow}U.S.A.). NOTE: Country names must be spelled correctly as below!"
-              echo -e "${CCyan}Valid country names as follows: Australia, Austria, Canada, China,"
-              echo -e "${CCyan}Czech Republic, Denmark, France, Germany, Iceland, Israel, Italy,"
-              echo -e "${CCyan}Japan, Latvia, Netherlands, Norway, Poland, Romania, Russia, Serbia,"
-              echo -e "${CCyan}Singapore, Spain, Sweden, Switzerland, Turkey, U.S.A., United Kingdom${CClear}"
-              read -p 'Perfect Privacy Country: ' PPCountry1
+              echo -e "${CCyan} 6b. What Country is your country of origin for Perfect Privacy? ${CYellow}(Default = "
+              echo -e "${CYellow} U.S.A.). NOTE: Country names must be spelled correctly as below!"
+              echo -e "${CCyan} Valid country names as follows: Australia, Austria, Canada, China,"
+              echo -e "${CCyan} Czech Republic, Denmark, France, Germany, Iceland, Israel, Italy,"
+              echo -e "${CCyan} Japan, Latvia, Netherlands, Norway, Poland, Romania, Russia, Serbia,"
+              echo -e "${CCyan} Singapore, Spain, Sweden, Switzerland, Turkey, U.S.A., United Kingdom${CClear}"
+              read -p " Perfect Privacy Country: " PPCountry1
               if [ -z "$PPCountry1" ]; then PPCountry="U.S.A."; else PPCountry=$PPCountry1; fi # Using default value on enter keypress
               # -----------------------------------------------------------------------------------------
               if [ "$PPSuperRandom" == "1" ]; then
                 echo ""
-                echo -e "${CCyan}6c. Would you like to randomize connections across multiple countries?"
-                echo -e "${CCyan}NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
-                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                echo -e "${CCyan} 6c. Would you like to randomize connections across multiple countries?"
+                echo -e "${CCyan} NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
+                echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
                 while true; do
-                  read -p "Use Multiple Countries? (0/1): " PPMultipleCountries1
+                  read -p " Use Multiple Countries? (0/1): " PPMultipleCountries1
                     case $PPMultipleCountries1 in
                       [0] ) PPMultipleCountries=0; break ;;
                       [1] ) PPMultipleCountries=1; break ;;
-                      "" ) echo -e "\nPlease answer 0 or 1";;
-                      * ) echo -e "\nPlease answer 0 or 1";;
+                      "" ) echo -e "\n Please answer 0 or 1";;
+                      * ) echo -e "\n Please answer 0 or 1";;
                     esac
                 done
                 if [ "$PPMultipleCountries" == "1" ]; then
                     echo -e "${CCyan}"
-                    read -p "$(echo -e "Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" PPCountry21
+                    read -p "$(echo -e " Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" PPCountry21
                     if [ -z "$PPCountry21" ]; then PPCountry2=0; else PPCountry2="$PPCountry21"; fi
                     echo -e "${CCyan}"
-                    read -p "$(echo -e "Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" PPCountry31
+                    read -p "$(echo -e " Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" PPCountry31
                     if [ -z "$PPCountry31" ]; then PPCountry3=0; else PPCountry3="$PPCountry31"; fi
                 else
                   PPMultipleCountries=0
@@ -2812,21 +2951,21 @@ vconfig () {
               fi
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6d. At what VPN server load would you like to reconnect to a different"
-              echo -e "${CCyan}Perfect Privacy Server? ${CYellow}(Default = 50)${CClear}"
-              read -p "% Server Load Threshold: " PPLoadReset1
+              echo -e "${CCyan} 6d. At what VPN server load would you like to reconnect to a different"
+              echo -e "${CCyan} Perfect Privacy Server? ${CYellow}(Default = 50)${CClear}"
+              read -p " % Server Load Threshold: " PPLoadReset1
               if [ -z "$PPLoadReset1" ]; then PPLoadReset=50; else PPLoadReset=$PPLoadReset1; fi # Using default value on enter keypress
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6e. Would you like to whitelist Perfect Privacy VPN servers in the Skynet"
-              echo -e "${CCyan}Firewall? ${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              echo -e "${CCyan} 6e. Would you like to whitelist Perfect Privacy VPN servers in the Skynet"
+              echo -e "${CCyan} Firewall? ${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
-                read -p "Update Skynet? (0/1): " UpdateSkynet1
+                read -p " Update Skynet? (0/1): " UpdateSkynet1
                   case $UpdateSkynet1 in
                     [0] ) UpdateSkynet=0; break ;;
                     [1] ) UpdateSkynet=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
             else
@@ -2848,52 +2987,52 @@ vconfig () {
               WeVPNLoadReset=50
 
               echo ""
-              echo -e "${CCyan}6a. Would you like to use the WeVPN SuperRandom functionality?"
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              echo -e "${CCyan} 6a. Would you like to use the WeVPN SuperRandom functionality?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
-                read -p "Use SuperRandom? (0/1): " WeVPNSuperRandom1
+                read -p " Use SuperRandom? (0/1): " WeVPNSuperRandom1
                   case $WeVPNSuperRandom1 in
                     [0] ) WeVPNSuperRandom=0; break ;;
                     [1] ) WeVPNSuperRandom=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
               # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6b. What Country is your country of origin for SurfShark? ${CYellow}(Default = "
-              echo -e "${CYellow}USA). NOTE: Country names must be spelled correctly as below!"
-              echo -e "${CCyan}Valid country names as follows: Australia, Austria, Belgium, Brazil,"
-              echo -e "${CCyan}Bulgaria, Canada, Czech Republic, Denmark, Egypt, Estonia, Finland,"
-              echo -e "${CCyan}France, Germany, Greece, Hong Kong, Hungary, Iceland, India, Indonesia,"
-              echo -e "${CCyan}Ireland, Israel, Italy, Japan, Luxembourg, Malaysia, Mexico, Netherlands,"
-              echo -e "${CCyan}New Zealand, Nigeria, Norway, Philippines, Poland, Portugal, Romania,"
-              echo -e "${CCyan}Russia, Serbia, Singapore, South Africa, South Korea, Spain, Sweden,"
-              echo -e "${CCyan}Switzerland, Taiwan, Turkey, UAE, UK, Ukraine, USA, Vietnam${CClear}"
-              read -p 'WeVPN Country: ' WeVPNCountry1
+              echo -e "${CCyan} 6b. What Country is your country of origin for SurfShark? ${CYellow}(Default = "
+              echo -e "${CYellow} USA). NOTE: Country names must be spelled correctly as below!"
+              echo -e "${CCyan} Valid country names as follows: Australia, Austria, Belgium, Brazil,"
+              echo -e "${CCyan} Bulgaria, Canada, Czech Republic, Denmark, Egypt, Estonia, Finland,"
+              echo -e "${CCyan} France, Germany, Greece, Hong Kong, Hungary, Iceland, India, Indonesia,"
+              echo -e "${CCyan} Ireland, Israel, Italy, Japan, Luxembourg, Malaysia, Mexico, Netherlands,"
+              echo -e "${CCyan} New Zealand, Nigeria, Norway, Philippines, Poland, Portugal, Romania,"
+              echo -e "${CCyan} Russia, Serbia, Singapore, South Africa, South Korea, Spain, Sweden,"
+              echo -e "${CCyan} Switzerland, Taiwan, Turkey, UAE, UK, Ukraine, USA, Vietnam${CClear}"
+              read -p " WeVPN Country: " WeVPNCountry1
               if [ -z "$WeVPNCountry1" ]; then WeVPNCountry="USA"; else WeVPNCountry=$WeVPNCountry1; fi # Using default value on enter keypress
               # -----------------------------------------------------------------------------------------
               if [ "$WeVPNSuperRandom" == "1" ]; then
                 echo ""
-                echo -e "${CCyan}6c. Would you like to randomize connections across multiple countries?"
-                echo -e "${CCyan}NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
-                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                echo -e "${CCyan} 6c. Would you like to randomize connections across multiple countries?"
+                echo -e "${CCyan} NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
+                echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
                 while true; do
-                  read -p "Use Multiple Countries? (0/1): " WeVPNMultipleCountries1
+                  read -p " Use Multiple Countries? (0/1): " WeVPNMultipleCountries1
                     case $WeVPNMultipleCountries1 in
                       [0] ) WeVPNMultipleCountries=0; break ;;
                       [1] ) WeVPNMultipleCountries=1; break ;;
-                      "" ) echo -e "\nPlease answer 0 or 1";;
-                      * ) echo -e "\nPlease answer 0 or 1";;
+                      "" ) echo -e "\n Please answer 0 or 1";;
+                      * ) echo -e "\n Please answer 0 or 1";;
                     esac
                 done
 
                 if [ "$WeVPNMultipleCountries" == "1" ]; then
                     echo -e "${CCyan}"
-                    read -p "$(echo -e "Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" WeVPNCountry21
+                    read -p "$(echo -e " Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" WeVPNCountry21
                     if [ -z "$WeVPNCountry21" ]; then WeVPNCountry2=0; else WeVPNCountry2="$WeVPNCountry21"; fi
                     echo -e "${CCyan}"
-                    read -p "$(echo -e "Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" WeVPNCountry31
+                    read -p "$(echo -e " Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" WeVPNCountry31
                     if [ -z "$WeVPNCountry31" ]; then WeVPNCountry3=0; else WeVPNCountry3="$WeVPNCountry31"; fi
                 else
                   WeVPNMultipleCountries=0
@@ -2959,23 +3098,23 @@ vconfig () {
 
           7) # -----------------------------------------------------------------------------------------
              echo ""
-             echo -e "${CCyan}7. Would you like to reset your VPN connection to a random VPN client"
-             echo -e "${CCyan}slot daily? ${CYellow}(No=0, Yes=1) (Default = 1)${CClear}"
+             echo -e "${CCyan} 7. Would you like to reset your VPN connection to a random VPN client"
+             echo -e "${CCyan} slot daily? ${CYellow}(No=0, Yes=1) (Default = 1)${CClear}"
              while true; do
-               read -p "Reset Daily? (0/1): " ResetOption1
+               read -p " Reset Daily? (0/1): " ResetOption1
                  case $ResetOption1 in
                    [0] ) ResetOption=0; break ;;
                    [1] ) ResetOption=1; break ;;
-                   "" ) echo -e "\nPlease answer 0 or 1";;
-                   * ) echo -e "\nPlease answer 0 or 1";;
+                   "" ) echo -e "\n Please answer 0 or 1";;
+                   * ) echo -e "\n Please answer 0 or 1";;
                  esac
              done
              # -----------------------------------------------------------------------------------------
              if [ "$ResetOption" == "1" ]; then
                echo ""
-               echo -e "${CCyan}7a. What time would you like to reset your connection?"
-               echo -e "${CYellow}(Default = 01:00)${CClear}"
-               read -p 'Reset Time (in HH:MM 24h): ' DailyResetTime1
+               echo -e "${CCyan} 7a. What time would you like to reset your connection?"
+               echo -e "${CYellow} (Default = 01:00)${CClear}"
+               read -p " Reset Time (in HH:MM 24h): " DailyResetTime1
                if [ -z "$DailyResetTime1" ]; then DailyResetTime="01:00"; else DailyResetTime=$DailyResetTime1; fi # Using default value on enter keypress
              else
                ResetOption=0
@@ -2985,68 +3124,68 @@ vconfig () {
 
           8) # -----------------------------------------------------------------------------------------
              echo ""
-             echo -e "${CCyan}8. What is the minimum acceptable PING value in milliseconds across"
-             echo -e "${CCyan}your VPN tunnel before VPNMON-R2 resets the connection in search for"
-             echo -e "${CCyan}a faster/lower PING server? ${CYellow}(Default = 100)${CClear}"
-             read -p 'Minimum PING (in ms): ' MINPING1
+             echo -e "${CCyan} 8. What is the minimum acceptable PING value in milliseconds across"
+             echo -e "${CCyan} your VPN tunnel before VPNMON-R2 resets the connection in search for"
+             echo -e "${CCyan} a faster/lower PING server? ${CYellow}(Default = 100)${CClear}"
+             read -p " Minimum PING (in ms): " MINPING1
              if [ -z "$MINPING1" ]; then MINPING=100; else MINPING=$MINPING1; fi # Using default value on enter keypress
           ;;
 
           9) # -----------------------------------------------------------------------------------------
              echo ""
-             echo -e "${CCyan}9. How many VPN client slots do you have properly configured? Please"
-             echo -e "${CCyan}note: VPN client slots MUST be in sequential order, starting from 1"
-             echo -e "${CCyan}through 5. (Example: if you are using slots 1, 2 and 3, but 4 and 5"
-             echo -e "${CCyan}are disabled, you would enter 3. ${CYellow}(Default = 5)${CClear}"
-             read -p 'VPN Clients: ' N1
+             echo -e "${CCyan} 9. How many VPN client slots do you have properly configured? Please"
+             echo -e "${CCyan} note: VPN client slots MUST be in sequential order, starting from 1"
+             echo -e "${CCyan} through 5. (Example: if you are using slots 1, 2 and 3, but 4 and 5"
+             echo -e "${CCyan} are disabled, you would enter 3. ${CYellow}(Default = 5)${CClear}"
+             read -p " VPN Clients: " N1
              if [ -z "$N1" ]; then N=5; else N=$N1; fi # Using default value on enter keypress
           ;;
 
           10) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}10. Would you like to show near-realtime VPN bandwidth stats on the UI?"
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              echo -e "${CCyan} 10. Would you like to show near-realtime VPN bandwidth stats on the UI?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
-                read -p "Show Stats? (0/1): " SHOWSTATS1
+                read -p " Show Stats? (0/1): " SHOWSTATS1
                   case $SHOWSTATS1 in
                     [0] ) SHOWSTATS=0; break ;;
                     [1] ) SHOWSTATS=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
           ;;
 
           11) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}11. How many seconds would you like to delay start-up of VPNMON-R2 in"
-              echo -e "${CCyan}order to provide more stability among other competing start-up scripts"
-              echo -e "${CCyan}during a reboot? NOTE: VPNMON-R2 itself does not auto-start on a reboot,"
-              echo -e "${CCyan}and leaves that method up to you. ${CYellow}(Default = 0)${CClear}"
-              read -p 'Delay Startup (seconds): ' DelayStartup1
+              echo -e "${CCyan} 11. How many seconds would you like to delay start-up of VPNMON-R2 in"
+              echo -e "${CCyan} order to provide more stability among other competing start-up scripts"
+              echo -e "${CCyan} during a reboot? NOTE: VPNMON-R2 itself does not auto-start on a reboot,"
+              echo -e "${CCyan} and leaves that method up to you. ${CYellow}(Default = 0)${CClear}"
+              read -p " Delay Startup (seconds): " DelayStartup1
               if [ -z "$DelayStartup1" ]; then DelayStartup=0; else DelayStartup=$DelayStartup1; fi # Using default value on enter keypress
           ;;
 
           12) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}12. Would you like to trim your log file when your VPN connection resets?"
-              echo -e "${CYellow}(No=0, Yes=1) (Default = $TRIMLOGS)${CClear}"
+              echo -e "${CCyan} 12. Would you like to trim your log file when your VPN connection resets?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = $TRIMLOGS)${CClear}"
               while true; do
-                read -p "Trim Logs? (0/1): " TRIMLOGS1
+                read -p " Trim Logs? (0/1): " TRIMLOGS1
                   case $TRIMLOGS1 in
                     [0] ) TRIMLOGS=0; break ;;
                     [1] ) TRIMLOGS=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
               # -----------------------------------------------------------------------------------------
               if [ "$TRIMLOGS" == "1" ]; then
                   echo ""
-                echo -e "${CCyan}12a. How large would you like your log file to grow (in # of lines)?"
-                echo -e "${CCyan}This option will automatically trim your log after each VPN reset."
-                echo -e "${CYellow}(Default = 1000 lines)${CClear}"
-                read -p 'Log file size (in # of lines): ' MAXLOGSIZE1
+                echo -e "${CCyan} 12a. How large would you like your log file to grow (in # of lines)?"
+                echo -e "${CCyan} This option will automatically trim your log after each VPN reset."
+                echo -e "${CYellow} (Default = 1000 lines)${CClear}"
+                read -p " Log file size (in # of lines): " MAXLOGSIZE1
                 if [ -z "$MAXLOGSIZE1" ]; then MAXLOGSIZE=1000; else MAXLOGSIZE=$MAXLOGSIZE1; fi # Using default value on enter keypress
               else
                 TRIMLOGS=0
@@ -3056,24 +3195,24 @@ vconfig () {
 
           13) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}13. Would you like to sync the active VPN slot with YazFi?"
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+              echo -e "${CCyan} 13. Would you like to sync the active VPN slot with YazFi?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
               while true; do
-                read -p "Sync YazFi? (0/1): " SyncYazFi1
+                read -p " Sync YazFi? (0/1): " SyncYazFi1
                   case $SyncYazFi1 in
                     [0] ) SyncYazFi=0; break ;;
                     [1] ) SyncYazFi=1; break ;;
-                    "" ) echo -e "\nPlease answer 0 or 1";;
-                    * ) echo -e "\nPlease answer 0 or 1";;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
                   esac
               done
               # -----------------------------------------------------------------------------------------
               if [ "$SyncYazFi" == "1" ]; then
                 echo ""
-                echo -e "${CCyan}13a. Please indicate which of your YazFi guest network slots you want to"
-                echo -e "${CCyan}sync with the active VPN slot?${CClear}"
+                echo -e "${CCyan} 13a. Please indicate which of your YazFi guest network slots you want to"
+                echo -e "${CCyan} sync with the active VPN slot?${CClear}"
                 echo ""
-                echo -e "${CYellow}Please use the corresponding () key to enable/disable sync for each slot:${CClear}"
+                echo -e "${CYellow} Please use the corresponding () key to enable/disable sync for each slot:${CClear}"
                   if [ $YF24GN1 == "1" ]; then YF24GN1Disp="${CGreen}Y${CCyan}"; else YF24GN1Disp="${CRed}N${CCyan}"; fi
                   if [ $YF24GN2 == "1" ]; then YF24GN2Disp="${CGreen}Y${CCyan}"; else YF24GN2Disp="${CRed}N${CCyan}"; fi
                   if [ $YF24GN3 == "1" ]; then YF24GN3Disp="${CGreen}Y${CCyan}"; else YF24GN3Disp="${CRed}N${CCyan}"; fi
@@ -3085,11 +3224,11 @@ vconfig () {
                   if [ $YF52GN3 == "1" ]; then YF52GN3Disp="${CGreen}Y${CCyan}"; else YF52GN3Disp="${CRed}N${CCyan}"; fi
                 while true; do
                   echo ""
-                  echo -e "${CCyan}2.4Ghz Primary Guest Network ------- 1 ${CYellow}(1)${CClear} $YF24GN1Disp -- 2 ${CYellow}(2)${CClear} $YF24GN2Disp -- 3 ${CYellow}(3)${CClear} $YF24GN3Disp${CClear}"
-                  echo -e "${CCyan}5.0Ghz Primary Guest Network ------- 1 ${CYellow}(4)${CClear} $YF5GN1Disp -- 2 ${CYellow}(5)${CClear} $YF5GN2Disp -- 3 ${CYellow}(6)${CClear} $YF5GN3Disp${CClear}"
-                  echo -e "${CCyan}5.0Ghz Secondary Guest Network ----- 1 ${CYellow}(7)${CClear} $YF52GN1Disp -- 2 ${CYellow}(8)${CClear} $YF52GN2Disp -- 3 ${CYellow}(9)${CClear} $YF52GN3Disp${CClear}"
+                  echo -e "${CCyan} 2.4Ghz Primary Guest Network ------- 1 ${CYellow}(1)${CClear} $YF24GN1Disp -- 2 ${CYellow}(2)${CClear} $YF24GN2Disp -- 3 ${CYellow}(3)${CClear} $YF24GN3Disp${CClear}"
+                  echo -e "${CCyan} 5.0Ghz Primary Guest Network ------- 1 ${CYellow}(4)${CClear} $YF5GN1Disp -- 2 ${CYellow}(5)${CClear} $YF5GN2Disp -- 3 ${CYellow}(6)${CClear} $YF5GN3Disp${CClear}"
+                  echo -e "${CCyan} 5.0Ghz Secondary Guest Network ----- 1 ${CYellow}(7)${CClear} $YF52GN1Disp -- 2 ${CYellow}(8)${CClear} $YF52GN2Disp -- 3 ${CYellow}(9)${CClear} $YF52GN3Disp${CClear}"
                   echo ""
-                  read -p "Please select? (1-9, E=Exit): " SelectSlot
+                  read -p " Please select? (1-9, E=Exit): " SelectSlot
                     case $SelectSlot in
                       1) if [ $YF24GN1 == "0" ]; then YF24GN1=1; YF24GN1Disp="${CGreen}Y${CCyan}"; elif [ $YF24GN1 == "1" ]; then YF24GN1=0; YF24GN1Disp="${CRed}N${CCyan}"; fi;;
                       2) if [ $YF24GN2 == "0" ]; then YF24GN2=1; YF24GN2Disp="${CGreen}Y${CCyan}"; elif [ $YF24GN2 == "1" ]; then YF24GN2=0; YF24GN2Disp="${CRed}N${CCyan}"; fi;;
@@ -3115,6 +3254,22 @@ vconfig () {
                 YF52GN2=0
                 YF52GN3=0
               fi
+          ;;
+
+          14) # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan} 14. For those with Dual-WAN configurations, would you like to allow VPN"
+              echo -e "${CCyan} connections on WAN1 while WAN0 is down?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 1)${CClear}"
+              while true; do
+                read -p " Allow VPN on WAN1? (0/1): " WAN1Override1
+                  case $WAN1Override1 in
+                    [0] ) WAN1Override=0; break ;;
+                    [1] ) WAN1Override=1; break ;;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
+                  esac
+              done
           ;;
 
           [Ss]) # -----------------------------------------------------------------------------------------
@@ -3173,8 +3328,9 @@ vconfig () {
                 echo 'YF52GN1='$YF52GN1
                 echo 'YF52GN2='$YF52GN2
                 echo 'YF52GN3='$YF52GN3
+                echo 'WAN1Override='$WAN1Override
               } > $CFGPATH
-            echo -e "${CCyan}Applying config changes to VPNMON-R2..."
+            echo -e "${CCyan} Applying config changes to VPNMON-R2..."
             echo -e "$(date) - VPNMON-R2 - Successfully wrote a new config file" >> $LOGFILE
             sleep 3
             return
@@ -3243,6 +3399,7 @@ vconfig () {
       echo 'YF52GN1=0'
       echo 'YF52GN2=0'
       echo 'YF52GN3=0'
+      echo 'WAN1Override=1'
     } > $CFGPATH
 
     #Re-run vpnmon-r2 -config to restart setup process
@@ -3258,37 +3415,56 @@ vupdate () {
   updatecheck # Check for the latest version from source repository
   clear
   logo
-  echo -e "Update Utility${CClear}"
+  echo -e " Update Utility${CClear}"
   echo ""
-  echo -e "${CCyan}Current Version: ${CYellow}$Version${CClear}"
-  echo -e "${CCyan}Updated Version: ${CYellow}$DLVersion${CClear}"
+  echo -e "${CCyan} Current Version: ${CYellow}$Version${CClear}"
+  echo -e "${CCyan} Updated Version: ${CYellow}$DLVersion${CClear}"
   echo ""
   if [ "$Version" == "$DLVersion" ]
     then
-      echo -e "${CGreen}No update available.  You are on the latest version!${CClear}"
-      echo ""
-      read -rsp $'Press any key to continue...\n' -n1 key
-      return
-    else
-      echo -e "${CCyan}Would you like to update to the latest version?${CClear}"
-      if promptyn "(y/n): "; then
+      echo -e "${CCyan} You are on the latest version! Would you like to download anyways?${CClear}"
+      echo -e "${CCyan} This will overwrite your local copy with the current build.${CClear}"
+      if promptyn " (y/n): "; then
         echo ""
-        echo -e "${CCyan}Updating VPNMON-R2 to ${CYellow}v$DLVersion${CClear}"
+        echo -e "${CCyan} Downloading VPNMON-R2 ${CYellow}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-$DLVersion.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"
         echo ""
-        echo -e "${CCyan}Update successful!${CClear}"
-        echo -e "$(date) - VPNMON-R2 - Successfully updated VPNMON-R2 from v$Version to v$DLVersion" >> $LOGFILE
+        echo -e "${CCyan} Download successful!${CClear}"
+        echo -e "$(date) - VPNMON-R2 - Successfully downloaded VPNMON-R2 v$DLVersion" >> $LOGFILE
         echo ""
-        echo -e "${CYellow}Please exit, restart and configure new options using: 'vpnmon-r2.sh -config'.${CClear}"
-        echo -e "${CYellow}NOTE: New features may have been added that require your input to take${CClear}"
-        echo -e "${CYellow}advantage of its full functionality.${CClear}"
+        echo -e "${CYellow} Please exit, restart and configure new options using: 'vpnmon-r2 -config'.${CClear}"
+        echo -e "${CYellow} NOTE: New features may have been added that require your input to take${CClear}"
+        echo -e "${CYellow} advantage of its full functionality.${CClear}"
         echo ""
-        read -rsp $'Press any key to continue...\n' -n1 key
+        read -rsp $' Press any key to continue...\n' -n1 key
         return
       else
         echo ""
         echo ""
-        echo -e "${CGreen}Exiting Update Utility...${CClear}"
+        echo -e "${CGreen} Exiting Update Utility...${CClear}"
+        sleep 1
+        return
+      fi
+    else
+      echo -e "${CCyan} You are NOT on the latest version! Would you like to update?${CClear}"
+      if promptyn " (y/n): "; then
+        echo ""
+        echo -e "${CCyan} Downloading VPNMON-R2 ${CYellow}v$DLVersion${CClear}"
+        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-$DLVersion.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"
+        echo ""
+        echo -e "${CCyan} Download successful!${CClear}"
+        echo -e "$(date) - VPNMON-R2 - Successfully updated VPNMON-R2 v$Version to v$DLVersion" >> $LOGFILE
+        echo ""
+        echo -e "${CYellow} Please exit, restart and configure new options using: 'vpnmon-r2 -config'.${CClear}"
+        echo -e "${CYellow} NOTE: New features may have been added that require your input to take${CClear}"
+        echo -e "${CYellow} advantage of its full functionality.${CClear}"
+        echo ""
+        read -rsp $' Press any key to continue...\n' -n1 key
+        return
+      else
+        echo ""
+        echo ""
+        echo -e "${CGreen} Exiting Update Utility...${CClear}"
         sleep 1
         return
       fi
@@ -3301,30 +3477,30 @@ vupdate () {
 vuninstall () {
   clear
   logo
-  echo -e "Uninstall Utility${CClear}"
+  echo -e " Uninstall Utility${CClear}"
   echo ""
-  echo -e "${CCyan}You are about to uninstall VPNMON-R2!  This action is irreversible."
-  echo -e "${CCyan}Do you wish to proceed?${CClear}"
-  if promptyn "(y/n): "; then
+  echo -e "${CCyan} You are about to uninstall VPNMON-R2!  This action is irreversible."
+  echo -e "${CCyan} Do you wish to proceed?${CClear}"
+  if promptyn " (y/n): "; then
     echo ""
-    echo -e "\n${CCyan}Are you sure? Please type 'Y' to validate you want to proceed.${CClear}"
-      if promptyn "(y/n): "; then
+    echo -e "\n${CCyan} Are you sure? Please type 'Y' to validate you want to proceed.${CClear}"
+      if promptyn " (y/n): "; then
         clear
         rm -r /jffs/addons/vpnmon-r2.d
         rm /jffs/scripts/vpnmon-r2.sh
         echo ""
-        echo -e "\n${CGreen}VPNMON-R2 has been uninstalled...${CClear}"
+        echo -e "\n${CGreen} VPNMON-R2 has been uninstalled...${CClear}"
         echo ""
         exit 0
       else
         echo ""
-        echo -e "\n${CGreen}Exiting Uninstall Utility...${CClear}"
+        echo -e "\n${CGreen} Exiting Uninstall Utility...${CClear}"
         sleep 1
         return
       fi
   else
     echo ""
-    echo -e "\n${CGreen}Exiting Uninstall Utility...${CClear}"
+    echo -e "\n${CGreen} Exiting Uninstall Utility...${CClear}"
     sleep 1
     return
   fi
@@ -3353,27 +3529,27 @@ vsetup () {
   while true; do
     clear
     logo
-    echo -e "Setup Utility${CClear}" # Provide main setup menu
+    echo -e " Setup Utility${CClear}" # Provide main setup menu
     echo ""
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${CGreen}Operations"
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure VPNMON-R2"
-    echo -e "${InvDkGray}${CWhite} fr ${CClear}${CCyan}: Force Re-install Entware Dependencies"
-    echo -e "${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
-    echo -e "${InvDkGray}${CWhite} vl ${CClear}${CCyan}: View logs"
-    echo -e "${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
-    echo -e "${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit"
-    echo -e "${CGreen}----------------------------------------------------------------"
+    echo -e "${CGreen} ----------------------------------------------------------------"
+    echo -e "${CGreen} Operations"
+    echo -e "${CGreen} ----------------------------------------------------------------"
+    echo -e " ${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure VPNMON-R2"
+    echo -e " ${InvDkGray}${CWhite} fr ${CClear}${CCyan}: Force Re-install Entware Dependencies"
+    echo -e " ${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
+    echo -e " ${InvDkGray}${CWhite} vl ${CClear}${CCyan}: View logs"
+    echo -e " ${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
+    echo -e " ${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit"
+    echo -e "${CGreen} ----------------------------------------------------------------"
     if [ "$FromUI" == "0" ]; then
-      echo -e "${CGreen}Launch"
-      echo -e "${CGreen}----------------------------------------------------------------"
-      echo -e "${InvDkGray}${CWhite} m1 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode"
-      echo -e "${InvDkGray}${CWhite} m2 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode w/ Screen"
-      echo -e "${CGreen}----------------------------------------------------------------"
+      echo -e "${CGreen} Launch"
+      echo -e "${CGreen} ----------------------------------------------------------------"
+      echo -e " ${InvDkGray}${CWhite} m1 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode"
+      echo -e " ${InvDkGray}${CWhite} m2 ${CClear}${CCyan}: Launch VPNMON-R2 into Normal Monitoring Mode w/ Screen"
+      echo -e "${CGreen} ----------------------------------------------------------------"
     fi
     echo ""
-    printf "Selection: "
+    printf " Selection: "
     read -r InstallSelection
 
     # Execute chosen selections
@@ -3385,68 +3561,68 @@ vsetup () {
               vconfig
             else
               logo
-              echo -e "${CYellow}Installing VPNMON-R2 Dependencies...${CClear}"
+              echo -e "${CYellow} Installing VPNMON-R2 Dependencies...${CClear}"
               echo ""
-              echo -e "${CCyan}VPNMON-R2 has some dependencies in order to function correctly, namely,${CClear}"
-              echo -e "${CCyan}CoreUtils-Timeout, JQuery and the Screen utility. These utilities ${CClear}"
-              echo -e "${CCyan}require you to have Entware already installed using the AMTM tool. If${CClear}"
-              echo -e "${CCyan}Entware is present, the Timeout, JQ and Screen utilities will ${CClear}"
-              echo -e "${CCyan}automatically be downloaded and installed during this setup process.${CClear}"
+              echo -e "${CCyan} VPNMON-R2 has some dependencies in order to function correctly, namely,${CClear}"
+              echo -e "${CCyan} CoreUtils-Timeout, JQuery and the Screen utility. These utilities ${CClear}"
+              echo -e "${CCyan} require you to have Entware already installed using the AMTM tool. If${CClear}"
+              echo -e "${CCyan} Entware is present, the Timeout, JQ and Screen utilities will ${CClear}"
+              echo -e "${CCyan} automatically be downloaded and installed during this setup process.${CClear}"
               echo ""
-              echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
-              echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
-              echo -e "${CCyan}hang scripts running on this router model.${CClear}"
+              echo -e "${CGreen} CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
+              echo -e "${CCyan} certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
+              echo -e "${CCyan} hang scripts running on this router model.${CClear}"
               echo ""
-              echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone${CClear}"
-              echo -e "${CCyan}environment directly on the router itself, instead of running your${CClear}"
-              echo -e "${CCyan}commands or a script from a network-attached SSH client. This can${CClear}"
-              echo -e "${CCyan}provide greater stability due to it running on the router itself.${CClear}"
+              echo -e "${CGreen} Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone${CClear}"
+              echo -e "${CCyan} environment directly on the router itself, instead of running your${CClear}"
+              echo -e "${CCyan} commands or a script from a network-attached SSH client. This can${CClear}"
+              echo -e "${CCyan} provide greater stability due to it running on the router itself.${CClear}"
               echo ""
-              echo -e "${CGreen}JQuery${CCyan} is a utility for querying data across the internet through the${CClear}"
-              echo -e "${CCyan}the means of APIs for the purposes of interacting with the various VPN${CClear}"
-              echo -e "${CCyan}providers to get a list of available VPN hosts in the selected country.${CClear}"
+              echo -e "${CGreen} JQuery${CCyan} is a utility for querying data across the internet through the${CClear}"
+              echo -e "${CCyan} the means of APIs for the purposes of interacting with the various VPN${CClear}"
+              echo -e "${CCyan} providers to get a list of available VPN hosts in the selected country.${CClear}"
               echo ""
               [ -z "$(nvram get odmpid)" ] && RouterModel="$(nvram get productid)" || RouterModel="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
-              echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
+              echo -e "${CCyan} Your router model is: ${CYellow}$RouterModel"
               echo ""
-              echo -e "${CCyan}Ready to install?${CClear}"
-              if promptyn "(y/n): "
+              echo -e "${CCyan} Ready to install?${CClear}"
+              if promptyn " (y/n): "
                 then
                   if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
                     echo ""
-                    echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
+                    echo -e "\n${CGreen} Updating Entware Packages...${CClear}"
                     echo ""
                     opkg update
                     echo ""
-                    echo -e "${CGreen}Installing Entware CoreUtils-Timeout Package...${CClear}"
+                    echo -e "${CGreen} Installing Entware CoreUtils-Timeout Package...${CClear}"
                     echo ""
                     opkg install coreutils-timeout
                     echo ""
-                    echo -e "${CGreen}Installing Entware Screen Package...${CClear}"
+                    echo -e "${CGreen} Installing Entware Screen Package...${CClear}"
                     echo ""
                     opkg install screen
                     echo ""
-                    echo -e "${CGreen}Installing Entware JQuery Package...${CClear}"
+                    echo -e "${CGreen} Installing Entware JQuery Package...${CClear}"
                     echo ""
                     opkg install jq
                     echo ""
-                    echo -e "${CGreen}Install completed...${CClear}"
+                    echo -e "${CGreen} Install completed...${CClear}"
                     echo ""
-                    read -rsp $'Press any key to continue...\n' -n1 key
+                    read -rsp $' Press any key to continue...\n' -n1 key
                     echo ""
-                    echo -e "${CGreen}Executing Configuration Utility...${CClear}"
+                    echo -e "${CGreen} Executing Configuration Utility...${CClear}"
                     sleep 2
                     vconfig
                   else
                     clear
-                    echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
-                    echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
+                    echo -e "${CGreen} ERROR: Entware was not found on this router...${CClear}"
+                    echo -e "${CGreen} Please install Entware using the AMTM utility before proceeding...${CClear}"
                     echo ""
                     sleep 3
                   fi
                 else
                   echo ""
-                  echo -e "\n${CGreen}Executing Configuration Utility...${CClear}"
+                  echo -e "\n${CGreen} Executing Configuration Utility...${CClear}"
                   sleep 2
                   vconfig
               fi
@@ -3457,58 +3633,58 @@ vsetup () {
           fr) # Force re-install the CoreUtils timeout/screen package
             clear
             logo
-            echo -e "${CYellow}Force Re-installing VPNMON-R2 Dependencies...${CClear}"
+            echo -e "${CYellow} Force Re-installing VPNMON-R2 Dependencies...${CClear}"
             echo ""
-            echo -e "${CCyan}Would you like to re-install the CoreUtils-Timeout, JQuery and the${CClear}"
-            echo -e "${CCyan}Screen utility? These utilities require you to have Entware already${CClear}"
-            echo -e "${CCyan}installed using the AMTM tool. If Entware is present, the Timeout,${CClear}"
-            echo -e "${CCyan}JQ, and Screen utilities will be uninstalled, downloaded and${CClear}"
-            echo -e "${CCyan}re-installed during this setup process.${CClear}"
+            echo -e "${CCyan} Would you like to re-install the CoreUtils-Timeout, JQuery and the${CClear}"
+            echo -e "${CCyan} Screen utility? These utilities require you to have Entware already${CClear}"
+            echo -e "${CCyan} installed using the AMTM tool. If Entware is present, the Timeout,${CClear}"
+            echo -e "${CCyan} JQ, and Screen utilities will be uninstalled, downloaded and${CClear}"
+            echo -e "${CCyan} re-installed during this setup process.${CClear}"
             echo ""
-            echo -e "${CGreen}CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
-            echo -e "${CCyan}certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
-            echo -e "${CCyan}hang scripts running on this router model.${CClear}"
+            echo -e "${CGreen} CoreUtils-Timeout${CCyan} is a utility that provides more stability for${CClear}"
+            echo -e "${CCyan} certain routers (like the RT-AC86U) which has a tendency to randomly${CClear}"
+            echo -e "${CCyan} hang scripts running on this router model.${CClear}"
             echo ""
-            echo -e "${CGreen}Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone${CClear}"
-            echo -e "${CCyan}environment directly on the router itself, instead of running your${CClear}"
-            echo -e "${CCyan}commands or a script from a network-attached SSH client. This can${CClear}"
-            echo -e "${CCyan}provide greater stability due to it running on the router itself.${CClear}"
+            echo -e "${CGreen} Screen${CCyan} is a utility that allows you to run SSH scripts in a standalone${CClear}"
+            echo -e "${CCyan} environment directly on the router itself, instead of running your${CClear}"
+            echo -e "${CCyan} commands or a script from a network-attached SSH client. This can${CClear}"
+            echo -e "${CCyan} provide greater stability due to it running on the router itself.${CClear}"
             echo ""
-            echo -e "${CGreen}JQuery${CCyan} is a utility for querying data across the internet through the${CClear}"
-            echo -e "${CCyan}the means of APIs for the purposes of interacting with the various VPN${CClear}"
-            echo -e "${CCyan}providers to get a list of available VPN hosts in the selected country.${CClear}"
+            echo -e "${CGreen} JQuery${CCyan} is a utility for querying data across the internet through the${CClear}"
+            echo -e "${CCyan} the means of APIs for the purposes of interacting with the various VPN${CClear}"
+            echo -e "${CCyan} providers to get a list of available VPN hosts in the selected country.${CClear}"
             echo ""
             [ -z "$(nvram get odmpid)" ] && RouterModel="$(nvram get productid)" || RouterModel="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
-            echo -e "${CCyan}Your router model is: ${CYellow}$RouterModel"
+            echo -e "${CCyan} Your router model is: ${CYellow}$RouterModel"
             echo ""
-            echo -e "${CCyan}Force Re-install?${CClear}"
-            if promptyn "(y/n): "
+            echo -e "${CCyan} Force Re-install?${CClear}"
+            if promptyn " (y/n): "
               then
                 if [ -d "/opt" ]; then # Does entware exist? If yes proceed, if no error out.
                   echo ""
-                  echo -e "\n${CGreen}Updating Entware Packages...${CClear}"
+                  echo -e "\n${CGreen} Updating Entware Packages...${CClear}"
                   echo ""
                   opkg update
                   echo ""
-                  echo -e "${CGreen}Force Re-installing Entware CoreUtils-Timeout Package...${CClear}"
+                  echo -e "${CGreen} Force Re-installing Entware CoreUtils-Timeout Package...${CClear}"
                   echo ""
                   opkg install --force-reinstall coreutils-timeout
                   echo ""
-                  echo -e "${CGreen}Force Re-installing Entware Screen Package...${CClear}"
+                  echo -e "${CGreen} Force Re-installing Entware Screen Package...${CClear}"
                   echo ""
                   opkg install --force-reinstall screen
                   echo ""
-                  echo -e "${CGreen}Force Re-installing Entware JQuery Package...${CClear}"
+                  echo -e "${CGreen} Force Re-installing Entware JQuery Package...${CClear}"
                   echo ""
                   opkg install --force-reinstall jq
                   echo ""
-                  echo -e "${CGreen}Re-install completed...${CClear}"
+                  echo -e "${CGreen} Re-install completed...${CClear}"
                   echo ""
-                  read -rsp $'Press any key to continue...\n' -n1 key
+                  read -rsp $' Press any key to continue...\n' -n1 key
                 else
                   clear
-                  echo -e "${CGreen}ERROR: Entware was not found on this router...${CClear}"
-                  echo -e "${CGreen}Please install Entware using the AMTM utility before proceeding...${CClear}"
+                  echo -e "${CGreen} ERROR: Entware was not found on this router...${CClear}"
+                  echo -e "${CGreen} Please install Entware using the AMTM utility before proceeding...${CClear}"
                   echo ""
                   sleep 3
                 fi
@@ -3522,14 +3698,14 @@ vsetup () {
 
           m1)
             echo ""
-            echo -e "\n${CGreen}Launching VPNMON-R2 into Monitor Mode...${CClear}"
+            echo -e "\n${CGreen} Launching VPNMON-R2 into Monitor Mode...${CClear}"
             sleep 2
             sh $APPPATH -monitor
           ;;
 
           m2)
             echo ""
-            echo -e "\n${CGreen}Launching VPNMON-R2 into Monitor Mode with Screen Utility...${CClear}"
+            echo -e "\n${CGreen} Launching VPNMON-R2 into Monitor Mode with Screen Utility...${CClear}"
             sleep 2
             sh $APPPATH -screen
           ;;
@@ -3551,7 +3727,7 @@ vsetup () {
 
           *)
             echo ""
-            echo -e "${CRed}Invalid choice - Please enter a valid option...${CClear}"
+            echo -e "${CRed} Invalid choice - Please enter a valid option...${CClear}"
             echo ""
             sleep 2
           ;;
@@ -3580,26 +3756,26 @@ vsetup () {
     then
       clear
       echo ""
-      echo "VPNMON-R2 v$Version"
+      echo " VPNMON-R2 v$Version"
       echo ""
-      echo "Exiting due to missing commandline options!"
-      echo "(run 'vpnmon-r2.sh -h' for help)"
+      echo " Exiting due to missing commandline options!"
+      echo " (run 'vpnmon-r2 -h' for help)"
       echo ""
       echo -e "${CClear}"
       exit 0
   fi
 
   # Check and see if an invalid commandline option is being used
-  if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-config" ] || [ "$1" == "-monitor" ] || [ "$1" == "-log" ] || [ "$1" == "-update" ] || [ "$1" == "-setup" ] || [ "$1" == "-uninstall" ] || [ "$1" == "-screen" ] || [ "$1" == "-reset" ] || [ "$1" == "-pause" ] || [ "$1" == "-resume" ] || [ "$1" == "-status" ]
+  if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-config" ] || [ "$1" == "-monitor" ] || [ "$1" == "-log" ] || [ "$1" == "-update" ] || [ "$1" == "-setup" ] || [ "$1" == "-uninstall" ] || [ "$1" == "-screen" ] || [ "$1" == "-reset" ] || [ "$1" == "-pause" ] || [ "$1" == "-stop" ] || [ "$1" == "-resume" ] || [ "$1" == "-status" ]
     then
       clear
     else
       clear
       echo ""
-      echo "VPNMON-R2 v$Version"
+      echo " VPNMON-R2 v$Version"
       echo ""
-      echo "Exiting due to invalid commandline options!"
-      echo "(run 'vpnmon-r2.sh -h' for help)"
+      echo " Exiting due to invalid commandline options!"
+      echo " (run 'vpnmon-r2 -h' for help)"
       echo ""
       echo -e "${CClear}"
       exit 0
@@ -3610,20 +3786,21 @@ vsetup () {
     then
     clear
     echo ""
-    echo "VPNMON-R2 v$Version Commandline Option Usage:"
+    echo " VPNMON-R2 v$Version Commandline Option Usage:"
     echo ""
-    echo "vpnmon-r2 -h | -help"
-    echo "vpnmon-r2 -log"
-    echo "vpnmon-r2 -config"
-    echo "vpnmon-r2 -update"
-    echo "vpnmon-r2 -setup"
-    echo "vpnmon-r2 -reset"
-    echo "vpnmon-r2 -pause"
-    echo "vpnmon-r2 -resume"
-    echo "vpnmon-r2 -status"
-    echo "vpnmon-r2 -uninstall"
-    echo "vpnmon-r2 -screen"
-    echo "vpnmon-r2 -monitor"
+    echo " vpnmon-r2 -h | -help"
+    echo " vpnmon-r2 -log"
+    echo " vpnmon-r2 -config"
+    echo " vpnmon-r2 -update"
+    echo " vpnmon-r2 -setup"
+    echo " vpnmon-r2 -reset"
+    echo " vpnmon-r2 -pause"
+    echo " vpnmon-r2 -stop"
+    echo " vpnmon-r2 -resume"
+    echo " vpnmon-r2 -status"
+    echo " vpnmon-r2 -uninstall"
+    echo " vpnmon-r2 -screen"
+    echo " vpnmon-r2 -monitor"
     echo ""
     echo " -h | -help (this output)"
     echo " -log (display the current log contents)"
@@ -3631,7 +3808,8 @@ vsetup () {
     echo " -update (script update utility)"
     echo " -setup (setup/dependencies utility)"
     echo " -reset (initiate a VPN reset)"
-    echo " -pause (pauses all operations)"
+    echo " -pause (pauses all operations, vpn connection stay up)"
+    echo " -stop (stops all operations, vpn connections go down)"
     echo " -resume (resumes normal operations)"
     echo " -status (displays current operating state)"
     echo " -uninstall (uninstall utility)"
@@ -3662,6 +3840,30 @@ vsetup () {
       echo -e "${CGreen} Last known VPN Client slot used:${CCyan} $LASTSLOT ${CClear}"
       echo -e "${CGreen} Use ${CCyan}'vpnmon-r2 -resume'${CGreen} to return to normal operations.${CClear}"
       echo -e "$(date) - VPNMON-R2 ----------> INFO: Entering a PAUSED state" >> $LOGFILE
+      echo ""
+      exit 0
+  fi
+
+  # Check to see if the stop option is being called, and write a status file indicating "STOPPED"
+  if [ "$1" == "-stop" ]
+    then
+      clear
+
+      STATE=$(cat $APPSTATUS | sed -n '1p') 2>&1
+      LASTSLOT=$(cat $APPSTATUS | sed -n '2p') 2>&1
+      if [ -z $STATE ]; then STATE="UNKNOWN"; fi
+      if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
+
+      { echo 'STOPPED'
+        echo $LASTSLOT
+      } > $APPSTATUS
+
+      echo ""
+      echo -e "${CYellow} STATUS:${CClear}"
+      echo -e "${CGreen} VPNMON-R2 is entering a ${CCyan}STOPPED ${CGreen}state...${CClear}"
+      echo -e "${CGreen} Last known VPN Client slot used:${CCyan} $LASTSLOT ${CClear}"
+      echo -e "${CGreen} Use ${CCyan}'vpnmon-r2 -resume'${CGreen} to return to normal operations.${CClear}"
+      echo -e "$(date) - VPNMON-R2 ----------> INFO: Entering a STOPPED state" >> $LOGFILE
       echo ""
       exit 0
   fi
@@ -3755,7 +3957,7 @@ vsetup () {
               timeoutlng=""
           fi
       else
-        echo -e "${CRed}Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup' to complete setup${CClear}"
+        echo -e "${CRed} Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2 -setup' to complete setup${CClear}"
         echo ""
         echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPNMON-R2 is not configured. Please run the setup tool." >> $LOGFILE
         kill 0
@@ -3859,7 +4061,7 @@ vsetup () {
           fi
 
       else
-        echo -e "${CRed} Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2.sh -setup'"
+        echo -e "${CRed} Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2 -setup'"
         echo -e "${CRed} to complete setup${CClear}"
         echo ""
         echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPNMON-R2 is not configured. Please run the setup tool." >> $LOGFILE
@@ -3905,7 +4107,7 @@ while true; do
       # If the configured time is within 2 minutes of the current time, reset the VPN connection
       if [ $currentepoch -gt $ConvDailyResetTimeEpoch ] && [ $currentepoch -lt $variance ]
         then
-          echo -e "\n\n${CCyan}VPNMON-R2 is executing a scheduled VPN Reset${CClear}\n"
+          echo -e "\n\n${CCyan} VPNMON-R2 is executing a scheduled VPN Reset${CClear}\n"
           echo -e "$(date) - VPNMON-R2 ----------> INFO: Executing scheduled VPN Reset" >> $LOGFILE
 
           vpnreset
@@ -4088,7 +4290,7 @@ while true; do
             sleep 1
 
             if [ $loadcount -eq 60 ]; then
-              echo -e "\n${CRed}Error: Unable to reach NordVPN API! Load reading is not possible.\n${CClear}"
+              echo -e "\n${CRed} Error: Unable to reach NordVPN API! Load reading is not possible.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API! Load reading is not possible." >> $LOGFILE
               break
             fi
@@ -4118,7 +4320,7 @@ while true; do
             sleep 1
 
             if [ $loadcount -eq 60 ]; then
-              echo -e "\n${CRed}Error: Unable to reach SurfShark API! Load reading is not possible.\n${CClear}"
+              echo -e "\n${CRed} Error: Unable to reach SurfShark API! Load reading is not possible.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach SurfShark API! Load reading is not possible." >> $LOGFILE
               break
             fi
@@ -4156,7 +4358,7 @@ while true; do
             sleep 1
 
             if [ $loadcount -eq 60 ]; then
-              echo -e "\n${CRed}Error: Unable to reach PerfectPrivacy API! Load reading is not possible.\n${CClear}"
+              echo -e "\n${CRed} Error: Unable to reach PerfectPrivacy API! Load reading is not possible.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach PerfectPrivacy API! Load reading is not possible." >> $LOGFILE
               break
             fi
@@ -4244,7 +4446,7 @@ while true; do
 
   else
 
-    Sleep 2
+    sleep 2
 
     # Check for external commandline activity
     lockcheck
