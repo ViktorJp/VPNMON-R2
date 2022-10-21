@@ -1,4 +1,4 @@
-v2.33  - (Beta TBA)
+v2.35  - (Beta TBA)
        - ADDED: Another commandline parameter "vpnmon-r2 -stop", based on a suggestion from our own
          @Stephen Harrington! This parameter, much like -pause, will cause VPNMON-R2 to retreat to a
          loop waiting for a -resume command. The difference here is that unlike with -pause, the -stop
@@ -11,9 +11,11 @@ v2.33  - (Beta TBA)
          will kill all VPN connetions, loop and wait for WAN0 to become active again before connecting
          back to your VPN provider. Thanks to @Stephen Harrington for the great suggestion!
        - CHANGED: Some of the feedback you receive when VPN resets, to include more granular information
-         about VPN slots or PING values that were under scrutiny before reconnecting. Thanks to @salvo
-         for noting this!
+         about VPN slots or PING values on screen and in the logs. Thanks to @salvo for noting this!
        - CHANGED: Fixed some of the text indents across the board to give it a more uniform look/feel.
+       - FIXED: There was a sleep variable incorrectly misnamed (as "Sleep"), and corrected this in order
+         to prevent any possible "Sleep: Not Found" errors that may pop up as a result.  Thanks to @TITAN
+         for finding this mistake!
 
 v2.32  - (October 18, 2022)
        - HOTFIX2: I have backed out this code to determine concurrent sessions for further testing in the
