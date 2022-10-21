@@ -1,4 +1,4 @@
-v2.35  - (Beta TBA)
+v2.35  - (October 21, 2022)
        - ADDED: Another commandline parameter "vpnmon-r2 -stop", based on a suggestion from our own
          @Stephen Harrington! This parameter, much like -pause, will cause VPNMON-R2 to retreat to a
          loop waiting for a -resume command. The difference here is that unlike with -pause, the -stop
