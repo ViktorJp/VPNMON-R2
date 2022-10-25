@@ -944,6 +944,7 @@ vpnresetlowestping() {
         { echo 'NORMAL'
           echo $LOWEST
         } > $APPSTATUS
+        CURRCLNT=$LOWEST
 
       # Reset the VPN Director Rules
         printf "${CGreen}\r                                                               "
@@ -1823,6 +1824,7 @@ vpnreset() {
       { echo 'NORMAL'
         echo $option
       } > $APPSTATUS
+      CURRCLNT=$option
 
     elif [ "$USELOWESTSLOT" == "1" ]; then
       i=0
@@ -1860,6 +1862,7 @@ vpnreset() {
       { echo 'NORMAL'
         echo $LOWEST
       } > $APPSTATUS
+      CURRCLNT=$LOWEST
 
     # Use a Round Robin configuration to pick the next VPN slot
     elif [ "$USELOWESTSLOT" == "2" ]; then
@@ -1877,8 +1880,9 @@ vpnreset() {
         sleep 2
         echo ""
         { echo 'NORMAL'
-          echo $LastSlotUsed
+          echo $NextSlotUsed
         } > $APPSTATUS
+        CURRCLNT=$NextSlotUsed
 
     fi
 
