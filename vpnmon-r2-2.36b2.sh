@@ -2373,11 +2373,11 @@ lockcheck () {
             state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
             state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
 
-            printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
+            printf "${CCyan}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5 "
             sleep 1
             i=$(($i+1))
             if [ $((state$i)) -ne 0 ]; then
-              printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...              "
+              printf "${CCyan}\r [Retrying Kill Command on all VPN Client Connections]...       ${CClear}\n"
               service stop_vpnclient$i >/dev/null 2>&1
               sleep 1
               i=0
