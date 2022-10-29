@@ -1,4 +1,4 @@
-v2.36  - (TBA)
+v2.36  - (October 29, 2022)
        - CHANGED: Added some functionality to the -stop command, that when it is resumed, it will
          attempt to connect to the last known good VPN slot.
        - FIXED: Omitted to include an event when VPNMON-R2 goes into a loop during the WAN1 VPN
