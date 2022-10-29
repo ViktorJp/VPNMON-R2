@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.35 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.36 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.35"                                      # Current version of VPNMON-R2
+Version="2.36"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -277,7 +277,7 @@ progressbar() {
           [Bb]) (bossmode);;
           'e')  # Exit gracefully
                 echo -e "${CClear}"
-                  { echo 'STOPPED'
+                  { echo 'EXITED'
                     echo $LastSlotUsed
                   } > $APPSTATUS
                 exit 0
@@ -944,6 +944,7 @@ vpnresetlowestping() {
         { echo 'NORMAL'
           echo $LOWEST
         } > $APPSTATUS
+        CURRCLNT=$LOWEST
 
       # Reset the VPN Director Rules
         printf "${CGreen}\r                                                               "
@@ -1823,6 +1824,7 @@ vpnreset() {
       { echo 'NORMAL'
         echo $option
       } > $APPSTATUS
+      CURRCLNT=$option
 
     elif [ "$USELOWESTSLOT" == "1" ]; then
       i=0
@@ -1860,6 +1862,7 @@ vpnreset() {
       { echo 'NORMAL'
         echo $LOWEST
       } > $APPSTATUS
+      CURRCLNT=$LOWEST
 
     # Use a Round Robin configuration to pick the next VPN slot
     elif [ "$USELOWESTSLOT" == "2" ]; then
@@ -1877,8 +1880,9 @@ vpnreset() {
         sleep 2
         echo ""
         { echo 'NORMAL'
-          echo $LastSlotUsed
+          echo $NextSlotUsed
         } > $APPSTATUS
+        CURRCLNT=$NextSlotUsed
 
     fi
 
@@ -2176,7 +2180,7 @@ lockcheck () {
     echo -e "${CGreen} of the VPN through the means of the '-reset' commandline"
     echo -e "${CGreen} option or scheduled CRON job."
     echo ""
-    echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
+    echo -e "${CGreen} [Retrying to resume normal operations every $SPIN seconds]...${CClear}\n"
     echo -e "$(date +%s)" > $RSTFILE
     START=$(cat $RSTFILE)
     spinner
@@ -2215,7 +2219,7 @@ lockcheck () {
       echo -e "${CGreen} the 'vpnmon-r2 -resume' commandline to return to a NORMAL"
       echo -e "${CGreen} operations mode."
       echo ""
-      echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
+      echo -e "${CGreen} [Retrying to resume normal operations every $SPIN seconds]...${CClear}\n"
       echo -e "$(date +%s)" > $RSTFILE
       START=$(cat $RSTFILE)
       STATE=$(cat $APPSTATUS | sed -n '1p')
@@ -2267,11 +2271,12 @@ lockcheck () {
             state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
             state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
 
-            printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
+            printf "${CCyan}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5 "
             sleep 1
             i=$(($i+1))
             if [ $((state$i)) -ne 0 ]; then
-              printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...              "
+              printf "${CCyan}\r [Retrying Kill Command on all VPN Client Connections]...       ${CClear}\n"
+              echo ""
               service stop_vpnclient$i >/dev/null 2>&1
               sleep 1
               i=0
@@ -2280,7 +2285,7 @@ lockcheck () {
 
       echo ""
       echo ""
-      echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
+      echo -e "${CGreen} [Retrying to resume normal operations every $SPIN seconds]...${CClear}\n"
       echo -e "$(date +%s)" > $RSTFILE
       START=$(cat $RSTFILE)
       STATE=$(cat $APPSTATUS | sed -n '1p')
@@ -2303,8 +2308,41 @@ lockcheck () {
   fi
 
   if [ "$StopLockFound" == "1" ]; then
-    #reset the script
+    #reset the script and restart the same last known good VPN client
+    LASTSLOT=$(cat $APPSTATUS | sed -n '2p') 2>&1
+    printf "${CGreen}\r [Attempting restart of last known good VPN$LASTSLOT client]...${CClear}\n"
+    service start_vpnclient$LASTSLOT >/dev/null 2>&1
+    sleep 5
+    ResVPNState=$($timeoutcmd$timeoutsec nvram get vpn_client${LASTSLOT}_state)
+
+    i=0
+    while [ $ResVPNState -ne 2 ]; do
+      i=$(($i+1))
+
+      if [ $i -eq 60 ]; then
+        printf "${CRed}\r [Second attempt to restart last known good VPN$LASTSLOT client]...            ${CClear}\n"
+        service stop_vpnclient$LASTSLOT >/dev/null 2>&1
+        sleep 5
+        service start_vpnclient$LASTSLOT >/dev/null 2>&1
+        sleep 5
+      fi
+
+      if [ $i -eq 120 ]; then
+        printf "${CRed}\r [Unable to restart of last known good VPN$LASTSLOT client]...${CClear}\n    "
+        sleep 2
+        printf "${CGreen}\r [VPN Reset Initiating]...                                                   "
+        service stop_vpnclient$LASTSLOT >/dev/null 2>&1
+        sleep 5
+        break
+      fi
+
+      ResVPNState=$($timeoutcmd$timeoutsec nvram get vpn_client${LASTSLOT}_state)
+      sleep 1
+
+    done
+
     sh $APPPATH -monitor
+
   fi
 
   WAN1OverrideLock=0
@@ -2332,11 +2370,11 @@ lockcheck () {
             state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
             state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
 
-            printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
+            printf "${CCyan}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5 "
             sleep 1
             i=$(($i+1))
             if [ $((state$i)) -ne 0 ]; then
-              printf "${CGreen}\r [Retrying Kill Command on all VPN Client Connections]...              "
+              printf "${CCyan}\r [Retrying Kill Command on all VPN Client Connections]...       ${CClear}\n"
               service stop_vpnclient$i >/dev/null 2>&1
               sleep 1
               i=0
@@ -2345,7 +2383,11 @@ lockcheck () {
 
       echo ""
       echo ""
-      echo -e "${CGreen} Retrying to resume normal operations every $SPIN seconds...${CClear}\n"
+      echo -e "${CGreen} [Retrying to resume normal operations every $SPIN seconds]...${CClear}\n"
+
+      { echo 'STOPPED'
+        echo $LASTSLOT
+      } > $APPSTATUS
 
       WAN0PrimaryCheck=$($timeoutcmd$timeoutsec nvram get wan0_primary)
 
@@ -3878,7 +3920,7 @@ vsetup () {
       if [ -z $STATE ]; then STATE="UNKNOWN"; fi
       if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
 
-      { echo 'NORMAL'
+      { echo 'RESUMING'
         echo $LASTSLOT
       } > $APPSTATUS
 
