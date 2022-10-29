@@ -6,7 +6,6 @@ To-Do:
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * Scheduling the start & stop screening i.e. auto cron list management (@salvo)
 
-
 Completed:
 ----------
 * Allow for the update menu to (F)orce download an existing version, even if versions match.
