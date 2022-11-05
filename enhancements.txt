@@ -5,6 +5,7 @@ To-Do:
 ------
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * Scheduling the start & stop screening i.e. auto cron list management (@salvo)
+* Implement a rudimentary killswitch so when VPN drops, or script is running with VPN off, killswitch = ON (@ComputerSteve)
 
 Completed:
 ----------
