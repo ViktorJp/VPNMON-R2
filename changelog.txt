@@ -4,9 +4,12 @@ v2.37  - (BETA - TBA)
          VPN connections, and wait in a loop until another "-failover" command is sent its way, upon
          which it will try to reconnect its last known good VPN connection. Thanks to both
          @Stephen Harrington and @Ranger802004 for their collaboration on this!
-       - ADDED: Integration with KILLMON, the new Kill Switch Monitor and Configurator! If KILLMON
-         is installed, it will show the current status on the main VPNMON-R2 UI, indicating its
-         current status, reboot protection and mode its currently running under!
+       - ADDED: Integration with KILLMON, the new IP4/IP6 Kill Switch Monitor and Configurator! If
+         KILLMON is installed, it will show the current status on the main VPNMON-R2 UI, indicating
+         its current IP4/IP6 running status, reboot protection and whether it's kill mode is using
+         (1) Paranoid, (2) IP Range or (3) Single IP scenarios. Also, it will check against the
+         IP4/IP6 iptables to check for KILLMON rules integrity, and will warn you if rules are in a
+         compromised state.
 
 v2.36  - (October 29, 2022)
        - CHANGED: Added some functionality to the -stop command, that when it is resumed, it will
