@@ -4272,19 +4272,39 @@ while true; do
     KILLMONSTATE=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '1p' | cut -d '"' -f2) 2>&1
     KILLMONPROT=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '2p' | cut -d '"' -f2) 2>&1
     KILLMONMODE=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '3p' | cut -d '"' -f2) 2>&1
+    KILLMON6STATE=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '4p' | cut -d '"' -f2) 2>&1
+    KILLMON6MODE=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '5p' | cut -d '"' -f2) 2>&1
+
     echo -e "${CGreen} _________________________${CClear}"
     echo -e "${CGreen}/${CRed}VPN Kill Switch (KILLMON)${CClear}${CGreen}\________________________________________${CClear}"
     echo ""
 
-    if [ $KILLMONSTATE == "ENABLED" ] && [ $KILLMONPROT == "ENABLED" ]; then
-      echo -e "${InvGreen} ${CClear}${CGreen} Status: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}${CGreen} | Mode: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}"
-    elif [ $KILLMONSTATE == "ENABLED" ] && [ $KILLMONPROT == "DISABLED" ]; then
-      echo -e "${InvGreen} ${CClear}${CGreen} Status: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}${CGreen} | Mode: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}"
-    elif [ $KILLMONSTATE == "DISABLED" ] && [ $KILLMONPROT == "ENABLED" ]; then
-      echo -e "${InvRed} ${CClear}${CGreen} Status: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}${CGreen} | Mode: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}"
-    elif [ $KILLMONSTATE == "DISABLED" ] && [ $KILLMONPROT == "DISABLED" ]; then
-      echo -e "${InvRed} ${CClear}${CGreen} Status: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}${CGreen} | Mode: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}"
+    if [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMON6STATE" == "ENABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+      echo -e "${InvGreen} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvGreen}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+    elif [ "$KILLMONSTATE" == "DISABLED" ] && [ "$KILLMON6STATE" == "ENABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+      echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvGreen}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+    elif [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMON6STATE" == "DISABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+      echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvRed}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+    elif [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMON6STATE" == "ENABLED" ] && [ "$KILLMONPROT" == "DISABLED" ]; then
+      echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvGreen}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}"
+    elif [ "$KILLMONSTATE" == "DISABLED" ] && [ "$KILLMON6STATE" == "DISABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+      echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvRed}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+    elif [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMON6STATE" == "DISABLED" ] && [ "$KILLMONPROT" == "DISABLED" ]; then
+      echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvRed}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}"
+    elif [ "$KILLMONSTATE" == "DISABLED" ] && [ "$KILLMON6STATE" == "DISABLED" ] && [ "$KILLMONPROT" == "DISABLED" ]; then
+      echo -e "${InvRed} ${CClear}${CGreen} Status IP4: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvRed}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}"
     fi
+
+    KILLMONRULESCHECK=$(iptables -L | grep -c "KILLMON")
+    KILLMONRULES6CHECK=$(ip6tables -L | grep -c "KILLMON")
+
+    if [ "$KILLMONSTATE" == "ENABLED" ] && [ $KILLMONRULESCHECK -eq 0 ] || [ "$KILLMON6STATE" == "ENABLED" ] && [ $KILLMONRULES6CHECK -eq 0 ]; then
+      echo -e "${InvRed} ${CClear}${CGreen} Mode IP4: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}${CGreen} | IP6: ${CWhite}${InvDkGray}$KILLMON6MODE${CClear}${CGreen} | Rules Integrity: ${CWhite}${InvRed}COMPROMISED${CClear}"
+      echo -e "$(date) - VPNMON-R2 ----------> WARNING: KILLMON kill switch iptables rules are currently in a COMPROMISED state." >> $LOGFILE
+    else
+      echo -e "${InvGreen} ${CClear}${CGreen} Mode IP4: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}${CGreen} | IP6: ${CWhite}${InvDkGray}$KILLMON6MODE${CClear}${CGreen} | Rules Integrity: ${CWhite}${InvGreen}NOMINAL${CClear}"
+    fi
+
   fi
 
   echo -e "${CGreen} __________${CClear}"
