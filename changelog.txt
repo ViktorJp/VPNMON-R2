@@ -1,4 +1,4 @@
-v2.38  - (December 7, 2022)
+v2.37b - (TBA)
        - ADDED: Integration with KILLMON, the new IP4/IP6 Kill Switch Monitor and Configurator! If
          KILLMON is installed, it will show the current status on the main VPNMON-R2 UI, indicating
          its current IP4/IP6 running status, reboot protection and whether it's kill mode is using
