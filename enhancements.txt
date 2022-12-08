@@ -7,6 +7,7 @@ To-Do:
 * Scheduling the start & stop screening i.e. auto cron list management (@salvo)
 * Implement a rudimentary killswitch so when VPN drops, or script is running with VPN off, killswitch = ON (@ComputerSteve)
 * Implement a failover switch to handling incoming WAN configuration changes from Ranger802004's WAN_Failover script
+* Look at connecting the next vpn tunnel before the 1st one disconnects to make it more seamless - @eleVator
 
 Completed:
 ----------
