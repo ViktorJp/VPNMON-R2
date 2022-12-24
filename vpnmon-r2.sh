@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.36 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.40 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.36"                                      # Current version of VPNMON-R2
+Version="2.40"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -2249,17 +2249,20 @@ lockcheck () {
   StopLockFound=0
   if [ -f $APPSTATUS ]; then
     STATE=$(cat $APPSTATUS | sed -n '1p')
-    while [ $STATE == "STOPPED" ]; do
+    while [ $STATE == "STOPPED" ] || [ $STATE == "FAILOVER" ] ; do
       # clear screen
       clear
       SPIN=15
       logo
       echo -e "${CGreen} -----------> NOTICE: VPNMON-R2 OPERATIONS STOPPED <-----------"
       echo ""
-      echo -e "${CGreen} VPNMON-R2 is currently operating in a STOPPED state. All VPN"
+      echo -e "${CGreen} VPNMON-R2 is currently operating in a STOPPED state due to a"
+      echo -e "${CGreen} WAN Failover or other external commandline event. All VPN"
       echo -e "${CGreen} Connections will be stopped while in this state. Please use"
-      echo -e "${CGreen} the 'vpnmon-r2 -resume' commandline to return to a NORMAL"
-      echo -e "${CGreen} operations mode."
+      echo -e "${CGreen} the 'vpnmon-r2 -resume' commandline or fail back to the"
+      echo -e "${CGreen} proper WAN interface to return to a NORMAL operations mode."
+      echo ""
+      echo -e "${CGreen} STATUS: ${CCyan}$STATE${CClear}"
       echo ""
       # Wait for confirmation that all VPN client slots are at 0 (disconnected)
         i=0
@@ -2350,6 +2353,9 @@ lockcheck () {
   while [ $WAN1Override == "0" ] && [ $WAN0PrimaryCheck -eq 0 ]
     do
       # clear screen
+      if [ -f $APPSTATUS ]; then
+        STATE=$(cat $APPSTATUS | sed -n '1p')
+      fi
       clear
       SPIN=15
       logo
@@ -2359,6 +2365,8 @@ lockcheck () {
       echo -e "${CGreen} WAN1 being overridden. VPN Connections will be stopped while"
       echo -e "${CGreen} in this state. Checking WAN0 state every $SPIN seconds to return"
       echo -e "${CGreen} to normal operations mode."
+      echo ""
+      echo -e "${CGreen} STATUS: ${CCyan}$STATE${CClear}"
       echo ""
       # Wait for confirmation that all VPN client slots are at 0 (disconnected)
         i=0
@@ -3488,7 +3496,7 @@ vupdate () {
         return
       fi
     else
-      echo -e "${CCyan} You are NOT on the latest version! Would you like to update?${CClear}"
+      echo -e "${CCyan} There is a new version out there! Would you like to update?${CClear}"
       if promptyn " (y/n): "; then
         echo ""
         echo -e "${CCyan} Downloading VPNMON-R2 ${CYellow}v$DLVersion${CClear}"
@@ -3564,7 +3572,7 @@ nano $LOGFILE
 vsetup () {
 
   # Check for and add an alias for VPNMON-R2
-  if ! grep -F "sh /jffs/scripts/vpnmon-r2.sh" /jffs/configs/profile.add; then
+  if ! grep -F "sh /jffs/scripts/vpnmon-r2.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
 		echo "alias vpnmon-r2=\"sh /jffs/scripts/vpnmon-r2.sh\" # VPNMON-R2" >> /jffs/configs/profile.add
   fi
 
@@ -3808,7 +3816,7 @@ vsetup () {
   fi
 
   # Check and see if an invalid commandline option is being used
-  if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-config" ] || [ "$1" == "-monitor" ] || [ "$1" == "-log" ] || [ "$1" == "-update" ] || [ "$1" == "-setup" ] || [ "$1" == "-uninstall" ] || [ "$1" == "-screen" ] || [ "$1" == "-reset" ] || [ "$1" == "-pause" ] || [ "$1" == "-stop" ] || [ "$1" == "-resume" ] || [ "$1" == "-status" ]
+  if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-config" ] || [ "$1" == "-monitor" ] || [ "$1" == "-log" ] || [ "$1" == "-update" ] || [ "$1" == "-setup" ] || [ "$1" == "-uninstall" ] || [ "$1" == "-screen" ] || [ "$1" == "-reset" ] || [ "$1" == "-pause" ] || [ "$1" == "-stop" ] || [ "$1" == "-resume" ] || [ "$1" == "-status" ] || [ "$1" == "-failover" ]
     then
       clear
     else
@@ -3840,6 +3848,7 @@ vsetup () {
     echo " vpnmon-r2 -stop"
     echo " vpnmon-r2 -resume"
     echo " vpnmon-r2 -status"
+    echo " vpnmon-r2 -failover"
     echo " vpnmon-r2 -uninstall"
     echo " vpnmon-r2 -screen"
     echo " vpnmon-r2 -monitor"
@@ -3854,6 +3863,7 @@ vsetup () {
     echo " -stop (stops all operations, vpn connections go down)"
     echo " -resume (resumes normal operations)"
     echo " -status (displays current operating state)"
+    echo " -failover (stops all operations during wan failover)"
     echo " -uninstall (uninstall utility)"
     echo " -screen (normal VPN monitoring using the screen utility)"
     echo " -monitor (normal VPN monitoring operations)"
@@ -3908,6 +3918,43 @@ vsetup () {
       echo -e "$(date) - VPNMON-R2 ----------> INFO: Entering a STOPPED state" >> $LOGFILE
       echo ""
       exit 0
+  fi
+
+  # Check to see if the failover option is being called, and write a status file indicating "FAILOVER"
+  if [ "$1" == "-failover" ]
+    then
+      clear
+
+      STATE=$(cat $APPSTATUS | sed -n '1p') 2>&1
+      LASTSLOT=$(cat $APPSTATUS | sed -n '2p') 2>&1
+      if [ -z $STATE ]; then STATE="UNKNOWN"; fi
+      if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
+
+      if [ $STATE == "FAILOVER" ]; then
+        { echo 'NORMAL'
+          echo $LASTSLOT
+        } > $APPSTATUS
+
+        echo ""
+        echo -e "${CYellow} STATUS:${CClear}"
+        echo -e "${CGreen} VPNMON-R2 is returning to a ${CCyan}NORMAL ${CGreen}state from a FAILOVER...${CClear}"
+        echo -e "${CGreen} Last known VPN Client slot used:${CCyan} $LASTSLOT ${CClear}"
+        echo -e "$(date) - VPNMON-R2 ----------> INFO: Returning to a NORMAL state from a FAILOVER" >> $LOGFILE
+        echo ""
+        exit 0
+      else
+        { echo 'FAILOVER'
+          echo $LASTSLOT
+        } > $APPSTATUS
+
+        echo ""
+        echo -e "${CYellow} STATUS:${CClear}"
+        echo -e "${CGreen} VPNMON-R2 is entering a ${CCyan}FAILOVER ${CGreen}state...${CClear}"
+        echo -e "${CGreen} Last known VPN Client slot used:${CCyan} $LASTSLOT ${CClear}"
+        echo -e "$(date) - VPNMON-R2 ----------> INFO: Entering a FAILOVER state" >> $LOGFILE
+        echo ""
+        exit 0
+      fi
   fi
 
   # Check to see if the resume option is being called, and write a status file indicating "NORMAL"
@@ -4226,6 +4273,80 @@ while true; do
       echo -e "${InvCyan} ${CClear}${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} ----------------- ${CGreen}Sched Reset: ${CWhite}${InvDkGray}$ConvDailyResetTime${CClear}${CYellow} / ${CWhite}${InvDkGray}$INTERVAL Sec${CClear}"
     else
       echo -e "${InvCyan} ${CClear}${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} -------------------- ${CGreen}Interval: ${CWhite}${InvDkGray}$INTERVAL Sec${CClear}"
+  fi
+
+  if [ -f /jffs/addons/killmon.d/killmon.cfg ]; then
+    KILLMONSTATE=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '1p' | cut -d '"' -f2) 2>&1
+    KILLMONPROT=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '2p' | cut -d '"' -f2) 2>&1
+    KILLMONMODE=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '3p' | cut -d '"' -f2) 2>&1
+    KILLMON6STATE=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '4p' | cut -d '"' -f2) 2>&1
+    KILLMON6MODE=$(cat /jffs/addons/killmon.d/killmon.cfg | sed -n '5p' | cut -d '"' -f2) 2>&1
+
+    if [ "$($timeoutcmd$timeoutsec nvram get ipv6_service)" = "disabled" ]; then
+      ipv6service=0
+    else
+      ipv6service=1
+    fi
+
+    echo -e "${CGreen} _________________________${CClear}"
+    echo -e "${CGreen}/${CRed}VPN Kill Switch (KILLMON)${CClear}${CGreen}\________________________________________${CClear}"
+    echo ""
+
+    if [ $ipv6service -eq 0 ]; then
+      if [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+        echo -e "${InvGreen} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "DISABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+        echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMONPROT" == "DISABLED" ]; then
+        echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "DISABLED" ] && [ "$KILLMONPROT" == "DISABLED" ]; then
+        echo -e "${InvRed} ${CClear}${CGreen} Status IP4: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}"
+      fi
+    else
+      if [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMON6STATE" == "ENABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+        echo -e "${InvGreen} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvGreen}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "DISABLED" ] && [ "$KILLMON6STATE" == "ENABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+        echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvGreen}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMON6STATE" == "DISABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+        echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvRed}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMON6STATE" == "ENABLED" ] && [ "$KILLMONPROT" == "DISABLED" ]; then
+        echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvGreen}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "DISABLED" ] && [ "$KILLMON6STATE" == "DISABLED" ] && [ "$KILLMONPROT" == "ENABLED" ]; then
+        echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvRed}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvGreen}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "ENABLED" ] && [ "$KILLMON6STATE" == "DISABLED" ] && [ "$KILLMONPROT" == "DISABLED" ]; then
+        echo -e "${InvYellow} ${CClear}${CGreen} Status IP4: ${CWhite}${InvGreen}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvRed}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}"
+      elif [ "$KILLMONSTATE" == "DISABLED" ] && [ "$KILLMON6STATE" == "DISABLED" ] && [ "$KILLMONPROT" == "DISABLED" ]; then
+        echo -e "${InvRed} ${CClear}${CGreen} Status IP4: ${CWhite}${InvRed}$KILLMONSTATE${CClear}${CGreen} | IP6: ${CWhite}${InvRed}$KILLMON6STATE${CClear}${CGreen} | Reboot Protection: ${CWhite}${InvRed}$KILLMONPROT${CClear}"
+      fi
+    fi
+
+    if [ $ipv6service -eq 0 ]; then
+      KILLMONRULESCHECK=$(iptables -L | grep -c "KILLMON")
+
+      if [ "$KILLMONSTATE" == "ENABLED" ] && [ $KILLMONRULESCHECK -eq 0 ]; then
+        echo -e "${InvRed} ${CClear}${CGreen} Mode IP4: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}${CGreen} | Rules Integrity: ${CWhite}${InvRed}COMPROMISED${CClear}"
+        echo -e "$(date) - VPNMON-R2 ----------> WARNING: KILLMON kill switch iptables rules are currently in a COMPROMISED state." >> $LOGFILE
+      elif [ "$KILLMONSTATE" == "DISABLED" ] && [ $KILLMONRULESCHECK -eq 0 ]; then
+          echo -e "${InvRed} ${CClear}${CGreen} Mode IP4: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}${CGreen} | Rules Integrity: ${CWhite}${InvRed}COMPROMISED${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> WARNING: KILLMON kill switch iptables rules are currently in a COMPROMISED state." >> $LOGFILE
+      else
+        echo -e "${InvGreen} ${CClear}${CGreen} Mode IP4: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}${CGreen} | Rules Integrity: ${CWhite}${InvGreen}NOMINAL${CClear}"
+      fi
+    else
+      KILLMONRULESCHECK=$(iptables -L | grep -c "KILLMON")
+      KILLMONRULES6CHECK=$(ip6tables -L | grep -c "KILLMON")
+
+      if [ "$KILLMONSTATE" == "ENABLED" ] && [ $KILLMONRULESCHECK -eq 0 ] || [ "$KILLMON6STATE" == "ENABLED" ] && [ $KILLMONRULES6CHECK -eq 0 ]; then
+        echo -e "${InvRed} ${CClear}${CGreen} Mode IP4: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}${CGreen} | IP6: ${CWhite}${InvDkGray}$KILLMON6MODE${CClear}${CGreen} | Rules Integrity: ${CWhite}${InvRed}COMPROMISED${CClear}"
+        echo -e "$(date) - VPNMON-R2 ----------> WARNING: KILLMON kill switch iptables rules are currently in a COMPROMISED state." >> $LOGFILE
+      elif [ "$KILLMONSTATE" == "DISABLED" ] && [ $KILLMONRULESCHECK -eq 0 ] || [ "$KILLMON6STATE" == "DISABLED" ] && [ $KILLMONRULES6CHECK -eq 0 ]; then
+        echo -e "${InvRed} ${CClear}${CGreen} Mode IP4: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}${CGreen} | IP6: ${CWhite}${InvDkGray}$KILLMON6MODE${CClear}${CGreen} | Rules Integrity: ${CWhite}${InvRed}COMPROMISED${CClear}"
+        echo -e "$(date) - VPNMON-R2 ----------> WARNING: KILLMON kill switch iptables rules are currently in a COMPROMISED state." >> $LOGFILE
+      else
+        echo -e "${InvGreen} ${CClear}${CGreen} Mode IP4: ${CWhite}${InvDkGray}$KILLMONMODE${CClear}${CGreen} | IP6: ${CWhite}${InvDkGray}$KILLMON6MODE${CClear}${CGreen} | Rules Integrity: ${CWhite}${InvGreen}NOMINAL${CClear}"
+      fi
+    fi
+
   fi
 
   echo -e "${CGreen} __________${CClear}"
