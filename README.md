@@ -60,7 +60,7 @@ What this script does
 24. VPNMON-R2 is now compatible with WeVPN!
 25. Added the NordVPN "Recommended Servers" functionality, giving you access to the closest, fastest, lowest latency servers to you!
 26. Added the "Round Robin" method of picking your VPN slots!
-
+27. Integrated with KILLMON and showing integrity status within the UI
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
@@ -73,14 +73,19 @@ Usage
 -------
 VPNMON-R2 is driven with commandline parameters.  These are the available options:
 
-* vpnmon-r2.sh -h (or vpnmon-r2.sh -help) -- displays a short overview of available commands
-* vpnmon-r2.sh -log -- displays the contents of the VPNMON-R2 activity log in the NANO text editor
-* vpnmon-r2.sh -config -- launches the configuration utility and saves your settings to a local config file
-* vpnmon-r2.sh -update -- launches the script update utility to download the newest version
-* vpnmon-r2.sh -setup -- launches the setup menu to configure and add optional Entware components
-* vpnmon-r2.sh -uninstall -- launches the uninstall utility that removes VPNMON-R2 from your router
-* vpnmon-r2.sh -screen -- launches VPNMON-R2 using the "screen" utility, and places it in -monitor mode
-* vpnmon-r2.sh -monitor -- launches VPNMON-R2 in a normal operations mode, ready to monitor the health of your VPN connections
+* vpnmon-r2 -h (or vpnmon-r2.sh -help) -- displays a short overview of available commands
+* vpnmon-r2 -log -- displays the contents of the VPNMON-R2 activity log in the NANO text editor
+* vpnmon-r2 -config -- launches the configuration utility and saves your settings to a local config file
+* vpnmon-r2 -update -- launches the script update utility to download the newest version
+* vpnmon-r2 -setup -- launches the setup menu to configure and add optional Entware components
+* vpnmon-r2 -reset -- initiates a VPN reset for use with setting up external CRON jobs (like the vpnon script did)
+* vpnmon-r2 -pause -- pauses all operations, sits back and waits for a -resume command
+* vpnmon-r2 -resume -- resumes normal operations of VPNMON-R2, coming from a -pause
+* vpnmon-r2 -status -- indicates the current status of VPNMON-R2, along with the last known used VPN slot
+* vpnmon-r2 -failover -- stops and resumes all operations during a manual WAN failover/failback
+* vpnmon-r2 -uninstall -- launches the uninstall utility that removes VPNMON-R2 from your router
+* vpnmon-r2 -screen -- launches VPNMON-R2 using the "screen" utility, and places it in -monitor mode
+* vpnmon-r2 -monitor -- launches VPNMON-R2 in a normal operations mode, ready to monitor the health of your VPN connections
 
 Gotchas
 -------
