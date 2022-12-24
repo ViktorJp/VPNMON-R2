@@ -4,17 +4,18 @@ v2.40  - (December 24, 2022)
          its current IP4/IP6 running status, reboot protection and whether it's kill mode is using
          (1) Paranoid, (2) IP Range or (3) Single IP scenarios. Also, it will check against the
          IP4/IP6 iptables to check for KILLMON rules integrity, and will warn you if rules are in a
-         compromised state. If KILLMON is not installed, it will not show any such killswith
+         compromised state. If KILLMON is not installed, it will not show any such killswitch
          indicators in the UI.
        - ADDED: Created an additional switch called "-failover" for the purposes of providing some
          more automation for those who need control over VPNMON-R2 during dual-wan failover events,
          should you need it. I was originally going to remove this functionality after a failed
-         attempt at integrating it better with @Ranger802004's dual-wan failover script, but ended
-         up deciding to just keep this incase it's needed in the future.  This function, when called
-         (ie. "vpnmmon-r2 -failover"), will stop all VPN connections, and wait in a loop until
-         another "-failover" command is sent its way, upon which it will try to reconnect its last
-         known good VPN connection. Thanks to both @Stephen Harrington and @Ranger802004 for their
-         beta testing, troubleshooting and efforts on this!
+         attempt at integrating it with @Ranger802004's dual-wan failover script, but ended up
+         deciding to just keep this functionality around incase it's needed in the future.  This
+         function, when called (ie. "vpnmon-r2 -failover"), will stop all VPN connections, and wait
+         in a loop until another "-failover" command is sent its way (in other words, a manual
+         fail-over and fail-back switch), upon which it will try to reconnect its last known good
+         VPN connection. Thanks to both @Stephen Harrington and @Ranger802004 for their beta testing,
+         troubleshooting and efforts on this!
 
 v2.36  - (October 29, 2022)
        - CHANGED: Added some functionality to the -stop command, that when it is resumed, it will
