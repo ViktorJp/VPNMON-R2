@@ -95,7 +95,7 @@ Gotchas
 
 Disclaimer
 ----------
-Use at your own risk.  I've been using this script successfully for a long time on an Asus RT-AC86U running Merlin FW v386.3_2, v386.4 and v386.5.  Please post any questions you may have to the forums (link below), and I will be happy to assist.
+Use at your own risk.  I've been using this script successfully for a long time on an Asus RT-AC86U running Merlin FW v386.3_2, v386.4, and beyond. Currently running under v386.7_2 and v388.1.  Please post any questions you may have to the forums (link below), and I will be happy to assist.
 
 Links/Forums
 ----------
