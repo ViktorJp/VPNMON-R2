@@ -1,3 +1,10 @@
+v2.41  - (TBA)
+       - ADDED: Some logic was added to check for parameters within the killmon.cfg to determine
+         whether or not to suppress the KILLMON header on the main UI along with the associated
+         logging that happens.  If you have KILLMON installed but not running or enabled, VPNMON-R2
+         would display warnings that KILLMON is disabled and that rule integrity is compromised.
+         You can now suppress these warnings from within the KILLMON UI v1.02.
+         
 v2.40  - (December 24, 2022)
        - MAJOR: Integration with KILLMON, the new IP4/IP6 Kill Switch Monitor and Configurator! If
          KILLMON is installed, it will show the current status on the main VPNMON-R2 UI, indicating
