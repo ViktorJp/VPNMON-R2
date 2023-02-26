@@ -1159,9 +1159,9 @@ vpnreset() {
           ;;
 
         esac
-        echo ""
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random NordVPN Multi-Country selected: $NordVPNRandomCountry]"
+        echo ""
         echo -e "$(date) - VPNMON-R2 - Randomly selected NordVPN Country: $NordVPNRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -1215,9 +1215,9 @@ vpnreset() {
           ;;
 
         esac
-        echo ""
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random SurfShark Multi-Country selected: $SurfSharkRandomCountry]"
+        echo ""
         echo -e "$(date) - VPNMON-R2 - Randomly selected SurfShark Country: $SurfSharkRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -1271,9 +1271,9 @@ vpnreset() {
           ;;
 
         esac
-        echo ""
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random PerfPriv Multi-Country selected: $PPRandomCountry]    "
+        echo ""
         echo -e "$(date) - VPNMON-R2 - Randomly selected Percect Privacy Country: $PPRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -1327,9 +1327,9 @@ vpnreset() {
           ;;
 
         esac
-        echo ""
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random WeVPN Multi-Country selected: $WeVPNRandomCountry]    "
+        echo ""
         echo -e "$(date) - VPNMON-R2 - Randomly selected WeVPN Country: $WeVPNRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -1383,9 +1383,9 @@ vpnreset() {
             ;;
 
           esac
-          echo ""
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Random AirVPN Multi-Country selected: $AirVPNRandomCountry]    "
+          echo ""
           echo -e "$(date) - VPNMON-R2 - Randomly selected AirVPN Country: $AirVPNRandomCountry" >> $LOGFILE
           sleep 1
       else
@@ -1572,6 +1572,7 @@ vpnreset() {
           printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs] "
           sleep 1
           echo ""
+          echo ""
 
           i=0
           while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
@@ -1630,8 +1631,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs]   "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs]   "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1695,8 +1697,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom SurfShark IPs] "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom SurfShark IPs] "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1758,8 +1761,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom PerfPriv IPs]  "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom PerfPriv IPs]  "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1821,8 +1825,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                                 "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom WeVPN Hostnames] "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom WeVPN Hostnames] "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1863,6 +1868,7 @@ vpnreset() {
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom AirVPN IPs] "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1930,8 +1936,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom AirVPN IPs]   "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom AirVPN IPs]   "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1970,8 +1977,9 @@ vpnreset() {
         fi
 
         printf "${CGreen}\r                                                               "
-        printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES Recommended NordVPN IPs]   "
+        printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES Recommended NordVPN IPs]   "
         sleep 1
+        echo ""
         echo ""
 
         i=0
@@ -2005,8 +2013,9 @@ vpnreset() {
         RECVPNCITY2="$(eval $RECVPNCITY2)"; if echo $RECVPNCITY2 | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY2="$RECVPNIP2"; fi
 
         printf "${CGreen}\r                                                               "
-        printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES Recommended AirVPN IPs]    "
+        printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES Recommended AirVPN IPs]    "
         sleep 1
+        echo ""
         echo ""
 
         i=0
@@ -2385,7 +2394,7 @@ wancheck() {
 
         # Ping through the WAN interface
         if [ "$WANIFNAME" == "$WAN0IFNAME" ] || [ "$DUALWANMODE" == "lb" ]; then
-         WAN0PING=$(ping -I $WAN0IFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+          WAN0PING=$(ping -I $WAN0IFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
         else
           WAN0PING="DW-FO"
         fi
