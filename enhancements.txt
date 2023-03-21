@@ -6,6 +6,7 @@ To-Do:
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * Scheduling the start & stop screening i.e. auto cron list management (@salvo)
 * Look at connecting the next vpn tunnel before the 1st one disconnects to make it more seamless - @eleVator
+* Look at providing some external means of forcing a reset through a file on a remote server.
 
 Completed:
 ----------
