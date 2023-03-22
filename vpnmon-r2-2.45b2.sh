@@ -4910,7 +4910,7 @@ while true; do
         LOAD_START_TIME=$(date +%s)
         printf "\r${InvYellow} ${CClear}${CYellow} [Checking NordVPN Server Load]..."
 
-        NORDHOST=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_desc | sed 's: ::g' | cut -d '-' -f3)
+        NORDHOST=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_desc | sed 's: ::g' | cut -d '-' -f3) >/dev/null 2>&1
 
         if [ -z $NORDHOST ]; then
           NORDHOST="Unknown"
