@@ -1,4 +1,4 @@
-RESET
+REBOOT
 
 # Valid options for remotely controlling your VPN connection or router resets are as follows. Command MUST be entered on line 1.
 #
