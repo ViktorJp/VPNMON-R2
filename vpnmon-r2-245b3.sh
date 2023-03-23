@@ -915,9 +915,8 @@ if [ "$EXTERNALRESET" == "1" ]; then
       SPIN=15
       echo -e "${CGreen} [Reset commencing in $SPIN seconds]...${CClear}\n"
       spinner
-      echo "RESET!"
-      sleep 3
-      #vpnreset
+
+      vpnreset
 
       SKIPPROGRESS=1
       FORCEDRESET=0
@@ -945,27 +944,7 @@ if [ "$EXTERNALRESET" == "1" ]; then
       SPIN=15
       echo -e "${CGreen} [Reboot commencing in $SPIN seconds]...${CClear}\n"
       spinner
-      #/sbin/service 'reboot'
-      echo "REBOOT!"
-      sleep 3
-
-      SKIPPROGRESS=1
-      FORCEDRESET=0
-
-      echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
-      echo -e "$(date +%s)" > $RSTFILE
-      START=$(cat $RSTFILE)
-      PINGLOW=0 # Reset ping time history variables
-      PINGHIGH=0
-      ICANHAZIP=""
-      oldrxbytes=0 # Reset Stats
-      oldtxbytes=0
-      newrxbytes=0
-      newtxbytes=0
-
-      #Track External Reset Timer
-      EXT_ELAPSED_TIME=0
-      EXT_START_TIME=$(date +%s)
+      /sbin/service 'reboot'
 
     elif [ "$EXT_EVENT" == "NORMAL" ]; then
 
