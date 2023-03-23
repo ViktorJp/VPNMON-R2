@@ -1,6 +1,6 @@
 RESET
 
-# Valid options for remotely controlling your VPN connection or router are as follows. Command MUST be entered on line 1.
+# Valid options for remotely controlling your VPN connection or router resets are as follows. Command MUST be entered on line 1.
 #
 # RESET  -- This will cause VPNMON-R2 to intiate a VPN connection reset
 # REBOOT -- This will cause VPNMON-R2 to intiate a reboot of your router
