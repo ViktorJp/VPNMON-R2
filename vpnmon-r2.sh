@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.41 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.48 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.41"                                      # Current version of VPNMON-R2
+Version="2.48"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -85,7 +85,11 @@ state3=0
 state4=0
 state5=0
 START=$(date +%s)                                   # Start a timer to determine intervals of VPN resets
+EXTERNALRESET=0                                     # Option for external reset capabilities
+EXT_SOURCE="None"                                   # External reset file URL location
+EXTINTERVAL=900                                     # Timer interval for tracking external file resets
 DelayStartup=0                                      # Tracking the delayed startup timer
+AUTOSTART=0                                         # Tracking if VPNMON-R2 will auto start on router reboot
 TRIMLOGS=0                                          # Tracking log sizes for trimming functionality
 MAXLOGSIZE=1000
 CURRLOGSIZE=0
@@ -145,6 +149,14 @@ WeVPNCountry2=""
 WeVPNCountry3=""
 WeVPNSuperRandom=0
 WeVPNLoadReset=50
+
+UseAirVPN=0                                          # Variables for AirVPN
+AirVPNMultipleCountries=0
+AirVPNCountry="United States"
+AirVPNCountry2=""
+AirVPNCountry3=""
+AirVPNSuperRandom=0
+AirVPNLoadReset=50
 
 # Color variables
 CBlack="\e[1;30m"
@@ -705,6 +717,7 @@ checkwan () {
 # (4) High Ping,
 # (5) VPN Client identified with a lower ping than the current connection
 # (6) Force reset through the UI
+# (7) External reset using a user-defined file available on the internet
 # ...and reset the VPN connection
 # -------------------------------------------------------------------------------------------------------------------------
 resetcheck () {
@@ -777,6 +790,12 @@ if [ $NordVPNLoadReset -le $VPNLOAD ] || [ $SurfSharkLoadReset -le $VPNLOAD ] ||
     echo -e "\n${CRed} Perfect Privacy Server Load is higher than $PPLoadReset %. Executing VPN Reset."
     echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
     echo -e "$(date) - VPNMON-R2 ----------> WARNING: Perfect Privacy Server Load > $PPLoadReset% - Executing VPN Reset" >> $LOGFILE
+  fi
+
+  if [ $UseAirVPN -eq 1 ];then
+    echo -e "\n${CRed} AirVPN Server Load is higher than $AirVPNLoadReset %. Executing VPN Reset."
+    echo -e " VPNMON-R2 is executing VPN Reset${CClear}\n"
+    echo -e "$(date) - VPNMON-R2 ----------> WARNING: AirVPN Server Load > $AirVPNLoadReset% - Executing VPN Reset" >> $LOGFILE
   fi
 
   vpnreset
@@ -878,6 +897,70 @@ if [ "$FORCEDRESET" == "1" ]; then
       newrxbytes=0
       newtxbytes=0
 fi
+
+# If an externet file on the internet indicates RESET or REBOOT, then proceed with a regular reset/reboot
+if [ "$EXTERNALRESET" == "1" ]; then
+
+  EXT_END_TIME=$(date +%s)
+  EXT_ELAPSED_TIME=$(( EXT_END_TIME - EXT_START_TIME ))
+
+  if [ $EXT_ELAPSED_TIME -ge $EXTINTERVAL ]; then
+
+    EXT_EVENT=$(curl --silent --retry 3 $EXT_SOURCE | sed -n '1p') 2>&1
+
+    if [ "$EXT_EVENT" == "RESET" ]; then
+      clear
+      logo
+      echo -e "\n${CRed} Forced reset through external file, VPNMON-R2 is executing VPN Reset${CClear}\n"
+      echo -e "$(date) - VPNMON-R2 ----------> INFO: Forced reset through external file - Executing VPN Reset" >> $LOGFILE
+      SPIN=15
+      echo -e "${CGreen} [Reset commencing in $SPIN seconds]...${CClear}\n"
+      spinner
+
+      vpnreset
+
+      SKIPPROGRESS=1
+      FORCEDRESET=0
+
+      echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+      echo -e "$(date +%s)" > $RSTFILE
+      START=$(cat $RSTFILE)
+      PINGLOW=0 # Reset ping time history variables
+      PINGHIGH=0
+      ICANHAZIP=""
+      oldrxbytes=0 # Reset Stats
+      oldtxbytes=0
+      newrxbytes=0
+      newtxbytes=0
+
+      #Track External Reset Timer
+      EXT_ELAPSED_TIME=0
+      EXT_START_TIME=$(date +%s)
+
+    elif [ "$EXT_EVENT" == "REBOOT" ]; then
+      clear
+      logo
+      echo -e "\n${CRed} Forced reboot through external file, VPNMON-R2 is rebooting router${CClear}\n"
+      echo -e "$(date) - VPNMON-R2 ----------> INFO: Forced reboot through external file - Executing router reboot" >> $LOGFILE
+      SPIN=15
+      echo -e "${CGreen} [Reboot commencing in $SPIN seconds]...${CClear}\n"
+      spinner
+      /sbin/service 'reboot'
+
+    elif [ "$EXT_EVENT" == "NORMAL" ]; then
+
+      EXT_ELAPSED_TIME=0
+      EXT_START_TIME=$(date +%s)
+
+    else
+
+      printf "${InvRed} ${CClear}${CRed} [External Reset File URL or Command Options Invalid]..."
+      echo ""
+
+    fi
+  fi
+fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1145,9 +1228,9 @@ vpnreset() {
           ;;
 
         esac
-        echo ""
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random NordVPN Multi-Country selected: $NordVPNRandomCountry]"
+        echo ""
         echo -e "$(date) - VPNMON-R2 - Randomly selected NordVPN Country: $NordVPNRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -1201,9 +1284,9 @@ vpnreset() {
           ;;
 
         esac
-        echo ""
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random SurfShark Multi-Country selected: $SurfSharkRandomCountry]"
+        echo ""
         echo -e "$(date) - VPNMON-R2 - Randomly selected SurfShark Country: $SurfSharkRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -1257,9 +1340,9 @@ vpnreset() {
           ;;
 
         esac
-        echo ""
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random PerfPriv Multi-Country selected: $PPRandomCountry]    "
+        echo ""
         echo -e "$(date) - VPNMON-R2 - Randomly selected Percect Privacy Country: $PPRandomCountry" >> $LOGFILE
         sleep 1
     else
@@ -1313,14 +1396,70 @@ vpnreset() {
           ;;
 
         esac
-        echo ""
         printf "${CGreen}\r                                                               "
         printf "${CGreen}\r [Random WeVPN Multi-Country selected: $WeVPNRandomCountry]    "
+        echo ""
         echo -e "$(date) - VPNMON-R2 - Randomly selected WeVPN Country: $WeVPNRandomCountry" >> $LOGFILE
         sleep 1
     else
       WeVPNRandomCountry=$WeVPNCountry
     fi
+
+    # Determine if multiple AirVPN countries need to be considered, and pick a random one
+      if [ $AirVPNMultipleCountries -eq 1 ]
+      then
+
+        # Determine how many countries we're dealing with
+        if [ -z "$AirVPNCountry2" ] || [ "$AirVPNCountry2" == "0" ]
+        then
+              COUNTRYTOTAL2=0
+        else
+              COUNTRYTOTAL2=1
+        fi
+
+        if [ -z "$AirVPNCountry3" ] || [ "$AirVPNCountry3" == "0" ]
+        then
+              COUNTRYTOTAL3=0
+        else
+              COUNTRYTOTAL3=1
+        fi
+
+        COUNTRYTOTAL=$(( COUNTRYTOTAL2 + COUNTRYTOTAL3 + 1 ))
+
+        # Generate a number between 1 and the total # of countries, to choose which country to connect to
+          RANDOMCOUNTRY=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+          COUNTRYNUM=$(( RANDOMCOUNTRY % COUNTRYTOTAL + 1 ))
+
+        # Set COUNTRYNUM to 1 in that rare case that it comes out to 0
+          if [ $COUNTRYNUM -eq 0 ]
+            then
+            COUNTRYNUM=1
+          fi
+
+        # Pick and assign the selected Perfect Privacy Country
+          case ${COUNTRYNUM} in
+
+            1)
+                AirVPNRandomCountry=$AirVPNCountry
+            ;;
+
+            2)
+                AirVPNRandomCountry=$AirVPNCountry2
+            ;;
+
+            3)
+                AirVPNRandomCountry=$AirVPNCountry3
+            ;;
+
+          esac
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Random AirVPN Multi-Country selected: $AirVPNRandomCountry]    "
+          echo ""
+          echo -e "$(date) - VPNMON-R2 - Randomly selected AirVPN Country: $AirVPNRandomCountry" >> $LOGFILE
+          sleep 1
+      else
+        AirVPNRandomCountry=$AirVPNCountry
+      fi
 
   # Export NordVPN/PerfectPrivacy IPs via API into a txt file, and import them into Skynet
     if [ $UpdateSkynet -eq 1 ]
@@ -1334,20 +1473,19 @@ vpnreset() {
         sleep 1
 
         svrcount=0
-        while [ $svrcount -ne 60 ]
+        while [ $svrcount -ne 15 ]
           do
             svrcount=$(($svrcount+1))
-            #curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == "'"$NordVPNRandomCountry"'") | .station' > /jffs/scripts/NordVPN.txt
-            NORDLINES="curl --silent --retry 3 https://api.nordvpn.com/v1/servers?limit=16384 | jq --raw-output '.[] | select(.locations[].country.name == \"$NordVPNRandomCountry\") | .station' > /jffs/scripts/NordVPN.txt"
+            NORDLINES="curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.country == \"$NordVPNRandomCountry\") | .ip_address' > /jffs/scripts/NordVPN.txt"
             NORDLINES="$(eval $NORDLINES 2>/dev/null)"; if echo $NORDLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
             if [ $LINES -ge 1 ]; then printf "${CGreen}\r [NordVPN Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
-            if [ $svrcount -eq 1 ]; then echo ""; fi
-            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
+            if [ $svrcount -ge 1 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/15]                          "
             sleep 1
 
-            if [ $svrcount -eq 60 ]; then
+            if [ $svrcount -eq 15 ]; then
               echo ""
               echo -e "\n${CRed} Error: Unable to reach NordVPN API! Check NordVPN service or"
               echo -e " Country Name specified in the configuration.${CClear}"
@@ -1381,10 +1519,9 @@ vpnreset() {
       then
 
         svrcount=0
-        while [ $svrcount -ne 60 ]
+        while [ $svrcount -ne 15 ]
           do
             svrcount=$(($svrcount+1))
-            #curl --silent --retry 3 "https://www.perfect-privacy.com/api/serverips" > /jffs/scripts/ppips.txt
             PPLINES="curl --silent --retry 3 https://www.perfect-privacy.com/api/serverips > /jffs/scripts/ppips.txt"
             PPLINES="$(eval $PPLINES 2>/dev/null)"; if echo $PPLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             awk -F' ' '{print $2}' /jffs/scripts/ppips.txt > /jffs/scripts/ppipscln.txt 2>&1
@@ -1392,11 +1529,11 @@ vpnreset() {
             LINES=$(cat /jffs/scripts/ppipslst.txt | wc -l) >/dev/null 2>&1  #Check to see how many lines/server IPs are in this file
 
             if [ $LINES -ge 1 ]; then printf "${CGreen}\r [Perfect Privacy Server List Successfully Downloaded]                          "; echo ""; sleep 1; break; fi
-            if [ $svrcount -eq 1 ]; then echo ""; fi
-            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/60]                          "
+            if [ $svrcount -ge 1 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/15]                          "
             sleep 1
 
-            if [ $svrcount -eq 60 ]; then
+            if [ $svrcount -eq 15 ]; then
               echo -e "\n${CRed} Error: Unable to reach Perfect Privacy API! Check PP service or"
               echo -e " Country Name specified in the configuration.${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach Perfect Privacy API!" >> $LOGFILE
@@ -1414,6 +1551,63 @@ vpnreset() {
           sleep 1
 
           firewall import whitelist /jffs/scripts/ppipslst.txt "Perfect Privacy VPN" >/dev/null 2>&1
+
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Letting Skynet import and settle for 15 seconds]             "
+          sleep 15
+
+          echo -e "$(date) - VPNMON-R2 - Updated Skynet Whitelist" >> $LOGFILE
+        fi
+      fi
+
+      if [ $UseAirVPN -eq 1 ]
+      then
+
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Reaching out to AirVPN API to download Server IPs]          "
+        sleep 1
+
+        svrcount=0
+        while [ $svrcount -ne 15 ]
+          do
+            svrcount=$(($svrcount+1))
+            AIRVPNLINES="curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name==\"$AirVPNRandomCountry\").ip_v4_in3' > /jffs/scripts/AirVPN.txt"
+            AIRVPNLINES="$(eval $AIRVPNLINES 2>/dev/null)"; if echo $AIRVPNLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
+            LINES=$(cat /jffs/scripts/AirVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
+
+            if [ $LINES -ge 1 ]; then
+              curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name=="'"$AirVPNRandomCountry"'").ip_v4_in4' >> /jffs/scripts/AirVPN.txt
+              printf "${CGreen}\r [AirVPN Server List Successfully Downloaded]                          "
+              echo ""
+              sleep 1
+              break
+            fi
+
+            if [ $svrcount -ge 2 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/15]                          "
+            sleep 1
+
+            if [ $svrcount -eq 15 ]; then
+              echo ""
+              echo -e "\n${CRed} Error: Unable to reach AirVPN API! Check AirVPN service or"
+              echo -e " Country Name specified in the configuration.${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach AirVPN API!" >> $LOGFILE
+              sleep 1
+              break
+            fi
+        done
+
+        if [ $LINES -eq 0 ] # If there are no lines, error out
+        then
+          echo -e "\n${CRed} Error: AirVPN.txt VPN Server list is blank! Skipping import into "
+          echo -e " Skynet Firewall.\n${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: AirVPN.txt VPN Server list is blank! Skipping Skynet Firewall import." >> $LOGFILE
+        else
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Updating Skynet whitelist with AirVPN Server IPs]           "
+          sleep 1
+
+          firewall import whitelist /jffs/scripts/AirVPN.txt "NordVPN - $AirVPNRandomCountry" >/dev/null 2>&1
 
           printf "${CGreen}\r                                                               "
           printf "${CGreen}\r [Letting Skynet import and settle for 15 seconds]             "
@@ -1443,6 +1637,7 @@ vpnreset() {
           printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs] "
           sleep 1
           echo ""
+          echo ""
 
           i=0
           while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
@@ -1453,10 +1648,11 @@ vpnreset() {
               RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
               RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
+              RNDVPNHOST=$(curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RNDVPNIP"'") | .domain' | cut -d '.' -f1)
               nvram set vpn_client"$i"_addr="$RNDVPNIP"
-              nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-              echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
-              sleep 1
+              nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY - $RNDVPNHOST"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY - Host: $RNDVPNHOST${CClear}"
+              #sleep 1
           done
           #echo ""
           echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom NordVPN Server Locations" >> $LOGFILE
@@ -1474,8 +1670,7 @@ vpnreset() {
         while [ $svrcount -ne 60 ]
           do
             svrcount=$(($svrcount+1))
-            #curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == "'"$NordVPNRandomCountry"'") | .station' > /jffs/scripts/NordVPN.txt
-            NORDLINES="curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq --raw-output '.[] | select(.locations[].country.name == \"$NordVPNRandomCountry\") | .station' > /jffs/scripts/NordVPN.txt"
+            NORDLINES="curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.country == \"$NordVPNRandomCountry\") | .ip_address' > /jffs/scripts/NordVPN.txt"
             NORDLINES="$(eval $NORDLINES 2>/dev/null)"; if echo $NORDLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
@@ -1501,8 +1696,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs]   "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom NordVPN IPs]   "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1514,10 +1710,11 @@ vpnreset() {
               RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
               RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
+              RNDVPNHOST=$(curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RNDVPNIP"'") | .domain' | cut -d '.' -f1)
               nvram set vpn_client"$i"_addr="$RNDVPNIP"
-              nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY"
-              echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
-              sleep 1
+              nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY - $RNDVPNHOST"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY - Host: $RNDVPNHOST${CClear}"
+              #sleep 1
           done
           #echo ""
           echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom NordVPN Server Locations" >> $LOGFILE
@@ -1541,7 +1738,6 @@ vpnreset() {
           do
             svrcount=$(($svrcount+1))
             # Run SurfShark API to get full server list from SurfShark
-            #curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.country == "'"$SurfSharkRandomCountry"'") | .connectionName' > /jffs/scripts/surfshark.txt
             SURFLINES="curl --silent --retry 3 https://api.surfshark.com/v3/server/clusters | jq --raw-output '.[] | select(.country == \"$SurfSharkRandomCountry\") | .connectionName' > /jffs/scripts/surfshark.txt"
             SURFLINES="$(eval $SURFLINES 2>/dev/null)"; if echo $SURFLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/surfshark.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines are in this file
@@ -1566,8 +1762,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom SurfShark IPs] "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom SurfShark IPs] "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1577,7 +1774,7 @@ vpnreset() {
               RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/surfshark.txt)
-              RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
+              RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
               RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
@@ -1603,7 +1800,6 @@ vpnreset() {
           do
             svrcount=$(($svrcount+1))
             # Run Perfect Privacy API to get full server list from Perfect Privacy VPN
-            #curl --silent --retry 3 "https://www.perfect-privacy.com/api/serverlocations.json" | jq -r 'path(.[] | select(.country =="'"$PPRandomCountry"'"))[0]' > /jffs/scripts/pp.txt
             PPLINES="curl --silent --retry 3 https://www.perfect-privacy.com/api/serverlocations.json | jq -r 'path(.[] | select(.country ==\"$PPRandomCountry\"))[0]' > /jffs/scripts/pp.txt"
             PPLINES="$(eval $PPLINES 2>/dev/null)"; if echo $PPLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/pp.txt | wc -l) >/dev/null 2>&1 #Check to see how many linesare in this file
@@ -1629,8 +1825,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                               "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom PerfPriv IPs]  "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom PerfPriv IPs]  "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1640,7 +1837,7 @@ vpnreset() {
               RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/pp.txt)
-              RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
+              RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
               RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
@@ -1666,7 +1863,6 @@ vpnreset() {
           do
             svrcount=$(($svrcount+1))
             # Run WeVPN API to get full server list from WeVPN
-            #curl --silent --retry 3 "https://client.wevpn.com/api/v3/locations" | jq --raw-output '.data[] | select(.country.name == "'"$WeVPNRandomCountry"'" ) | .hostname' > /jffs/scripts/wevpn.txt
             WELINES="curl --silent --retry 3 https://client.wevpn.com/api/v3/locations | jq --raw-output '.data[] | select(.country.name == \"$WeVPNRandomCountry\" ) | .hostname' > /jffs/scripts/wevpn.txt"
             WELINES="$(eval $WELINES 2>/dev/null)"; if echo $WELINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/wevpn.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines are in this file
@@ -1692,8 +1888,9 @@ vpnreset() {
           sleep 1
         else
           printf "${CGreen}\r                                                                 "
-          printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES SuperRandom WeVPN Hostnames] "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom WeVPN Hostnames] "
           sleep 1
+          echo ""
           echo ""
 
           i=0
@@ -1703,7 +1900,7 @@ vpnreset() {
               RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/wevpn.txt)
-              RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1 #2>/dev/null
+              RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
               RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
@@ -1717,40 +1914,194 @@ vpnreset() {
       fi
     fi
 
-    if [ $RecommendedServer == "1" ]; then
-      UpdateVPNMGR=0 #Override vpnmgr if we're getting NordVPN Recommended Servers
-      NordCountryID=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/countries" | jq --raw-output '.[] | select(.name == "'"$NordVPNRandomCountry"'") | [.name,.id] | "\(.[1])"')
-      curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/recommendations?filters\[country_id\]=$NordCountryID&limit=5" | jq --raw-output '.[].station' > /jffs/scripts/NordVPNRS.txt  #Extract all the closest recommended NordVPN servers to a text file
-      LINES=$(cat /jffs/scripts/NordVPNRS.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
+    if [ $AirVPNSuperRandom -eq 1 ]
+    then
+      UpdateVPNMGR=0 # Failsafe to make sure VPNMGR doesn't overwrite values written by the SuperRandom function
 
-      if [ $LINES -eq 0 ] #If there are no lines, error out
+      if [ -f /jffs/scripts/AirVPN.txt ] # Check to see if AirVPN file exists from UpdateSkynet
       then
-        echo -e "\n${CRed} Error: NordVPNRS.txt recommended servers list is blank! Check"
-        echo -e " NordVPN Service or Country Name specified in the configuration.${CClear}"
-        echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPNRS.txt recommended servers list is blank!" >> $LOGFILE
-        sleep 3
-        return
-      fi
+        LINES=$(cat /jffs/scripts/AirVPN.txt | wc -l) >/dev/null 2>&1 # Check to see how many lines/server IPs are in this file
 
-      printf "${CGreen}\r                                                               "
-      printf "${CGreen}\r [Update VPN Slots 1-$N from $LINES Recommended NordVPN IPs]   "
-      sleep 1
-      echo ""
-
-      i=0
-      while [ $i -ne $N ] #Assign Recommended IPs/Descriptions to VPN Slots 1-N
-        do
-          i=$(($i+1))
-          RECVPNIP=$(sed -n "${i}p" /jffs/scripts/NordVPNRS.txt)
-          RECVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RECVPNIP | jq --raw-output .city"
-          RECVPNCITY="$(eval $RECVPNCITY)"; if echo $RECVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY="$RECVPNIP"; fi
-          nvram set vpn_client"$i"_addr="$RECVPNIP"
-          nvram set vpn_client"$i"_desc="NordVPN - $RECVPNCITY"
-          echo -e "${CCyan}  VPN$i Slot - Recommended IP: $RECVPNIP - City: $RECVPNCITY${CClear}"
+        if [ $LINES -eq 0 ] # If there are no lines, error out
+        then
+          echo -e "\n${CRed} Error: AirVPN.txt VPN Server list is blank! Skipping SuperRandom "
+          echo -e " assignment process.\n${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: AirVPN.txt VPN Server list is blank! Skipping SuperRandom assignment process." >> $LOGFILE
+        else
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom AirVPN IPs] "
           sleep 1
-      done
-      #echo ""
-      echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES Recommended NordVPN Server Locations" >> $LOGFILE
+          echo ""
+          echo ""
+
+          i=0
+          while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
+            do
+              i=$(($i+1))
+              RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+              R_LINE=$(( RANDOM % LINES + 1 ))
+              RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/AirVPN.txt)
+              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
+              nvram set vpn_client"$i"_addr="$RNDVPNIP"
+              nvram set vpn_client"$i"_desc="AirVPN - $RNDVPNCITY"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+              sleep 1
+          done
+          #echo ""
+          echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom AirVPN Server Locations" >> $LOGFILE
+        fi
+
+      else
+
+        # AirVPN.txt must not exist and/or UpdateSkynet is turned off, so run API to get full server list from AirVPN
+
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Reaching out to AirVPN API to download Server IPs]          "
+        sleep 1
+
+        svrcount=0
+        while [ $svrcount -ne 15 ]
+          do
+            svrcount=$(($svrcount+1))
+            AIRVPNLINES="curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name==\"$AirVPNRandomCountry\").ip_v4_in3' > /jffs/scripts/AirVPN.txt"
+            AIRVPNLINES="$(eval $AIRVPNLINES 2>/dev/null)"; if echo $AIRVPNLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
+            LINES=$(cat /jffs/scripts/AirVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
+
+            if [ $LINES -ge 1 ]; then
+              curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name=="'"$AirVPNRandomCountry"'").ip_v4_in4' >> /jffs/scripts/AirVPN.txt
+              printf "${CGreen}\r [AirVPN Server List Successfully Downloaded]                          "
+              echo ""
+              sleep 1
+              break
+            fi
+
+            if [ $svrcount -ge 2 ]; then echo ""; fi
+            printf "${CRed}\r [Connectivity Issue: Retrying... $svrcount/15]                          "
+            sleep 1
+
+            if [ $svrcount -eq 15 ]; then
+              echo ""
+              echo -e "\n${CRed} Error: Unable to reach AirVPN API! Check AirVPN service or"
+              echo -e " Country Name specified in the configuration.${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach AirVPN API! Check AirVPN service or config's Country Name." >> $LOGFILE
+              break
+            fi
+        done
+
+        if [ $LINES -eq 0 ] #If there are no lines, error out
+        then
+          echo -e "\n${CRed} Error: AirVPN.txt VPN Server list is blank! Skipping SuperRandom"
+          echo -e " assignment process.${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: AirVPN.txt VPN Server list is blank! Skipping SuperRandom assignment process" >> $LOGFILE
+          sleep 1
+        else
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES SuperRandom AirVPN IPs]   "
+          sleep 1
+          echo ""
+          echo ""
+
+          i=0
+          while [ $i -ne $N ] #Assign SuperRandom IPs/Descriptions to VPN Slots 1-N
+            do
+              i=$(($i+1))
+              RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
+              R_LINE=$(( RANDOM % LINES + 1 ))
+              RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/AirVPN.txt)
+              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
+              nvram set vpn_client"$i"_addr="$RNDVPNIP"
+              nvram set vpn_client"$i"_desc="AirVPN - $RNDVPNCITY"
+              echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY${CClear}"
+              sleep 1
+          done
+          #echo ""
+          echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES SuperRandom AirVPN Server Locations" >> $LOGFILE
+        fi
+      fi
+    fi
+
+    if [ $RecommendedServer == "1" ]; then
+      if [ $UseNordVPN == "1" ]; then
+        UpdateVPNMGR=0  #Override vpnmgr if we're getting NordVPN Recommended Servers
+        NordCountryID=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/countries" | jq --raw-output '.[] | select(.name == "'"$NordVPNRandomCountry"'") | [.name,.id] | "\(.[1])"')
+        curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/recommendations?filters\[country_id\]=$NordCountryID&limit=5" | jq --raw-output '.[].station' > /jffs/scripts/NordVPNRS.txt  #Extract all the closest recommended NordVPN servers to a text file
+        LINES=$(cat /jffs/scripts/NordVPNRS.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
+
+        if [ $LINES -eq 0 ]; then  #If there are no lines, error out
+          echo -e "\n${CRed} Error: NordVPNRS.txt recommended servers list is blank! Check"
+          echo -e " NordVPN Service or Country Name specified in the configuration.${CClear}"
+          echo -e "$(date) - VPNMON-R2 ----------> ERROR: NordVPNRS.txt recommended servers list is blank!" >> $LOGFILE
+          sleep 3
+          return
+        fi
+
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES Recommended NordVPN IPs]   "
+        sleep 1
+        echo ""
+        echo ""
+
+        i=0
+        while [ $i -ne $N ] #Assign Recommended IPs/Descriptions to VPN Slots 1-N
+          do
+            i=$(($i+1))
+            RECVPNIP=$(sed -n "${i}p" /jffs/scripts/NordVPNRS.txt)
+            RECVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RECVPNIP | jq --raw-output .city"
+            RECVPNCITY="$(eval $RECVPNCITY)"; if echo $RECVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY="$RECVPNIP"; fi
+            RECVPNHOST=$(curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RECVPNIP"'") | .domain' | cut -d '.' -f1)
+            nvram set vpn_client"$i"_addr="$RECVPNIP"
+            nvram set vpn_client"$i"_desc="NordVPN - $RECVPNCITY - $RECVPNHOST"
+            echo -e "${CCyan}  VPN$i Slot - Recommended IP: $RECVPNIP - City: $RECVPNCITY - Host: $RECVPNHOST${CClear}"
+            #sleep 1
+        done
+
+        echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from $LINES Recommended NordVPN Server Locations" >> $LOGFILE
+
+      elif [ $UseAirVPN == "1" ]; then
+
+        UpdateVPNMGR=0 #Override vpnmgr if we're getting NordVPN Recommended Servers
+        AirVPNCountryID=$(curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.countries[] | select(.country_name=="'"$AirVPNRandomCountry"'").country_code')
+
+        AirTemp1=$AirVPNCountryID"3.vpn.airdns.org"
+        AirTemp2=$AirVPNCountryID"4.vpn.airdns.org"
+        RECVPNIP1=$(ping -q -c1 -n $AirTemp1 | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
+        RECVPNIP2=$(ping -q -c1 -n $AirTemp2 | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
+
+        RECVPNCITY1="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RECVPNIP1 | jq --raw-output .city"
+        RECVPNCITY1="$(eval $RECVPNCITY1)"; if echo $RECVPNCITY1 | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY1="$RECVPNIP1"; fi
+        RECVPNCITY2="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RECVPNIP2 | jq --raw-output .city"
+        RECVPNCITY2="$(eval $RECVPNCITY2)"; if echo $RECVPNCITY2 | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY2="$RECVPNIP2"; fi
+
+        printf "${CGreen}\r                                                               "
+        printf "${CGreen}\r [Updating VPN Slots 1-$N from $LINES Recommended AirVPN IPs]    "
+        sleep 1
+        echo ""
+        echo ""
+
+        i=0
+        while [ $i -ne $N ] #Assign Recommended IPs/Descriptions to VPN Slots 1-N
+          do
+            i=$(($i+1))
+
+            if [ $i -eq 1 ] || [ $i -eq 3 ] || [ $i -eq 5 ]; then
+              nvram set vpn_client"$i"_addr="$RECVPNIP1"
+              nvram set vpn_client"$i"_desc="AirVPN - $RECVPNCITY1"
+              echo -e "${CCyan}  VPN$i Slot - Recommended IP: $RECVPNIP1 - City: $RECVPNCITY1${CClear}"
+              sleep 1
+            elif [ $i -eq 2 ] || [ $i -eq 4 ]; then
+              nvram set vpn_client"$i"_addr="$RECVPNIP2"
+              nvram set vpn_client"$i"_desc="AirVPN - $RECVPNCITY2"
+              echo -e "${CCyan}  VPN$i Slot - Recommended IP: $RECVPNIP2 - City: $RECVPNCITY2${CClear}"
+              sleep 1
+            fi
+
+        done
+
+        echo -e "$(date) - VPNMON-R2 - Refreshed VPN Slots 1 - $N from Recommended AirVPN Server Locations" >> $LOGFILE
+
+      fi
     fi
 
   # Clean up API NordVPN Server Extracts
@@ -1779,6 +2130,12 @@ vpnreset() {
     if [ -f /jffs/scripts/wevpn.txt ]
     then
       rm -f /jffs/scripts/wevpn.txt  #Cleanup WeVPN temp files
+    fi
+
+  # Clean up API AirVPN Server Extracts
+    if [ -f /jffs/scripts/AirVPN.txt ]
+    then
+      rm -f /jffs/scripts/AirVPN.txt  #Cleanup AirVPN temp files
     fi
 
   # Call VPNMGR functions to refresh server lists and save their results to the VPN client configs
@@ -2103,6 +2460,7 @@ wancheck() {
         else
           WAN0PING="DW-FO"
         fi
+        #WAN0PING="25.000"
 
         if [ -z "$WAN0PING" ]; then WAN0PING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
@@ -2114,6 +2472,7 @@ wancheck() {
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN0 city to $WAN0CITY" >> $LOGFILE
         fi
         #WAN0CITY="Your City"
+        #WAN0IP="123.456.789.001"
         if [ $WAN0PING == "DW-FO" ]; then
           echo -e "${InvGreen} ${CClear}${CGreen}==WAN0 $WAN0IFNAME Active | ||${CWhite}${InvGreen} FAILOVER ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$WAN0CITY${CClear}"
         else
@@ -2466,6 +2825,8 @@ vconfig () {
           printf "PerfectPrivacy"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
         elif [ "$UseWeVPN" == "1" ]; then
           printf "WeVPN"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
+        elif [ "$UseAirVPN" == "1" ]; then
+          printf "AirVPN"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
         else
           printf "Other"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n"
         fi
@@ -2486,6 +2847,10 @@ vconfig () {
       elif [ "$UseWeVPN" == "1" ] && [ "$WeVPNSuperRandom" == "0" ]; then
         printf "No"; printf "%s\n";
       elif [ "$UseWeVPN" == "1" ] && [ "$WeVPNSuperRandom" == "1" ]; then
+        printf "Yes"; printf "%s\n";
+      elif [ "$UseAirVPN" == "1" ] && [ "$AirVPNSuperRandom" == "0" ]; then
+        printf "No"; printf "%s\n";
+      elif [ "$UseAirVPN" == "1" ] && [ "$AirVPNSuperRandom" == "1" ]; then
         printf "Yes"; printf "%s\n";
       else
         printf "No"; printf "%s\n";
@@ -2532,6 +2897,16 @@ vconfig () {
         else
           printf "$WeVPNCountry"; printf "%s\n";
         fi
+      elif [ "$UseAirVPN" == "1" ]; then
+        if [ "$AirVPNCountry2" != "0" ] && [ "$AirVPNCountry3" == "0" ]; then
+          printf "$AirVPNCountry, $AirVPNCountry2"; printf "%s\n";
+        elif [ "$AirVPNCountry2" == "0" ] && [ "$AirVPNCountry3" != "0" ]; then
+          printf "$AirVPNCountry, $AirVPNCountry3"; printf "%s\n";
+        elif [ "$AirVPNCountry2" != "0" ] && [ "$AirVPNCountry3" != "0" ]; then
+          printf "$AirVPNCountry, $AirVPNCountry2, $AirVPNCountry3"; printf "%s\n";
+        else
+          printf "$AirVPNCountry"; printf "%s\n";
+        fi
       else
         printf "None"; printf "%s\n";
       fi
@@ -2547,6 +2922,8 @@ vconfig () {
         printf "$SurfSharkLoadReset"; printf "%s\n";
       elif [ "$UsePP" == "1" ]; then
         printf "$PPLoadReset"; printf "%s\n";
+      elif [ "$UseAirVPN" == "1" ]; then
+        printf "$AirVPNLoadReset"; printf "%s\n";
       else
         printf "No"; printf "%s\n";
       fi
@@ -2561,7 +2938,7 @@ vconfig () {
       else printf "Yes"; printf "%s\n";
       fi
 
-      if [ "$UseNordVPN" == "1" ]; then
+      if [ "$UseNordVPN" == "1" ] || [ "$UseAirVPN" == "1" ]; then
         echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  Use Recommended Server(s)?   :"$ODISABLED2
       else
         echo -en " ${InvDkGray}${CWhite}  |-${CClear}${CDkGray}-  Use Recommended Server(s)?   :"${CDkGray}
@@ -2616,6 +2993,7 @@ vconfig () {
           printf "No"; printf "%s\n";
         else printf "Yes"; printf "%s\n"; fi
       echo -e " ${InvDkGray}${CWhite}  | ${CClear}"
+      echo -e " ${InvDkGray}${CWhite}  n ${CClear}${CCyan}: Next Page -->"
       echo -e " ${InvDkGray}${CWhite}  s ${CClear}${CCyan}: Save & Exit"
       echo -e " ${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit & Discard Changes"
       echo -e "${CGreen} ----------------------------------------------------------------"
@@ -2708,7 +3086,7 @@ vconfig () {
             6) # -----------------------------------------------------------------------------------------
                echo ""
                echo -e "${CCyan} 6. Which service is your default VPN Provider? ${CYellow}(NordVPN = 1,"
-               echo -e "${CYellow} Surfshark = 2, Perfect Privacy = 3, WeVPN = 4, Other = 5)"
+               echo -e "${CYellow} Surfshark = 2, Perfect Privacy = 3, WeVPN = 4, AirVPN = 5, Other = 9)"
                echo -e "${CYellow} (Default = Other)${CClear}"
                while true; do
                 read -p " VPN Provider (1/2/3/4/5): " VPNProvider1
@@ -2718,8 +3096,9 @@ vconfig () {
                     [3] ) VPNProvider=3; break ;;
                     [4] ) VPNProvider=4; break ;;
                     [5] ) VPNProvider=5; break ;;
-                    "" ) echo -e "\n Please answer 1/2/3/4/5";;
-                    * ) echo -e "\n Please answer 1/2/3/4/5";;
+                    [9] ) VPNProvider=9; break ;;
+                    "" ) echo -e "\n Please answer 1/2/3/4/5/9";;
+                    * ) echo -e "\n Please answer 1/2/3/4/5/9";;
                   esac
                done
 
@@ -3106,10 +3485,128 @@ vconfig () {
             fi
 
             # -----------------------------------------------------------------------------------------
+            # AirVPN Logic
+            # -----------------------------------------------------------------------------------------
+
+            if [ "$VPNProvider" == "5" ]; then # AirVPN
+              UseAirVPN=1
+
+              echo ""
+              echo -e "${CCyan} 6a. Would you like to use the AirVPN SuperRandom functionality? NOTE:"
+              echo -e "${CCyan} Choosing this option will prevent you from using AirVPN Recommended"
+              echo -e "${CCyan} Server functionality, and will instead pick random servers within the"
+              echo -e "${CCyan} country of your choice, without regard to distance or latency."
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
+              while true; do
+                read -p " Use SuperRandom? (0/1): " AirVPNSuperRandom1
+                  case $AirVPNSuperRandom1 in
+                    [0] ) AirVPNSuperRandom=0; break ;;
+                    [1] ) AirVPNSuperRandom=1; break ;;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
+                  esac
+              done
+              RecommendedServer=0
+              # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan} 6b. What Country is your country of origin for AirVPN? ${CYellow}(Default = "
+              echo -e "${CYellow} USA). NOTE: Country names must be spelled correctly as below!"
+              echo -e "${CCyan} Valid country names as follows: Austria, Belgium, Bulgaria, Canada,"
+              echo -e "${CCyan} Czech Republic, Estonia, Germany, Ireland, Japan, Latvia, Netherlands,"
+              echo -e "${CCyan} New Zealand, Norway, Romania, Serbia, Singapore, Spain, Sweden,"
+              echo -e "${CCyan} Switzerland, Ukraine, United Kingdom, United States${CClear}"
+              read -p " AirVPN Country: " AirVPNCountry1
+              if [ -z "$AirVPNCountry1" ]; then AirVPNCountry="United States"; else AirVPNCountry=$AirVPNCountry1; fi # Using default value on enter keypress
+              # -----------------------------------------------------------------------------------------
+              if [ "$AirVPNSuperRandom" == "1" ]; then
+                echo ""
+                echo -e "${CCyan} 6c. Would you like to randomize connections across multiple countries?"
+                echo -e "${CCyan} NOTE: A maximum of 2 additional country names can be added. (Total of 3)"
+                echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
+                while true; do
+                  read -p " Use Multiple Countries? (0/1): " AirVPNMultipleCountries1
+                    case $AirVPNMultipleCountries1 in
+                      [0] ) AirVPNMultipleCountries=0; break ;;
+                      [1] ) AirVPNMultipleCountries=1; break ;;
+                      "" ) echo -e "\n Please answer 0 or 1";;
+                      * ) echo -e "\n Please answer 0 or 1";;
+                    esac
+                done
+
+                if [ "$AirVPNMultipleCountries" == "1" ]; then
+                    echo -e "${CCyan}"
+                    read -p "$(echo -e " Enter Country #2 (Use 0 for blank) (Default = 0): ${CClear}")" AirVPNCountry21
+                    if [ -z "$AirVPNCountry21" ]; then AirVPNCountry2=0; else AirVPNCountry2="$AirVPNCountry21"; fi
+                    echo -e "${CCyan}"
+                    read -p "$(echo -e " Enter Country #3 (Use 0 for blank) (Default = 0): ${CClear}")" AirVPNCountry31
+                    if [ -z "$AirVPNCountry31" ]; then AirVPNCountry3=0; else AirVPNCountry3="$AirVPNCountry31"; fi
+                else
+                  AirVPNMultipleCountries=0
+                  AirVPNCountry2=0
+                  AirVPNCountry3=0
+                fi
+              else
+                WeVPNMultipleCountries=0
+                WeVPNCountry2=0
+                WeVPNCountry3=0
+              fi
+              # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan} 6d. At what VPN server load would you like to reconnect to a different"
+              echo -e "${CCyan} AirVPN Server? ${CYellow}(Default = 50)${CClear}"
+              read -p " % Server Load Threshold: " AirVPNLoadReset1
+              if [ -z "$AirVPNLoadReset1" ]; then AirVPNLoadReset=50; else AirVPNLoadReset=$AirVPNLoadReset1; fi # Using default value on enter keypress
+              # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan} 6e. Would you like to whitelist AirVPN servers in the Skynet Firewall?"
+              echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
+              while true; do
+                read -p " Update Skynet? (0/1): " UpdateSkynet1
+                  case $UpdateSkynet1 in
+                    [0] ) UpdateSkynet=0; break ;;
+                    [1] ) UpdateSkynet=1; break ;;
+                    "" ) echo -e "\n Please answer 0 or 1";;
+                    * ) echo -e "\n Please answer 0 or 1";;
+                  esac
+              done
+              # -----------------------------------------------------------------------------------------
+              if [ $AirVPNSuperRandom == "0" ]; then
+                echo ""
+                echo -e "${CCyan} 6f. Would you like to use AirVPN Recommended Servers? Note: Choosing"
+                echo -e "${CCyan} this option will configure your VPN slots with servers that are the"
+                echo -e "${CCyan} closest to your WAN location exit, and have the lowest latency/load."
+                echo -e "${CCyan} This option will override your choice you may have selected for"
+                echo -e "${CCyan} SuperRandom and multiple countries. This is an AirVPN feature."
+                echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
+                while true; do
+                  read -p " Use Recommended AirVPN Server(s)? (0/1): " RecommendedServer1
+                    case $RecommendedServer1 in
+                      [0] ) RecommendedServer=0; break ;;
+                      [1] ) RecommendedServer=1; break ;;
+                      "" ) echo -e "\n Please answer 0 or 1";;
+                      * ) echo -e "\n Please answer 0 or 1";;
+                    esac
+                done
+                AirVPNSuperRandom=0
+                AirVPNMultipleCountries=0
+              fi
+              # -----------------------------------------------------------------------------------------
+            else
+              UseAirVPN=0
+              AirVPNSuperRandom=0
+              AirVPNMultipleCountries=0
+              AirVPNCountry="United States"
+              AirVPNCountry2=0
+              AirVPNCountry3=0
+              AirVPNLoadReset=50
+              RecommendedServer=0
+            fi
+
+            # -----------------------------------------------------------------------------------------
             # VPN Service Not Listed Logic
             # -----------------------------------------------------------------------------------------
 
-            if [ "$VPNProvider" == "5" ]; then # Not Listed
+            if [ "$VPNProvider" == "9" ]; then # Not Listed
               UseNordVPN=0
               NordVPNSuperRandom=0
               NordVPNMultipleCountries=0
@@ -3143,6 +3640,14 @@ vconfig () {
               WeVPNCountry2=0
               WeVPNCountry3=0
               WeVPNLoadReset=50
+
+              UseAirVPN=0
+              AirVPNSuperRandom=0
+              AirVPNMultipleCountries=0
+              AirVPNCountry="United States"
+              AirVPNCountry2=0
+              AirVPNCountry3=0
+              AirVPNLoadReset=50
             fi
           ;;
 
@@ -3359,6 +3864,13 @@ vconfig () {
                 echo 'WeVPNCountry2="'"$WeVPNCountry2"'"'
                 echo 'WeVPNCountry3="'"$WeVPNCountry3"'"'
                 echo 'WeVPNLoadReset='$WeVPNLoadReset
+                echo 'UseAirVPN='$UseAirVPN
+                echo 'AirVPNSuperRandom='$AirVPNSuperRandom
+                echo 'AirVPNMultipleCountries='$AirVPNMultipleCountries
+                echo 'AirVPNCountry="'"$AirVPNCountry"'"'
+                echo 'AirVPNCountry2="'"$AirVPNCountry2"'"'
+                echo 'AirVPNCountry3="'"$AirVPNCountry3"'"'
+                echo 'AirVPNLoadReset='$AirVPNLoadReset
                 echo 'UpdateSkynet='$UpdateSkynet
                 echo 'ResetOption='$ResetOption
                 echo 'DailyResetTime="'"$DailyResetTime"'"'
@@ -3379,6 +3891,10 @@ vconfig () {
                 echo 'YF52GN2='$YF52GN2
                 echo 'YF52GN3='$YF52GN3
                 echo 'WAN1Override='$WAN1Override
+                echo 'EXTERNALRESET='$EXTERNALRESET
+                echo 'EXT_SOURCE="'"$EXT_SOURCE"'"'
+                echo 'EXTINTERVAL='$EXTINTERVAL
+                echo 'AUTOSTART='$AUTOSTART
               } > $CFGPATH
             echo -e "${CCyan} Applying config changes to VPNMON-R2..."
             echo -e "$(date) - VPNMON-R2 - Successfully wrote a new config file" >> $LOGFILE
@@ -3388,6 +3904,126 @@ vconfig () {
 
           [Ee]) # -----------------------------------------------------------------------------------------
             return
+          ;;
+
+          [Nn]) # -----------------------------------------------------------------------------------------
+
+          while true; do
+            clear
+            logo
+            echo -e "${CGreen} ----------------------------------------------------------------"
+            echo -e "${CGreen} Configuration Utility Options (Page 2)"
+            echo -e "${CGreen} ----------------------------------------------------------------"
+            echo -en " ${InvDkGray}${CWhite} 15 ${CClear}${CCyan}: Enable Remote Reset?          :"${CGreen}
+            if [ "$EXTERNALRESET" == "0" ]; then
+              printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
+            else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
+            echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  External File Location       :"$ODISABLED2
+            printf "%.26s>\n" $EXT_SOURCE
+            echo -e " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  External File Interval?      :"$ODISABLED2$EXTINTERVAL
+            echo -en " ${InvDkGray}${CWhite} 16 ${CClear}${CCyan}: Enable Auto Start?            :"${CGreen}
+            if [ "$AUTOSTART" == "0" ]; then
+              printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
+            else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
+            echo -e " ${InvDkGray}${CWhite}  | ${CClear}"
+            echo -e " ${InvDkGray}${CWhite}  p ${CClear}${CCyan}: <-- Previous Page"
+            echo -e "${CGreen} ----------------------------------------------------------------"
+            echo ""
+            printf " Selection: "
+            read -r ConfigSelection
+
+            # Execute chosen selections
+                case "$ConfigSelection" in
+
+                  15) # -----------------------------------------------------------------------------------------
+                     echo ""
+                     echo -e "${CCyan} 15. Would you like to enable remote reset capabilities? Please note: This"
+                     echo -e "${CCyan} gives you the option to specify an external file location, preferably"
+                     echo -e "${CCyan} hosted on an internet server. The contents of this file must contain one"
+                     echo -e "${CCyan} one of the following words on the first line of the file:"
+                     echo -e "${CYellow} RESET ${CCyan} -- This will perform a VPN Reset"
+                     echo -e "${CYellow} REBOOT ${CCyan} -- This will perform a Router Reboot"
+                     echo -e "${CYellow} NORMAL ${CCyan} -- This will allow for normal VPNMON-R2 operations"
+                     echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
+                     read -p ' Enable Remote Reset?: ' EXTERNALRESET1
+                     if [ "$EXTERNALRESET1" == "" ] || [ -z "$EXTERNALRESET1" ]; then EXTERNALRESET=0; else EXTERNALRESET="$EXTERNALRESET1"; fi # Using default value on enter keypress
+
+                     if [ "$EXTERNALRESET" == "0" ]; then
+                       EXT_SOURCE="None"
+                       EXTINTERVAL=900
+                     elif [ "$EXTERNALRESET" == "1" ]; then
+
+                       # -----------------------------------------------------------------------------------------
+
+                       echo ""
+                       echo -e "${CCyan} 15a. Please specify the location to the external file that VPNMON-R2 will"
+                       echo -e "${CCyan} be reading on a regular interval to determine if a VPN reset or router"
+                       echo -e "${CCyan} reboot needs to take place?  Please note: This is typically in the form"
+                       echo -e "${CCyan} of a URL, such as example:"
+                       echo -e "${CCyan} https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/event.txt"
+                       echo -e "${CYellow} (Default = 'None')"
+                       echo -e "${CYellow} (Current value = $EXT_SOURCE)"
+                       read -p ' External file location?: ' EXT_SOURCE1
+                       if [ "$EXT_SOURCE1" == "" ] || [ -z "$EXT_SOURCE1" ]; then EXT_SOURCE="None"; else EXT_SOURCE="$EXT_SOURCE1"; fi # Using default value on enter keypress
+
+                       # -----------------------------------------------------------------------------------------
+
+                       echo ""
+                       echo -e "${CCyan} 15b. Please specify the interval at which VPNMON-R2 will be checking"
+                       echo -e "${CCyan} the external file to determine if a VPN reset or router reboot needs"
+                       echo -e "${CCyan} to take place?  Please note: This value is in seconds."
+                       echo -e "${CYellow} (Default = 900)${CClear}"
+                       read -p ' External file check interval?: ' EXTINTERVAL1
+                       if [ "$EXTINTERVAL1" == "" ] || [ -z "$EXTINTERVAL1" ]; then EXTINTERVAL=900; else EXTINTERVAL="$EXTINTERVAL1"; fi # Using default value on enter keypress
+                     else
+                       EXT_SOURCE="None"
+                       EXTINTERVAL=900
+                     fi
+                  ;;
+
+                  16) # -----------------------------------------------------------------------------------------
+                    echo ""
+                    echo -e "${CCyan} 16. Would you like VPNMON-R2 to automatically start after your router"
+                    echo -e "${CCyan} reboots?  Please note:  This will place a command with a 30 second"
+                    echo -e "${CCyan} delay into the following file -- ${CYellow}/jffs/scripts/post-mount"
+                    echo -e "${CCyan} In order to continue running it in background, it will be using the"
+                    echo -e "${CCyan} 'vpnmon-r2 -screen' switch, and running under the SCREEN utility."
+                    echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
+                    read -p ' Auto Start VPNMON-R2?: ' AUTOSTART1
+                    if [ "$AUTOSTART1" == "" ] || [ -z "$AUTOSTART1" ]; then AUTOSTART=0; else AUTOSTART="$AUTOSTART1"; fi # Using default value on enter keypress
+
+                    if [ "$AUTOSTART" == "0" ]; then
+
+                      if [ -f /jffs/scripts/post-mount ]; then
+                        sed -i -e '/vpnmon-r2.sh/d' /jffs/scripts/post-mount
+                        AUTOSTART=0
+                      fi
+
+                    else
+
+                      if [ -f /jffs/scripts/post-mount ]; then
+
+                        if ! grep -q -F "(sleep 30 && /jffs/scripts/vpnmon-r2.sh -screen) & # Added by vpnmon-r2" /jffs/scripts/post-mount; then
+                          echo "(sleep 30 && /jffs/scripts/vpnmon-r2.sh -screen) & # Added by vpnmon-r2" >> /jffs/scripts/post-mount
+                          AUTOSTART=1
+                        fi
+
+                      else
+                        echo "#!/bin/sh" > /jffs/scripts/post-mount
+                        echo "" >> /jffs/scripts/post-mount
+                        echo "(sleep 30 && /jffs/scripts/vpnmon-r2.sh -screen) & # Added by vpnmon-r2" >> /jffs/scripts/post-mount
+                        chmod 0755 /jffs/scripts/post-mount
+                        AUTOSTART=1
+                      fi
+                    fi
+                  ;;
+
+                  [Pp])
+                     break
+                  ;;
+
+                esac
+          done
           ;;
 
           esac
@@ -3430,6 +4066,13 @@ vconfig () {
       echo 'WeVPNCountry2=0'
       echo 'WeVPNCountry3=0'
       echo 'WeVPNLoadReset=50'
+      echo 'UseAirVPN=0'
+      echo 'AirVPNSuperRandom=0'
+      echo 'AirVPNMultipleCountries=0'
+      echo 'AirVPNCountry="United States"'
+      echo 'AirVPNCountry2=0'
+      echo 'AirVPNCountry3=0'
+      echo 'AirVPNLoadReset=50'
       echo 'UpdateSkynet=0'
       echo 'ResetOption=1'
       echo 'DailyResetTime="01:00"'
@@ -3450,6 +4093,10 @@ vconfig () {
       echo 'YF52GN2=0'
       echo 'YF52GN3=0'
       echo 'WAN1Override=1'
+      echo 'EXTERNALRESET=0'
+      echo 'EXT_SOURCE="None'
+      echo 'EXTINTERVAL=900'
+      echo 'AUTOSTART=0'
     } > $CFGPATH
 
     #Re-run vpnmon-r2 -config to restart setup process
@@ -4165,6 +4812,10 @@ vsetup () {
 #DEBUG=; set -x # uncomment/comment to enable/disable debug mode
 #{              # uncomment/comment to enable/disable debug mode
 
+#Track External Reset Timer
+EXT_ELAPSED_TIME=0
+EXT_START_TIME=$(date +%s)
+
 while true; do
 
   # Testing to see if a VPN Reset Date/Time Logfile exists or not, and if not, creates one
@@ -4266,13 +4917,25 @@ while true; do
   if [ -z $ICANHAZIP ]; then ICANHAZIP="Probing"; fi
 
   # Display the VPN and WAN states along with the public VPN IP and other info
-  echo -e "${InvCyan} ${CClear}${CCyan} VPN State 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5${CClear}${CGreen} --- ${CGreen}Public VPN IP: ${CWhite}${InvDkGray}$ICANHAZIP${CClear}"
+  echo -e "${InvCyan} ${CClear}${CCyan} VPN State 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5${CClear}${CGreen} --- Public VPN IP: ${CWhite}${InvDkGray}$ICANHAZIP${CClear}"
 
   if [ $ResetOption -eq 1 ]
     then
-      echo -e "${InvCyan} ${CClear}${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} ----------------- ${CGreen}Sched Reset: ${CWhite}${InvDkGray}$ConvDailyResetTime${CClear}${CYellow} / ${CWhite}${InvDkGray}$INTERVAL Sec${CClear}"
+      echo -e "${InvCyan} ${CClear}${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} ----------------- Sched Reset: ${CWhite}${InvDkGray}$ConvDailyResetTime${CClear}${CYellow} / ${CWhite}${InvDkGray}$INTERVAL Sec${CClear}"
     else
-      echo -e "${InvCyan} ${CClear}${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} -------------------- ${CGreen}Interval: ${CWhite}${InvDkGray}$INTERVAL Sec${CClear}"
+      echo -e "${InvCyan} ${CClear}${CCyan} WAN State 0:$wstate0 1:$wstate1${CGreen} -------------------- Interval: ${CWhite}${InvDkGray}$INTERVAL Sec${CClear}"
+  fi
+
+  if [ "$EXTERNALRESET" == "1" ]; then
+    echo -e "${InvCyan} ${CClear}${CCyan} Remote Reset Protection${CGreen} ---------------- Status: ${CWhite}${InvDkGray}On${CClear}${CYellow} / ${CWhite}${InvDkGray}$EXTINTERVAL Sec${CClear}"
+  fi
+
+  if [ "$AUTOSTART" == "1" ]; then
+    if ! grep -q -F "(sleep 30 && /jffs/scripts/vpnmon-r2.sh -screen) & # Added by vpnmon-r2" /jffs/scripts/post-mount; then
+      echo -e "${InvCyan} ${CClear}${CCyan} Auto Start After Reboot Protection${CGreen} ----- Status: ${CWhite}${InvDkGray}On${CClear}${CYellow} / ${CWhite}${InvRed}ISSUE${CClear}"
+    else
+      echo -e "${InvCyan} ${CClear}${CCyan} Auto Start After Reboot Protection${CGreen} ----- Status: ${CWhite}${InvDkGray}On${CClear}${CYellow} / ${CWhite}${InvDkGray}post-mount${CClear}"
+    fi
   fi
 
   if [ -f /jffs/addons/killmon.d/killmon.cfg ]; then
@@ -4430,6 +5093,9 @@ while true; do
       elif [ $WeVPNSuperRandom -eq 1 ]
         then
           RANDOMMETHOD="WeVPN SuperRandom"
+      elif [ $AirVPNSuperRandom -eq 1 ]
+        then
+          RANDOMMETHOD="AirVPN SuperRandom"
       else
         RANDOMMETHOD="Standard"
     fi
@@ -4443,24 +5109,31 @@ while true; do
         LOAD_START_TIME=$(date +%s)
         printf "\r${InvYellow} ${CClear}${CYellow} [Checking NordVPN Server Load]..."
 
-        loadcount=0
-        while [ $loadcount -ne 60 ]
-          do
-            loadcount=$(($loadcount+1))
-            #VPNLOAD=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers?limit=16384" | jq '.[] | select(.station == "'"$VPNIP"'") | .load') >/dev/null 2>&1
-            VPNLOAD="curl --silent --retry 3 https://api.nordvpn.com/v1/servers?limit=16384 | jq '.[] | select(.station == \"$VPNIP\") | .load' 2>&1"
-            VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
+        NORDHOST=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_desc | sed 's: ::g' | cut -d '-' -f3) >/dev/null 2>&1
 
-            if [ -z $VPNLOAD ]; then break; fi
-            if [ $VPNLOAD -gt 0 ]; then break; fi
-            sleep 1
+        if [ -z $NORDHOST ]; then
+          NORDHOST="Unknown"
+          VPNLOAD=0
+        else
 
-            if [ $loadcount -eq 60 ]; then
-              echo -e "\n${CRed} Error: Unable to reach NordVPN API! Load reading is not possible.\n${CClear}"
-              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API! Load reading is not possible." >> $LOGFILE
-              break
-            fi
-        done
+          loadcount=0
+          while [ $loadcount -ne 60 ]
+            do
+              loadcount=$(($loadcount+1))
+              VPNLOAD="curl --silent https://api.nordvpn.com/server/stats/$NORDHOST.nordvpn.com | jq .percent 2>&1"
+              VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
+
+              if [ -z $VPNLOAD ]; then break; fi
+              if [ $VPNLOAD -gt 0 ]; then break; fi
+              sleep 1
+
+              if [ $loadcount -eq 60 ]; then
+                echo -e "\n${CRed} Error: Unable to reach NordVPN API! Load reading is not possible.\n${CClear}"
+                echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API! Load reading is not possible." >> $LOGFILE
+                break
+              fi
+          done
+        fi
 
         printf "\r"
         LOAD_END_TIME=$(date +%s)
@@ -4477,7 +5150,6 @@ while true; do
         while [ $loadcount -ne 60 ]
           do
             loadcount=$(($loadcount+1))
-            #VPNLOAD=$(curl --silent --retry 3 "https://api.surfshark.com/v3/server/clusters" | jq --raw-output '.[] | select(.connectionName == "'"$VPNIP"'") | .load') >/dev/null 2>&1
             VPNLOAD="curl --silent --retry 3 https://api.surfshark.com/v3/server/clusters | jq --raw-output '.[] | select(.connectionName == \"$VPNIP\") | .load' >/dev/null 2>&1"
             VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
 
@@ -4507,7 +5179,6 @@ while true; do
         while [ $loadcount -ne 60 ]
           do
             loadcount=$(($loadcount+1))
-            #PPcurl=$(curl --silent --retry 3 "https://www.perfect-privacy.com/api/traffic.json") >/dev/null 2>&1
             PPcurl="curl --silent --retry 3 https://www.perfect-privacy.com/api/traffic.json >/dev/null 2>&1"
             PPcurl="$(eval $PPcurl 2>/dev/null)"; if echo $PPcurl | grep -qoE '\berror.*\b'; then PPcurl=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
             PP_in=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_in"') 2>&1
@@ -4535,14 +5206,38 @@ while true; do
         LOAD_ELAPSED_TIME=$(( LOAD_END_TIME - LOAD_START_TIME ))
     fi
 
-    if [ -z "$VPNLOAD" ]; then VPNLOAD=0; fi # On that rare occasion where it's unable to get the NordVPN/SurfShark/PerfectPrivacy load, assign 0
+    if [ $AirVPNSuperRandom -eq 1 ] || [ $UseAirVPN -eq 1 ]
+      then
+        # Get the AirVPN server load - thanks to @JackYaz for letting me borrow his code from VPNMGR to accomplish this! ;)
+        LOAD_START_TIME=$(date +%s)
+        printf "\r${InvYellow} ${CClear}${CYellow} [Checking AirVPN Server Load]..."
 
-    # Display some of the NordVPN/SurfShark/PerfectPrivacy specific stats
-    if [ $NordVPNSuperRandom -eq 1 ] || [ $UseNordVPN -eq 1 ] || [ $SurfSharkSuperRandom -eq 1 ] || [ $UseSurfShark -eq 1 ] || [ $PPSuperRandom -eq 1 ] || [ $UsePP -eq 1 ]
+        AirVPNLOAD3=$(curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.ip_v4_in3=="'"$VPNIP"'").currentload' 2>&1)
+        AirVPNLOAD4=$(curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.ip_v4_in4=="'"$VPNIP"'").currentload' 2>&1)
+
+        if [ ! -z "$AirVPNLOAD3" ]; then
+          VPNLOAD=$AirVPNLOAD3
+        elif [ ! -z "$AirVPNLOAD4" ]; then
+          VPNLOAD=$AirVPNLOAD4
+        else
+          VPNLOAD=0
+        fi
+
+        sleep 1
+
+        printf "\r"
+        LOAD_END_TIME=$(date +%s)
+        LOAD_ELAPSED_TIME=$(( LOAD_END_TIME - LOAD_START_TIME ))
+    fi
+
+    if [ -z "$VPNLOAD" ]; then VPNLOAD=0; fi # On that rare occasion where it's unable to get the NordVPN/SurfShark/PerfectPrivacy/AirVPN load, assign 0
+
+    # Display some of the NordVPN/SurfShark/PerfectPrivacy/AirVPN specific stats
+    if [ $NordVPNSuperRandom -eq 1 ] || [ $UseNordVPN -eq 1 ] || [ $SurfSharkSuperRandom -eq 1 ] || [ $UseSurfShark -eq 1 ] || [ $PPSuperRandom -eq 1 ] || [ $UsePP -eq 1 ] || [ $AirVPNSuperRandom -eq 1 ] || [ $UseAirVPN -eq 1 ]
       then
         echo -e "${InvGreen} ${CClear}${CGreen} Ping Lo:${CWhite}${InvGreen}$PINGLOW${CClear}${CGreen} Hi:${CWhite}${InvRed}$PINGHIGH${CClear}${CGreen} ms | Load: ${CWhite}${InvDkGray} $VPNLOAD% ${CClear}${CGreen} | Cfg: ${CWhite}${InvDkGray}$RANDOMMETHOD${CClear}"
 
-        # Display the high/low ping times, and for non-NordVPN/SurfShark/PerfectPrivacy customers, whether Skynet update is enabled.
+        # Display the high/low ping times, and for non-NordVPN/SurfShark/PerfectPrivacy/AirVPN customers, whether Skynet update is enabled.
         elif [ $UpdateSkynet -eq 0 ]
         then
           echo -e "${InvGreen} ${CClear}${CGreen} Ping Lo:${CWhite}${InvGreen}$PINGLOW${CClear}${CGreen} Hi:${CWhite}${InvRed}$PINGHIGH${CClear}${CGreen} ms | Cfg: ${CWhite}${InvDkGray}$RANDOMMETHOD${CClear}"
