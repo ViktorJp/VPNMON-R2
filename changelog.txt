@@ -1,3 +1,41 @@
+v2.48  - (March 25, 2023)
+       - MAJOR: We added another major VPN Provider -- AirVPN -- to the mix of compatible VPN services
+         that play well with APIs, giving us the ability to use these for SuperRandom(r) functionality
+         in the country (or countries) of your choice. Also, provides us with the ability to use the 
+         AirVPN Recommended Servers feature, for those who want their servers to stay closer or more 
+         optimized for speed. AirVPN gives us the same range of capabilities that NordVPN gives, 
+         including reporting on the current server Load, or resetting the connection if the load 
+         exceeds your specified amount... Also, the ability to whitelist your AirVPN servers in Skynet 
+         so they don't get blocked (as they so frequently do).... so, really happy to get this one 
+         added. Note: This assumes you have all (up to) 5 VPN slots configured and working with AirVPN 
+         config, using OpenVPN, TLS authentication & encryption - which is pretty much the standard 
+         out there. Thanks to @machinist for the ask!
+       - MAJOR: Added the capability to reset your VPN connection or reboot your router using an 
+         external file! I find myself in a pickle at times, unable to access my devices on a subnet, 
+         and unable to control my router from remote due to a misconfiguration or because the VPN 
+         tunnel got borked up, preventing all our devices from getting out to the internet. I wanted 
+         to (selfishly) find a way to externally cause the router to reset its VPN connection, and in 
+         a worst-case scenario, reboot the router! Well, that is all now possible. Simply host a file 
+         off an internet accessible server, having one of the words "RESET", "REBOOT" or "NORMAL" on 
+         the first line of the file. With options on the 2nd page in the config, you can specify if 
+         you want to enable this feature, what the full URL path to this file is (example: 
+         https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/event.txt), and what kind of 
+         interval you want to use to check on this file. The next time VPNMON-R2 checks the file, it 
+         will act on one of these commands! I've added an indicator to the top of the UI if this 
+         feature is enabled, showing the interval seconds as well.
+       -MAJOR: Added the capability for VPNMON-R2 to auto-start after a reboot. By popular demand, I'm 
+         not sure how many times this was asked, so it's finally in there! Config menu item #16 will 
+         ask if you want VPNMON-R2 to auto-start. It inserts the command 'vpnmon-r2.sh -screen' into 
+         your /jffs/scripts/post-mount file. An indicator at the top of the UI shows if this feature 
+         is enabled, and intact in your post-mount file. If for some reason it's different than what 
+         was originally added, it will indicate that there's an issue.
+       - ADDED: A second page of config options! Currently with 14 options, the list is getting too 
+         large, and expanded it out onto a second page for future growth!
+       - FIXED: Made some modifications to the NordVPN API calls in order to hopefully provide a
+         faster response for those dealing with bandwidth or other possible throttling limitations in 
+         other countries, like Turkey. Thanks to @iTyPsIDg for helping troubleshoot while out there!
+       - FIXED: Minor code improvements and optimizations.
+
 v2.41  - (January 22, 2023)
        - ADDED: Some logic was added to check for parameters within the killmon.cfg to determine
          whether or not to suppress the KILLMON header on the main UI along with the associated
