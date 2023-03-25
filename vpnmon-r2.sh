@@ -4809,8 +4809,8 @@ vsetup () {
 # Begin VPNMON-R2 Main Loop
 # -------------------------------------------------------------------------------------------------------------------------
 
-DEBUG=; set -x # uncomment/comment to enable/disable debug mode
-{              # uncomment/comment to enable/disable debug mode
+#DEBUG=; set -x # uncomment/comment to enable/disable debug mode
+#{              # uncomment/comment to enable/disable debug mode
 
 #Track External Reset Timer
 EXT_ELAPSED_TIME=0
@@ -5358,4 +5358,4 @@ done
 echo -e "${CClear}"
 exit 0
 
-} #2>&1 | tee $LOG | logger -t $(basename $0)[$$]  # uncomment/comment to enable/disable debug mode
+#} #2>&1 | tee $LOG | logger -t $(basename $0)[$$]  # uncomment/comment to enable/disable debug mode
