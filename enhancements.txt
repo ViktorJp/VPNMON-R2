@@ -6,12 +6,13 @@ To-Do:
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * Scheduling the start & stop screening i.e. auto cron list management (@salvo)
 * Look at connecting the next vpn tunnel before the 1st one disconnects to make it more seamless - @eleVator
-* Look at providing some external means of forcing a reset through a file on a remote server.
-* Update NordVPN API with more optimized versions.
-* Add AirVPN as another supported VPN Provider along with VPN stats and superrandom capabilities.
+
 
 Completed:
 ----------
+* Look at providing some external means of forcing a reset through a file on a remote server.
+* Update NordVPN API with more optimized versions.
+* Add AirVPN as another supported VPN Provider along with VPN stats and superrandom capabilities.
 * Implement a rudimentary killswitch so when VPN drops, or script is running with VPN off, killswitch = ON (@ComputerSteve)
 * Implement a failover switch to handling incoming WAN configuration changes from Ranger802004's WAN_Failover script
 * Allow for the update menu to (F)orce download an existing version, even if versions match.
