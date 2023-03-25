@@ -10,6 +10,7 @@ To-Do:
 
 Completed:
 ----------
+* Autostart script in the post-mount file
 * Look at providing some external means of forcing a reset through a file on a remote server.
 * Update NordVPN API with more optimized versions.
 * Add AirVPN as another supported VPN Provider along with VPN stats and superrandom capabilities.
