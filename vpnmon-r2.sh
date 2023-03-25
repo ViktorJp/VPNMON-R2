@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.48 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.49 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.48"                                      # Current version of VPNMON-R2
+Version="2.49"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -61,7 +61,7 @@ PauseLockFound=0                                    # Lockfile variable for paus
 StopLockFound=0                                     # Lockfile variable for stops
 WAN1OverrideLock=0                                  # Lockfile variable for WAN1 vpn connection overrides
 NewScreen=0                                         # Screen variable to determine if it's new or reused
-connState="2"                                       # Status = 2 means VPN is connected, 1 = connecting, 0 = not connected
+connState=2                                         # Status = 2 means VPN is connected, 1 = connecting, 0 = not connected
 BASE=1                                              # Random numbers start at BASE up to N, ie. 1..3
 STATUS=0                                            # Tracks whether or not a ping was successful
 VPNCLCNT=0                                          # Tracks to make sure there are not multiple connections running
@@ -4094,7 +4094,7 @@ vconfig () {
       echo 'YF52GN3=0'
       echo 'WAN1Override=1'
       echo 'EXTERNALRESET=0'
-      echo 'EXT_SOURCE="None'
+      echo 'EXT_SOURCE="None"'
       echo 'EXTINTERVAL=900'
       echo 'AUTOSTART=0'
     } > $CFGPATH
@@ -4809,8 +4809,8 @@ vsetup () {
 # Begin VPNMON-R2 Main Loop
 # -------------------------------------------------------------------------------------------------------------------------
 
-#DEBUG=; set -x # uncomment/comment to enable/disable debug mode
-#{              # uncomment/comment to enable/disable debug mode
+DEBUG=; set -x # uncomment/comment to enable/disable debug mode
+{              # uncomment/comment to enable/disable debug mode
 
 #Track External Reset Timer
 EXT_ELAPSED_TIME=0
@@ -5358,4 +5358,4 @@ done
 echo -e "${CClear}"
 exit 0
 
-#} #2>&1 | tee $LOG | logger -t $(basename $0)[$$]  # uncomment/comment to enable/disable debug mode
+} #2>&1 | tee $LOG | logger -t $(basename $0)[$$]  # uncomment/comment to enable/disable debug mode
