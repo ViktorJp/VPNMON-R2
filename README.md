@@ -1,5 +1,5 @@
 # VPNMON-R2
-VPNMON-R2 v2.41 - Asus-Merlin VPN Monitor by Viktor Jaep, 2022-2023
+VPNMON-R2 v2.48 - Asus-Merlin VPN Monitor by Viktor Jaep, 2022-2023
 
 **Executive Summary**: VPNMON-R2 is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy VPN services.  It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to function perfectly in a standalone environment with your own personal VPN service. This script will check the health of (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of commands that will kill all VPN clients, will optionally whitelist all NordVPN/PerfectPrivacy VPN servers in the Skynet Firewall, and randomly picks one of your (up to) 5 VPN Clients to connect to. One of VPNMON-R2's unique features is called "SuperRandom", where it will randomly assign VPN endpoints for a random county (or your choice) to your VPN slots, and randomly connect to one of these. It will now also test your WAN connection, and put itself into standby until the WAN is restored before reconnecting your VPN connections.
 
@@ -61,6 +61,9 @@ What this script does
 25. Added the NordVPN "Recommended Servers" functionality, giving you access to the closest, fastest, lowest latency servers to you!
 26. Added the "Round Robin" method of picking your VPN slots!
 27. Integrated with KILLMON and showing integrity status within the UI
+28. Added AirVPN support!
+29. Added Remote Reboot -- using a simple command in an internet-accessible file, you can remotely reset the VPN or reboot your router!
+30. Added Auto Start after a router reboot... VPNMON-R2 will now run in the screen environment automatically.
 
 What if I'm not running VPNMGR/NordVPN(PIA/WeVPN)/Skynet?
 ---------------------------------------------------------
