@@ -5120,9 +5120,10 @@ while true; do
           while [ $loadcount -ne 60 ]
             do
               loadcount=$(($loadcount+1))
-              VPNLOAD="curl --silent https://api.nordvpn.com/server/stats/$NORDHOST.nordvpn.com | jq .percent 2>&1"
+              VPNLOAD="curl --silent --retry 3 https://api.nordvpn.com/server/stats/$NORDHOST.nordvpn.com | jq .percent 2>&1"
               VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
 
+              if [ "$VPNLOAD" == "null" ]; then VPNLOAD=0; break; fi
               if [ -z $VPNLOAD ]; then break; fi
               if [ $VPNLOAD -gt 0 ]; then break; fi
               sleep 1
