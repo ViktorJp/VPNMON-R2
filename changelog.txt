@@ -1,8 +1,8 @@
 v2.51  - (March 26, 2023)
        - FIXED: Added some backwards capability back in for those who are manually setting their VPN
-         slots, and not utilizing the new method that VPNMON-R2 uses the VPN slot description field to
-         read part of the NordVPN server hostname in order to do load checks. This will also hopefully
-         add more backward compatibility for VPNMGR as well, since I believe it sets its own
+         slots, and not utilizing the new method that VPNMON-R2 uses in the VPN slot description field
+         to read part of the NordVPN server hostname in order to do load checks. This will also
+         hopefully add more backward compatibility for VPNMGR as well, since I believe it sets its own
          description field info for its own purposes.
 
 v2.50  - (March 26, 2023)
