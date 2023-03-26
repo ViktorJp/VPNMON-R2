@@ -1,9 +1,9 @@
 v2.51  - (March 26, 2023)
-       - FIXED: Reverted some code back for checking NordVPN loads, especially for those who are
-         manually configuring their servers, which prevents a proper lookup using a new method that
-         was introduced in v2.48, and uses part of the hostname in the VPN slot description to
-         initiate a lookup.  Now, if that information is not present in the description field, it will
-         revert back to its old way, and utilize an API lookup against the NordVPN IP address.
+       - FIXED: Added some backwards capability back in for those who are manually setting their VPN
+         slots, and not utilizing the new method that VPNMON-R2 uses the VPN slot description field to
+         read part of the NordVPN server hostname in order to do load checks. This will also hopefully
+         add more backward compatibility for VPNMGR as well, since I believe it sets its own
+         description field info for its own purposes.
 
 v2.50  - (March 26, 2023)
        - FIXED: Fixed a recommended servers variable tracking issue in part due to the introduction of 
