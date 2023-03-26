@@ -1,3 +1,7 @@
+v2.49 - (March 25, 2023)
+       - FIXED: Fixed a terminated quoted string error where I forgot to close a sting for one of the
+         new options that writes itself to the config file. Thanks Gesa!
+
 v2.48  - (March 25, 2023)
        - MAJOR: We added another major VPN Provider -- AirVPN -- to the mix of compatible VPN services
          that play well with APIs, giving us the ability to use these for SuperRandom(r) functionality
