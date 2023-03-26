@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.49 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.50 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.49"                                      # Current version of VPNMON-R2
+Version="2.50"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -76,7 +76,7 @@ FORCEDRESET=0                                       # Variable tracks whether a 
 LOWPINGCOUNT=0                                      # Counter for the number of tries before switching to lower ping server
 PINGCHANCES=5                                       # Number of chances your current connection gets before reconnecting to
 IGNOREHIGHPING=0                                    # Ignore high ping rule if running on WAN1 failover mode faster server
-RecommendedServer=0                                 # Tracks NordVPN Closest/lowest latency Recommended Server Option
+RecommendedServer=0                             # Tracks NordVPN Closest/lowest latency Recommended Server Option
 WAN1Override=1                                      # Tracks WAN1 Overrides preventing VPN connections while WAN1 is active
 SPIN=15                                             # 15-second Spin timer
 state1=0                                            # Initialize the VPN connection states for VPN Clients 1-5
@@ -3226,7 +3226,7 @@ vconfig () {
               NordVPNCountry3=0
               NordVPNLoadReset=50
               UpdateSkynet=0
-              RecommendedServer=0
+              #RecommendedServer=0
             fi
 
             # -----------------------------------------------------------------------------------------
@@ -3599,7 +3599,7 @@ vconfig () {
               AirVPNCountry2=0
               AirVPNCountry3=0
               AirVPNLoadReset=50
-              RecommendedServer=0
+              #RecommendedServer=0
             fi
 
             # -----------------------------------------------------------------------------------------
