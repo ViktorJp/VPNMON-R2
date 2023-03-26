@@ -39,7 +39,7 @@ v2.48  - (March 25, 2023)
          interval you want to use to check on this file. The next time VPNMON-R2 checks the file, it 
          will act on one of these commands! I've added an indicator to the top of the UI if this 
          feature is enabled, showing the interval seconds as well.
-       -MAJOR: Added the capability for VPNMON-R2 to auto-start after a reboot. By popular demand, I'm 
+       - MAJOR: Added the capability for VPNMON-R2 to auto-start after a reboot. By popular demand, I'm 
          not sure how many times this was asked, so it's finally in there! Config menu item #16 will 
          ask if you want VPNMON-R2 to auto-start. It inserts the command 'vpnmon-r2.sh -screen' into 
          your /jffs/scripts/post-mount file. An indicator at the top of the UI shows if this feature 
