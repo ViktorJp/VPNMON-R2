@@ -1,4 +1,9 @@
-v2.49  - (March 25, 2023)
+v2.50  - (March 26, 2023)
+       - FIXED: Fixed a recommended servers variable tracking issue in part due to the introduction of 
+         AirVPN's similar feature, and getting it to co-exist with NordVPN. Thanks to @kuki68ster for 
+         flagging this!
+
+v2.49  - (March 26, 2023)
        - FIXED: Fixed a terminated quoted string error where I forgot to close a sting for one of the
          new options that writes itself to the config file. Thanks Gesa!
 
