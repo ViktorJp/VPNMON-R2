@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.50 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.51 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.50"                                      # Current version of VPNMON-R2
+Version="2.51"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -5111,30 +5111,28 @@ while true; do
 
         NORDHOST=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_desc | sed 's: ::g' | cut -d '-' -f3) >/dev/null 2>&1
 
-        if [ -z $NORDHOST ]; then
-          NORDHOST="Unknown"
-          VPNLOAD=0
-        else
-
-          loadcount=0
-          while [ $loadcount -ne 60 ]
-            do
-              loadcount=$(($loadcount+1))
+        loadcount=0
+        while [ $loadcount -ne 60 ]
+          do
+            loadcount=$(($loadcount+1))
+            if [ -z $NORDHOST ]; then
+              VPNLOAD="curl --silent --retry 3 https://api.nordvpn.com/v1/servers?limit=16384 | jq '.[] | select(.station == \"$VPNIP\") | .load' 2>&1"
+              VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
+            else
               VPNLOAD="curl --silent --retry 3 https://api.nordvpn.com/server/stats/$NORDHOST.nordvpn.com | jq .percent 2>&1"
               VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/60]           "; sleep 1; fi
+            fi
 
-              if [ "$VPNLOAD" == "null" ]; then VPNLOAD=0; break; fi
-              if [ -z $VPNLOAD ]; then break; fi
-              if [ $VPNLOAD -gt 0 ]; then break; fi
-              sleep 1
+            if [ -z $VPNLOAD ]; then break; fi
+            if [ $VPNLOAD -gt 0 ]; then break; fi
+            sleep 1
 
-              if [ $loadcount -eq 60 ]; then
-                echo -e "\n${CRed} Error: Unable to reach NordVPN API! Load reading is not possible.\n${CClear}"
-                echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API! Load reading is not possible." >> $LOGFILE
-                break
-              fi
+            if [ $loadcount -eq 60 ]; then
+              echo -e "\n${CRed} Error: Unable to reach NordVPN API! Load reading is not possible.\n${CClear}"
+              echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API! Load reading is not possible." >> $LOGFILE
+              break
+            fi
           done
-        fi
 
         printf "\r"
         LOAD_END_TIME=$(date +%s)
