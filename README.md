@@ -1,5 +1,5 @@
 # VPNMON-R2
-VPNMON-R2 v2.49 - Asus-Merlin VPN Monitor by Viktor Jaep, 2022-2023
+VPNMON-R2 v2.52 - Asus-Merlin VPN Monitor by Viktor Jaep, 2022-2023
 
 **Executive Summary**: VPNMON-R2 is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy VPN services.  It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to function perfectly in a standalone environment with your own personal VPN service. This script will check the health of (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of commands that will kill all VPN clients, will optionally whitelist all NordVPN/PerfectPrivacy VPN servers in the Skynet Firewall, and randomly picks one of your (up to) 5 VPN Clients to connect to. One of VPNMON-R2's unique features is called "SuperRandom", where it will randomly assign VPN endpoints for a random county (or your choice) to your VPN slots, and randomly connect to one of these. It will now also test your WAN connection, and put itself into standby until the WAN is restored before reconnecting your VPN connections.
 
@@ -16,7 +16,7 @@ How is this script supposed to run?
 -----------------------------------
 Personally, I run this script in its own SSH window from a PC that's connected directly to the Asus router, as it loops and checks the connection every 60 seconds. Installation instructions:
 1. Download and install directly from AMTM, or using your favorite SSH tools, copy & paste this command:
-   ``curl --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-2.41.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"``
+   ``curl --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-2.52.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"``
 2. To initially configure this script, open up a dedicated SSH window, and simply execute the script
    ``sh /jffs/scripts/vpnmon-r2.sh -setup``
 3. Once you've successfully configured the various options, you can run the script using this command:
