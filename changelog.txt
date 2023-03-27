@@ -1,3 +1,10 @@
+v2.52  - (March 27, 2023)
+       - FIXED: Apparently the code that parsed the client slot description field wasn't as solid as
+         I had hoped for, and thanks to @kuki68ster, was able to identify this issue. I have rolled
+         back some of the functionality of pulling hostnames from description fields for those who are
+         using custom entries in the description field.  This should hopefully fully restore the
+         ability to get load indications for NordVPN again.
+
 v2.51  - (March 26, 2023)
        - FIXED: Added some backwards capability back in for those who are manually setting their VPN
          slots, and not utilizing the new method that VPNMON-R2 uses in the VPN slot description field
