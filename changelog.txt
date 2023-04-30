@@ -4,7 +4,7 @@ v2.55b - (April 30, 2023)
          port 53 DNS traffic to the root servers now gets forced out over your VPN connection, instead 
          of out over the open Internet for your ISP (or others) to snoop on. Please note, this is not
          an end-all-be-all fix to keep all DNS lookups private, but it certainly helps get you closer.
-       - ADDED: Per one of @Martineau's old suggestions in the thread, when enabling this feature in
+       - ADDED: Per one of @Martineau's old suggestions in the threads, when enabling this feature in
          the configuration menu, I've also added a command in the POST-MOUNT file that will disable
          Unbounds's VPN binding upon a router reboot as a fail-safe so that DNS resolutions aren't
          impacted as they would still be trying to get out over a VPN tunnel that is no longer in
