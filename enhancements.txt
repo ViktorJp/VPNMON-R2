@@ -3,6 +3,7 @@ Future Enhancements (Planned)
 
 To-Do:
 ------
+* Look into Unbound support, to launch the VPN=# Unbound command when the tunnel/slot changes.
 * Look into more granular city/feature control of VPN slots that won't participate in superrandom
 * Scheduling the start & stop screening i.e. auto cron list management (@salvo)
 * Look at connecting the next vpn tunnel before the 1st one disconnects to make it more seamless - @eleVator
