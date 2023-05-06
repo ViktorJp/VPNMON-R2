@@ -1,0 +1,4 @@
+#!/bin/sh
+
+[ "${dev:0:4}" = 'tun1' ] && vpn_id=${dev:4:1} &&  [ "$script_type" = 'route-up' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh $vpn_id start &
+[ "${dev:0:4}" = 'tun1' ] && vpn_id=${dev:4:1} &&  [ "$script_type" = 'route-pre-down' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh $vpn_id stop &
