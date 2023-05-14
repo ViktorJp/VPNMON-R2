@@ -1,9 +1,27 @@
-v2.55b - (April 30, 2023)
-       - MAJOR: Added functionality to integrate with Unbound! This update will now force Unbound to
-         accept and apply the newest VPN slot to its config after a VPN reset, so that all unencrypted 
-         port 53 DNS traffic to the root servers now gets forced out over your VPN connection, instead 
-         of out over the open Internet for your ISP (or others) to snoop on. Please note, this is not
-         an end-all-be-all fix to keep all DNS lookups private, but it certainly helps get you closer.
+v2.55  - (May 14, 2023)
+       - MAJOR: Added major functionality to integrate more closely with Unbound! Unbound allows you
+         to become your own DNS resolver, so you don't have to rely on other DNS providers (like from
+         your ISP, Google, Quad9, etc.), and helps somewhat with privacy - because who knows what they
+         log on their end, right? ;) The downside with Unbound is that the traffic you generate for
+         your own DNS lookups to root servers or other authoritative servers is not encrypted... which
+         would allow your ISP (or others) to still snoop on your plaintext port 53 DNS queries. So
+         here's the good news -- this Unbound modification (thanks to @Martineau/Swinson) forces all
+         plaintext port 53 traffic that Unbound generates for DNS lookups over your VPN tunnel instead!
+         This means your internet activity is even more secure from your ISP (or others) prying eyes.
+         Please note, this is not an end-all-be-all fix to keep all DNS lookups private, but it
+         certainly helps get you closer. This update will now require that Unbound is installed and
+         running, and will download and/or apply other scripts to the following files:
+              /jffs/scripts/nat-start
+              /jffs/scripts/openvpn-event
+              /jffs/scripts/post-mount
+              /jffs/addons/unbound/unbound_DNS_via_OVPN.sh
+       - NOTE: VPNMON-R2 does not play any role in manipulating Unbound or the associated scripts in
+         any way... it continues to function as it normally does. Except now, as openvpn events fire
+         off as VPN tunnels are disconnected or established, this will allow these scripts to work in
+         harmony with each other to force Unbound traffic over the VPN tunnel. Playing with these
+         scripts and modifications isn't for the feint of heart, and may take some serious
+         troubleshooting skills to get it configured right if something doesn't work straight out of
+         the gate.
        - ADDED: Per one of @Martineau's old suggestions in the threads, when enabling this feature in
          the configuration menu, I've also added a command in the POST-MOUNT file that will disable
          Unbounds's VPN binding upon a router reboot as a fail-safe so that DNS resolutions aren't
