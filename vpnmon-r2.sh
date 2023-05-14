@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.53 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.55 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.53"                                      # Current version of VPNMON-R2
+Version="2.55"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -78,6 +78,7 @@ PINGCHANCES=5                                       # Number of chances your cur
 IGNOREHIGHPING=0                                    # Ignore high ping rule if running on WAN1 failover mode faster server
 RecommendedServer=0                             # Tracks NordVPN Closest/lowest latency Recommended Server Option
 WAN1Override=1                                      # Tracks WAN1 Overrides preventing VPN connections while WAN1 is active
+UpdateUnbound=0                                     # Tracks whether to update Unbound with the current VPN slot
 SPIN=15                                             # 15-second Spin timer
 state1=0                                            # Initialize the VPN connection states for VPN Clients 1-5
 state2=0
@@ -978,8 +979,15 @@ vpnresetlowestping() {
       WAN1IP="Unassigned"
       VPNIP="Unassigned"
 
-    # Kill all current VPN client sessions
+    # Check whether to unbind Unbound with current VPN slot
+    if [ $UpdateUnbound -eq 1 ]; then
       echo ""
+      printf "${CGreen}\r [Unbinding Unbound from VPN Tunnel]...                           "
+      sleep 2
+      #sh /jffs/addons/unbound/unbound_DNS_via_OVPN.sh $LastSlotUsed stop >/dev/null 2>&1
+    fi
+
+    # Kill all current VPN client sessions
       printf "${CGreen}\r [Killing all VPN Client Connections]                          "
       i=0
       while [ $i -ne $N ]
@@ -1100,6 +1108,15 @@ vpnresetlowestping() {
           fi
         fi
 
+        # Check whether to update Unbound with current VPN slot
+        if [ $UpdateUnbound -eq 1 ]; then
+          echo ""
+          printf "${CGreen}\r                                                               "
+          printf "${CGreen}\r [Updating Unbound to force DNS traffic over VPN$LOWEST]               "
+          sleep 2
+          #sh /jffs/addons/unbound/unbound_DNS_via_OVPN.sh $LOWEST start >/dev/null 2>&1
+        fi
+
         printf "${CGreen}\r [VPNMON-R2 Reset Finished]                                    "
         echo -e "$(date) - VPNMON-R2 - VPN Reset Finished" >> $LOGFILE
         sleep 2
@@ -1143,6 +1160,13 @@ vpnreset() {
     WAN0IP="Unassigned"
     WAN1IP="Unassigned"
     VPNIP="Unassigned"
+
+  # Check whether to unbind Unbound with current VPN slot
+  if [ $UpdateUnbound -eq 1 ]; then
+    printf "${CGreen}\r [Unbinding Unbound from VPN Tunnel]...                           "
+    sleep 2
+    #sh /jffs/addons/unbound/unbound_DNS_via_OVPN.sh $LastSlotUsed stop >/dev/null 2>&1
+  fi
 
   # Kill all current VPN client sessions
     printf "${CGreen}\r [Killing all VPN Client Connections]...                          "
@@ -2314,6 +2338,15 @@ vpnreset() {
           ResetYazFi=$($timeoutcmd$timeoutlng sh /jffs/scripts/YazFi runnow >/dev/null 2>&1)
           echo -e "$(date) - VPNMON-R2 - Successfully updated YazFi guest network(s) with the current VPN slot." >> $LOGFILE
         fi
+    fi
+
+    # Check whether to update Unbound with current VPN slot
+    if [ $UpdateUnbound -eq 1 ]; then
+      echo ""
+      printf "${CGreen}\r                                                               "
+      printf "${CGreen}\r [Updating Unbound to force DNS traffic over VPN$option]               "
+      sleep 2
+      #sh /jffs/addons/unbound/unbound_DNS_via_OVPN.sh $option start >/dev/null 2>&1
     fi
 
     printf "${CGreen}\r                                                               "
@@ -3895,6 +3928,7 @@ vconfig () {
                 echo 'EXT_SOURCE="'"$EXT_SOURCE"'"'
                 echo 'EXTINTERVAL='$EXTINTERVAL
                 echo 'AUTOSTART='$AUTOSTART
+                echo 'UpdateUnbound='$UpdateUnbound
               } > $CFGPATH
             echo -e "${CCyan} Applying config changes to VPNMON-R2..."
             echo -e "$(date) - VPNMON-R2 - Successfully wrote a new config file" >> $LOGFILE
@@ -3915,16 +3949,20 @@ vconfig () {
             echo -e "${CGreen} Configuration Utility Options (Page 2)"
             echo -e "${CGreen} ----------------------------------------------------------------"
             echo -en " ${InvDkGray}${CWhite} 15 ${CClear}${CCyan}: Enable Remote Reset?          :"${CGreen}
-            if [ "$EXTERNALRESET" == "0" ]; then
-              printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
-            else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
+              if [ "$EXTERNALRESET" == "0" ]; then
+                printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
+              else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
             echo -en " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  External File Location       :"$ODISABLED2
             printf "%.26s>\n" $EXT_SOURCE
             echo -e " ${InvDkGray}${CWhite}  |-${CClear}$ODISABLED-  External File Interval?      :"$ODISABLED2$EXTINTERVAL
             echo -en " ${InvDkGray}${CWhite} 16 ${CClear}${CCyan}: Enable Auto Start?            :"${CGreen}
-            if [ "$AUTOSTART" == "0" ]; then
-              printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
-            else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
+              if [ "$AUTOSTART" == "0" ]; then
+                printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
+              else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
+            echo -en " ${InvDkGray}${CWhite} 17 ${CClear}${CCyan}: Enable Unbound Update?        :"${CGreen}
+              if [ "$UpdateUnbound" == "0" ]; then
+                printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
+              else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
             echo -e " ${InvDkGray}${CWhite}  | ${CClear}"
             echo -e " ${InvDkGray}${CWhite}  p ${CClear}${CCyan}: <-- Previous Page"
             echo -e "${CGreen} ----------------------------------------------------------------"
@@ -4012,10 +4050,147 @@ vconfig () {
                         echo "#!/bin/sh" > /jffs/scripts/post-mount
                         echo "" >> /jffs/scripts/post-mount
                         echo "(sleep 30 && /jffs/scripts/vpnmon-r2.sh -screen) & # Added by vpnmon-r2" >> /jffs/scripts/post-mount
-                        chmod 0755 /jffs/scripts/post-mount
+                        chmod 755 /jffs/scripts/post-mount
                         AUTOSTART=1
                       fi
                     fi
+                  ;;
+
+                  17) # -----------------------------------------------------------------------------------------
+                     echo ""
+                     echo -e "${CCyan} 17. Would you like to configure Unbound to use your current VPN slot?"
+                     echo -e "${CCyan} Unbound is a separate script that allows you to become your own DNS"
+                     echo -e "${CCyan} resolver. This gets a bit more ${CYellow}ADVANCED${CCyan}, requires additional scripts"
+                     echo -e "${CCyan} and configurations to get working correctly. Please understand that"
+                     echo -e "${CCyan} multiple files will either be downloaded or modified. By agreeing to"
+                     echo -e "${CCyan} this, know that this functionality may break your ability to resolve"
+                     echo -e "${CCyan} hosts on the internet. When functioning correctly, all port 53 DNS"
+                     echo -e "${CCyan} plaintext lookup traffic will be routed across your VPN connection,"
+                     echo -e "${CCyan} making your browsing activity invisible to your ISP or other trackers."
+                     echo ""
+                     echo -e "${CCyan} Requirements:"
+                     echo -e "${CYellow} 1. Unbound must already be installed and functioning (AMTM)"
+                     echo ""
+                     echo -e "${CCyan} These files will be downloaded or modified:"
+                     echo -e "${CYellow} 1. /jffs/scripts/nat-start"
+                     echo -e "${CYellow} 2. /jffs/scripts/openvpn-event"
+                     echo -e "${CYellow} 3. /jffs/scripts/post-mount"
+                     echo -e "${CYellow} 4. /jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
+                     echo -e "${CYellow} 5. Required router reboot - please don't forget to do so!"
+                     echo ""
+                     echo -e "${CCyan} Do you accept the extra risk and possible challenge? Entering '1'"
+                     echo -e "${CCyan} will download/make modifications to the files above, while entering"
+                     echo -e "${CCyan} '0' will remove any modifications made to existing files."
+                     echo -e "${CYellow} (No=0, Yes=1) (Default = 0) (Exit=e)${CClear}"
+                     read -p ' Enable Unbound Update?: ' UpdateUnbound1
+                     if [ "$UpdateUnbound1" == "" ] || [ -z "$UpdateUnbound1" ]; then UpdateUnbound=0; else UpdateUnbound="$UpdateUnbound1"; fi # Using default value on enter keypress
+
+                     if [ ! -d "/jffs/addons/unbound" ]; then
+                       echo ""
+                       echo -e "${CRed} [Unbound was not found on this system. Exiting]...${CClear}"
+                       UpdateUnbound=0
+                       sleep 3
+
+                     else
+
+                       if [ "$UpdateUnbound" == "0" ]; then
+
+                         # Delete all additions made to files to enable Unbound over VPN functionality
+                         echo ""
+                         echo -e "${CYellow} [Unbinding Unbound from VPN]...${CClear}"
+
+                         # Disable vpn functionality with Unbound
+                         sh /jffs/addons/unbound/unbound_manager.sh vpn=disable >/dev/null 2>&1
+
+                         # Remove Unbound failsafe in post-mount
+                         if [ -f /jffs/scripts/post-mount ]; then
+                           sed -i -e '/vpn=disable/d' /jffs/scripts/post-mount
+                         fi
+
+                         # Remove Unbound VPN helper script in openvpn-event
+                         if [ -f /jffs/scripts/openvpn-event ]; then
+                           sed -i -e '/unbound_DNS_via_OVPN.sh/d' /jffs/scripts/openvpn-event
+                         fi
+
+                         # Remove RPDB Rules added to nat-start
+                         if [ -f /jffs/scripts/nat-start ]; then
+                           sed -i -e '/Added by vpnmon-r2/d' /jffs/scripts/nat-start
+                         fi
+
+                         # Remove the unbound_DNS_via_OVPN.sh file
+                         if [ -f /jffs/addons/unbound/unbound_DNS_via_OVPN.sh ]; then
+                           rm /jffs/addons/unbound/unbound_DNS_via_OVPN.sh
+                         fi
+
+                       elif [ "$UpdateUnbound" == "1" ]; then
+
+                         # Modify or create post-mount
+                         if [ -f /jffs/scripts/post-mount ]; then
+
+                           if ! grep -q -F "[ -n "'"$(which unbound_manager)"'" ] && { sh /jffs/addons/unbound/unbound_manager.sh vpn=disable; } # Added by vpnmon-r2" /jffs/scripts/post-mount; then
+                             echo "[ -n "'"$(which unbound_manager)"'" ] && { sh /jffs/addons/unbound/unbound_manager.sh vpn=disable; } # Added by vpnmon-r2" >> /jffs/scripts/post-mount
+                           fi
+
+                         else
+                           echo "#!/bin/sh" > /jffs/scripts/post-mount
+                           echo "" >> /jffs/scripts/post-mount
+                           echo "[ -n "'"$(which unbound_manager)"'" ] && { sh /jffs/addons/unbound/unbound_manager.sh vpn=disable; } # Added by vpnmon-r2" >> /jffs/scripts/post-mount
+                           chmod 755 /jffs/scripts/post-mount
+                         fi
+
+                         # Modify or create nat-start
+                         if [ -f /jffs/scripts/nat-start ]; then
+
+                           if ! grep -q -F "sleep 10  # During the boot process nat-start may run multiple times so this is required - Added by vpnmon-r2" /jffs/scripts/nat-start; then
+                             echo "" >> /jffs/scripts/nat-start
+                             echo "sleep 10  # During the boot process nat-start may run multiple times so this is required - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "" >> /jffs/scripts/nat-start
+                             echo "# Ensure duplicate rules are not created - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "for VPN_ID in 0 1 2 3 4 5  # Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "  do  # Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "    ip rule del prio 999$VPN_ID  2>/dev/null  # Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "  done  # Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "" >> /jffs/scripts/nat-start
+                             echo "# Create the RPDB rules - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "ip rule add from 0/0 fwmark \"0x8000/0x8000\" table main   prio 9990        # WAN   fwmark - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "ip rule add from 0/0 fwmark \"0x7000/0x7000\" table ovpnc4 prio 9991        # VPN 4 fwmark - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "ip rule add from 0/0 fwmark \"0x3000/0x3000\" table ovpnc5 prio 9992        # VPN 5 fwmark - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "ip rule add from 0/0 fwmark \"0x1000/0x1000\" table ovpnc1 prio 9993        # VPN 1 fwmark - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "ip rule add from 0/0 fwmark \"0x2000/0x2000\" table ovpnc2 prio 9994        # VPN 2 fwmark - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                             echo "ip rule add from 0/0 fwmark \"0x4000/0x4000\" table ovpnc3 prio 9995        # VPN 3 fwmark - Added by vpnmon-r2" >> /jffs/scripts/nat-start
+                          fi
+
+                         else
+                           curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/nat-start" -o "/jffs/scripts/nat-start" && chmod 755 "/jffs/scripts/nat-start"
+                         fi
+
+                         # Modify or create openvpn-event
+                         if [ -f /jffs/scripts/openvpn-event ]; then
+
+                           if ! grep -q -F "[ "'"${dev:0:4}"'" = 'tun1' ] && vpn_id=\${dev:4:1} &&  [ "'"$script_type"'" = 'route-up' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh \$vpn_id start &" /jffs/scripts/openvpn-event; then
+                             echo "[ "'"${dev:0:4}"'" = 'tun1' ] && vpn_id=\${dev:4:1} &&  [ "'"$script_type"'" = 'route-up' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh \$vpn_id start &" >> /jffs/scripts/openvpn-event
+                             echo "[ "'"${dev:0:4}"'" = 'tun1' ] && vpn_id=\${dev:4:1} &&  [ "'"$script_type"'" = 'route-pre-down' ] && /jffs/addons/unbound/unbound_DNS_via_OVPN.sh \$vpn_id stop &" >> /jffs/scripts/openvpn-event
+                           fi
+
+                         else
+                           curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/openvpn-event" -o "/jffs/scripts/openvpn-event" && chmod 755 "/jffs/scripts/openvpn-event"
+                         fi
+
+                         # Download and create the unbound_DNS_via_OVPN.sh file - many thanks to @Martineau and @Swinson
+                         if [ ! -f /jffs/addons/unbound/unbound_DNS_via_OVPN.sh ]; then
+                           curl --silent --retry 3 "https://raw.githubusercontent.com/MartineauUK/Unbound-Asuswrt-Merlin/dev/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
+                           # backup - curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
+                         fi
+
+                         echo ""
+                         read -rsp $'Please reboot now if this is your first time enabling Unbound for VPN...\n' -n1 key
+
+                       elif [ "$UpdateUnbound1" == "e" ]; then
+                         echo ""
+                         echo -e "${CGreen} [Exiting]..."
+                         sleep 2
+                       fi
+                     fi
                   ;;
 
                   [Pp])
@@ -4097,6 +4272,7 @@ vconfig () {
       echo 'EXT_SOURCE="None"'
       echo 'EXTINTERVAL=900'
       echo 'AUTOSTART=0'
+      echo 'UpdateUnbound=0'
     } > $CFGPATH
 
     #Re-run vpnmon-r2 -config to restart setup process
