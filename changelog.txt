@@ -1,3 +1,12 @@
+v2.56  - (TBA)
+       - ADDED: Implemented another reset condition, in particular, if the Unbound public DNS Resolver
+         IP is not the same at your public VPN IP. Thanks so much to @Somewhereovertherainbow for his
+         amazing regex and awk skills to pull this query off with a dig command. You will now find a
+         new item under the config menu to enable this feature, on page 2, item 18, and will ask if
+         you want to enable an Unbound out-of-sync reset. In rare conditions, your Unbound public IP
+         DNS Resolver may revert to your public WAN IP. This reset will force it to send its encrypted
+         DNS traffic back over the VPN tunnel if it happens to go out-of-sync.
+
 v2.55  - (May 14, 2023)
        - MAJOR: Added major functionality to integrate more closely with Unbound! Unbound allows you
          to become your own DNS resolver, so you don't have to rely on other DNS providers (like from
