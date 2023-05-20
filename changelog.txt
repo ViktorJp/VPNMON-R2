@@ -6,7 +6,8 @@ v2.56  - (TBA)
          you want to enable an Unbound out-of-sync reset. In rare conditions (typically for anything
          messing with your iptables like skynet version updates, and whatnot, your Unbound public IP
          DNS Resolver may revert to your public WAN IP. This reset will force it to send its encrypted
-         DNS traffic back over the VPN tunnel if it happens to go out-of-sync.
+         DNS traffic back over the VPN tunnel if it happens to go out-of-sync. If you are OK with your
+         DNS Resolver IP being different than your Public VPN IP, simply don't enable this.
 
 v2.55  - (May 14, 2023)
        - MAJOR: Added major functionality to integrate more closely with Unbound! Unbound allows you
