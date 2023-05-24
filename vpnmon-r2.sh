@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.57 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.58 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.57"                                      # Current version of VPNMON-R2
+Version="2.58"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -80,7 +80,7 @@ RecommendedServer=0                                 # Tracks NordVPN Closest/low
 WAN1Override=1                                      # Tracks WAN1 Overrides preventing VPN connections while WAN1 is active
 UpdateUnbound=0                                     # Tracks whether to update Unbound with the current VPN slot
 UnboundReset=0                                      # Tracks whether to reset VPN if Unbound becomes out of sync with WAN IP
-ResolverTimer=0                                     # Timer to give the DNS resolver check time to settle before getting its value
+ResolverTimer=1                                     # Timer to give the DNS resolver check time to settle before getting its value
 SPIN=15                                             # 15-second Spin timer
 state1=0                                            # Initialize the VPN connection states for VPN Clients 1-5
 state2=0
@@ -288,7 +288,7 @@ progressbar() {
   if [ $key_press ]; then
       case $key_press in
           [Ss]) FromUI=1; (vsetup); source $CFGPATH; echo -e "${CGreen} [Returning to the Main UI momentarily]                                    "; sleep 1; FromUI=0; i=$INTERVAL;;
-          [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; sleep 1; FORCEDRESET=1; i=$INTERVAL; ICANHAZIP="Probing"; resetcheck;;
+          [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; sleep 1; FORCEDRESET=1; i=$INTERVAL; ICANHAZIP="Probing"; resetcheck; ResolverTimer=1;;
           [Bb]) (bossmode);;
           'e')  # Exit gracefully
                 echo -e "${CClear}"
@@ -747,6 +747,7 @@ if [ $STATUS -eq 0 ]; then
     oldtxbytes=0
     newrxbytes=0
     newtxbytes=0
+    return
 fi
 
 # If VPNCLCNT is greater than 1 there are multiple connections running, reset the VPN
@@ -770,6 +771,7 @@ if [ $VPNCLCNT -gt 1 ]; then
     oldtxbytes=0
     newrxbytes=0
     newtxbytes=0
+    return
 fi
 
 # If the NordVPN/SurfShark/PP Server load is greater than the set variable, reset the VPN and hopefully find a better server
@@ -816,6 +818,7 @@ if [ $NordVPNLoadReset -le $VPNLOAD ] || [ $SurfSharkLoadReset -le $VPNLOAD ] ||
   oldtxbytes=0
   newrxbytes=0
   newtxbytes=0
+  return
 fi
 
 # If the AVGPING average ping across the tunnel is greater than the set variable, reset the VPN and hopefully land on a server with lesser ping times
@@ -839,6 +842,7 @@ if [ "${AVGPING%.*}" -gt "$MINPING" ] && [ "$IGNOREHIGHPING" == "0" ]; then
   oldtxbytes=0
   newrxbytes=0
   newtxbytes=0
+  return
 else
   IGNOREHIGHPING=0
 fi
@@ -872,6 +876,7 @@ if [ "$USELOWESTSLOT" == "1" ]; then
       oldtxbytes=0
       newrxbytes=0
       newtxbytes=0
+      return
     fi
   else
     LOWPINGCOUNT=0
@@ -900,6 +905,7 @@ if [ "$FORCEDRESET" == "1" ]; then
       oldtxbytes=0
       newrxbytes=0
       newtxbytes=0
+      return
 fi
 
 # If an externet file on the internet indicates RESET or REBOOT, then proceed with a regular reset/reboot
@@ -940,6 +946,7 @@ if [ "$EXTERNALRESET" == "1" ]; then
       #Track External Reset Timer
       EXT_ELAPSED_TIME=0
       EXT_START_TIME=$(date +%s)
+      return
 
     elif [ "$EXT_EVENT" == "REBOOT" ]; then
       clear
@@ -968,7 +975,7 @@ fi
 # If the Unbound public DNS Resolver IP goes out of sync with the public VPN IP, then reset
 if [ "$UpdateUnbound" == "1" ] && [ "$UnboundReset" == "1" ] && [ "$ICANHAZIP" != "Probing" ]; then
 
-    if [ "$ResolverTimer" == "1" ]; then
+    if [ $ResolverTimer -eq 1 ]; then
       ResolverTimer=0
     else
 
@@ -1003,6 +1010,7 @@ if [ "$UpdateUnbound" == "1" ] && [ "$UnboundReset" == "1" ] && [ "$ICANHAZIP" !
               oldtxbytes=0
               newrxbytes=0
               newtxbytes=0
+              return
         else
               echo -e "${InvGreen} ${CClear}${CGreen} Unbound Public DNS Resolver IP: ${CWhite}${InvDkGray}$DNSResolver${CClear}${CCyan} - [IN SYNC]${CClear}"
               #echo $ICANHAZIP
@@ -2421,8 +2429,6 @@ vpnreset() {
     rm $LOCKFILE >/dev/null 2>&1
 
     i=$INTERVAL # Skip the timer interval
-
-    ResolverTimer=1 # Give the resolver a break the first go-around to let it settle
 
     # Returning from a WAN Down situation or scheduled reset, restart VPNMON-R2 with -monitor switch, or return
     if [ "$RESETSWITCH" == "1" ]
@@ -5036,6 +5042,9 @@ vsetup () {
           # Write Status file
           LASTSLOT=$(cat $APPSTATUS | sed -n '2p') 2>&1
           if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
+
+          # Give the resolver a break the first go-around to let it settle
+          ResolverTimer=1 
 
           { echo 'NORMAL'
             echo $LASTSLOT
