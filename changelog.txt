@@ -1,4 +1,4 @@
-v2.57  - (TBA)
+v2.57  - (May 24, 2023)
        - ADDED: Building on the Unbound functionality, I've implemented another reset condition, in
          particular, if the Unbound public DNS Resolver IP is not the same at your public VPN IP.
          Thanks so much to @Somewhereovertherainbow for his amazing regex and awk skills to pull this
