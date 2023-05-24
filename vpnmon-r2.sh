@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.55 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.57 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.55"                                      # Current version of VPNMON-R2
+Version="2.57"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -76,9 +76,11 @@ FORCEDRESET=0                                       # Variable tracks whether a 
 LOWPINGCOUNT=0                                      # Counter for the number of tries before switching to lower ping server
 PINGCHANCES=5                                       # Number of chances your current connection gets before reconnecting to
 IGNOREHIGHPING=0                                    # Ignore high ping rule if running on WAN1 failover mode faster server
-RecommendedServer=0                             # Tracks NordVPN Closest/lowest latency Recommended Server Option
+RecommendedServer=0                                 # Tracks NordVPN Closest/lowest latency Recommended Server Option
 WAN1Override=1                                      # Tracks WAN1 Overrides preventing VPN connections while WAN1 is active
 UpdateUnbound=0                                     # Tracks whether to update Unbound with the current VPN slot
+UnboundReset=0                                      # Tracks whether to reset VPN if Unbound becomes out of sync with WAN IP
+ResolverTimer=0                                     # Timer to give the DNS resolver check time to settle before getting its value
 SPIN=15                                             # 15-second Spin timer
 state1=0                                            # Initialize the VPN connection states for VPN Clients 1-5
 state2=0
@@ -286,7 +288,7 @@ progressbar() {
   if [ $key_press ]; then
       case $key_press in
           [Ss]) FromUI=1; (vsetup); source $CFGPATH; echo -e "${CGreen} [Returning to the Main UI momentarily]                                    "; sleep 1; FromUI=0; i=$INTERVAL;;
-          [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; sleep 1; FORCEDRESET=1; i=$INTERVAL; resetcheck;;
+          [Rr]) echo -e "${CGreen} [Reset Queued]                                                            "; sleep 1; FORCEDRESET=1; i=$INTERVAL; ICANHAZIP="Probing"; resetcheck;;
           [Bb]) (bossmode);;
           'e')  # Exit gracefully
                 echo -e "${CClear}"
@@ -559,7 +561,7 @@ get_wan_setting1() {
 updatecheck () {
 
   # Download the latest version file from the source repository
-  curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/version.txt" -o "/jffs/addons/vpnmon-r2.d/version.txt"
+  curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/version.txt" -o "/jffs/addons/vpnmon-r2.d/version.txt"
 
   if [ -f $DLVERPATH ]
     then
@@ -719,6 +721,7 @@ checkwan () {
 # (5) VPN Client identified with a lower ping than the current connection
 # (6) Force reset through the UI
 # (7) External reset using a user-defined file available on the internet
+# (8) Unbound public DNS Resolver IP goes out of sync with the public VPN IP
 # ...and reset the VPN connection
 # -------------------------------------------------------------------------------------------------------------------------
 resetcheck () {
@@ -907,7 +910,7 @@ if [ "$EXTERNALRESET" == "1" ]; then
 
   if [ $EXT_ELAPSED_TIME -ge $EXTINTERVAL ]; then
 
-    EXT_EVENT=$(curl --silent --retry 3 $EXT_SOURCE | sed -n '1p') 2>&1
+    EXT_EVENT=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors $EXT_SOURCE | sed -n '1p') 2>&1
 
     if [ "$EXT_EVENT" == "RESET" ]; then
       clear
@@ -962,6 +965,54 @@ if [ "$EXTERNALRESET" == "1" ]; then
   fi
 fi
 
+# If the Unbound public DNS Resolver IP goes out of sync with the public VPN IP, then reset
+if [ "$UpdateUnbound" == "1" ] && [ "$UnboundReset" == "1" ] && [ "$ICANHAZIP" != "Probing" ]; then
+
+    if [ "$ResolverTimer" == "1" ]; then
+      ResolverTimer=0
+    else
+
+      # Huge thanks to @SomewhereOverTheRainbow for his expertise in troublshooting and coming up with this DNS Resolver methodology!
+      DNSResolver="$({ unbound-control flush whoami.akamai.net >/dev/null 2>&1; } && dig whoami.akamai.net +short @"$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{split($4, ip_addr, ":");if(substr($4,11) !~ /.*953.*/)print ip_addr[1];if(substr($4,11) !~ /.*953.*/)exit}')" -p "$(netstat -nlp 2>/dev/null | awk '/.*(unbound){1}.*/{if(substr($4,11) !~ /.*953.*/)print substr($4,11);if(substr($4,11) !~ /.*953.*/)exit}')" 2>/dev/null)"
+
+      if [ -z "$DNSResolver" ]; then
+        echo -e "${InvGreen} ${CClear}${CGreen} Unbound Public DNS Resolver IP: ${CWhite}${InvDkGray}UNKNOWN${CClear}${CRed} - [NOT SYNCED]${CClear}"
+
+      # rudimentary check to make sure value coming back is in the format of an IP address... Don't care if it's more than 255.
+      elif expr "$DNSResolver" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+
+        # If the DNS resolver and public VPN IP address don't match in our Unbound scenario, reset!
+        if [ "$DNSResolver" != "$ICANHAZIP" ]; then
+          clear
+          logo
+          echo -e "\n${CRed} Unbound DNS Resolver Out-of-Sync, VPNMON-R2 is executing VPN Reset${CClear}\n"
+          echo -e "$(date) - VPNMON-R2 ----------> INFO: Unbound DNS Resolver Out-of-Sync - Executing VPN Reset" >> $LOGFILE
+
+              vpnreset
+
+              SKIPPROGRESS=1
+              FORCEDRESET=0
+
+              echo -e "$(date) - VPNMON-R2 - Resuming normal operations" >> $LOGFILE
+              echo -e "$(date +%s)" > $RSTFILE
+              START=$(cat $RSTFILE)
+              PINGLOW=0 # Reset ping time history variables
+              PINGHIGH=0
+              ICANHAZIP=""
+              oldrxbytes=0 # Reset Stats
+              oldtxbytes=0
+              newrxbytes=0
+              newtxbytes=0
+        else
+              echo -e "${InvGreen} ${CClear}${CGreen} Unbound Public DNS Resolver IP: ${CWhite}${InvDkGray}$DNSResolver${CClear}${CCyan} - [IN SYNC]${CClear}"
+              #echo $ICANHAZIP
+        fi
+
+      else
+        echo -e "${InvGreen} ${CClear}${CGreen} Unbound Public DNS Resolver IP: ${CWhite}${InvDkGray}UNKNOWN${CClear}${CRed} - [NOT SYNCED]${CClear}"
+      fi
+    fi
+fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1500,7 +1551,7 @@ vpnreset() {
         while [ $svrcount -ne 15 ]
           do
             svrcount=$(($svrcount+1))
-            NORDLINES="curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.country == \"$NordVPNRandomCountry\") | .ip_address' > /jffs/scripts/NordVPN.txt"
+            NORDLINES="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://api.nordvpn.com/server | jq --raw-output '.[] | select(.country == \"$NordVPNRandomCountry\") | .ip_address' > /jffs/scripts/NordVPN.txt"
             NORDLINES="$(eval $NORDLINES 2>/dev/null)"; if echo $NORDLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
@@ -1546,7 +1597,7 @@ vpnreset() {
         while [ $svrcount -ne 15 ]
           do
             svrcount=$(($svrcount+1))
-            PPLINES="curl --silent --retry 3 https://www.perfect-privacy.com/api/serverips > /jffs/scripts/ppips.txt"
+            PPLINES="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://www.perfect-privacy.com/api/serverips > /jffs/scripts/ppips.txt"
             PPLINES="$(eval $PPLINES 2>/dev/null)"; if echo $PPLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             awk -F' ' '{print $2}' /jffs/scripts/ppips.txt > /jffs/scripts/ppipscln.txt 2>&1
             sed "s/,/\n/g" /jffs/scripts/ppipscln.txt > /jffs/scripts/ppipslst.txt 2>&1
@@ -1595,12 +1646,12 @@ vpnreset() {
         while [ $svrcount -ne 15 ]
           do
             svrcount=$(($svrcount+1))
-            AIRVPNLINES="curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name==\"$AirVPNRandomCountry\").ip_v4_in3' > /jffs/scripts/AirVPN.txt"
+            AIRVPNLINES="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name==\"$AirVPNRandomCountry\").ip_v4_in3' > /jffs/scripts/AirVPN.txt"
             AIRVPNLINES="$(eval $AIRVPNLINES 2>/dev/null)"; if echo $AIRVPNLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/AirVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
             if [ $LINES -ge 1 ]; then
-              curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name=="'"$AirVPNRandomCountry"'").ip_v4_in4' >> /jffs/scripts/AirVPN.txt
+              curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name=="'"$AirVPNRandomCountry"'").ip_v4_in4' >> /jffs/scripts/AirVPN.txt
               printf "${CGreen}\r [AirVPN Server List Successfully Downloaded]                          "
               echo ""
               sleep 1
@@ -1670,9 +1721,9 @@ vpnreset() {
               RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
-              RNDVPNHOST=$(curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RNDVPNIP"'") | .domain' | cut -d '.' -f1)
+              RNDVPNHOST=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RNDVPNIP"'") | .domain' | cut -d '.' -f1)
               nvram set vpn_client"$i"_addr="$RNDVPNIP"
               nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY - $RNDVPNHOST"
               echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY - Host: $RNDVPNHOST${CClear}"
@@ -1694,7 +1745,7 @@ vpnreset() {
         while [ $svrcount -ne 60 ]
           do
             svrcount=$(($svrcount+1))
-            NORDLINES="curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.country == \"$NordVPNRandomCountry\") | .ip_address' > /jffs/scripts/NordVPN.txt"
+            NORDLINES="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://api.nordvpn.com/server | jq --raw-output '.[] | select(.country == \"$NordVPNRandomCountry\") | .ip_address' > /jffs/scripts/NordVPN.txt"
             NORDLINES="$(eval $NORDLINES 2>/dev/null)"; if echo $NORDLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/NordVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
@@ -1732,9 +1783,9 @@ vpnreset() {
               RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/NordVPN.txt)
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
-              RNDVPNHOST=$(curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RNDVPNIP"'") | .domain' | cut -d '.' -f1)
+              RNDVPNHOST=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RNDVPNIP"'") | .domain' | cut -d '.' -f1)
               nvram set vpn_client"$i"_addr="$RNDVPNIP"
               nvram set vpn_client"$i"_desc="NordVPN - $RNDVPNCITY - $RNDVPNHOST"
               echo -e "${CCyan}  VPN$i Slot - SuperRandom IP: $RNDVPNIP - City: $RNDVPNCITY - Host: $RNDVPNHOST${CClear}"
@@ -1762,7 +1813,7 @@ vpnreset() {
           do
             svrcount=$(($svrcount+1))
             # Run SurfShark API to get full server list from SurfShark
-            SURFLINES="curl --silent --retry 3 https://api.surfshark.com/v3/server/clusters | jq --raw-output '.[] | select(.country == \"$SurfSharkRandomCountry\") | .connectionName' > /jffs/scripts/surfshark.txt"
+            SURFLINES="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://api.surfshark.com/v3/server/clusters | jq --raw-output '.[] | select(.country == \"$SurfSharkRandomCountry\") | .connectionName' > /jffs/scripts/surfshark.txt"
             SURFLINES="$(eval $SURFLINES 2>/dev/null)"; if echo $SURFLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/surfshark.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines are in this file
 
@@ -1799,7 +1850,7 @@ vpnreset() {
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/surfshark.txt)
               RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
               nvram set vpn_client"$i"_desc="SurfShark - $RNDVPNCITY"
@@ -1824,7 +1875,7 @@ vpnreset() {
           do
             svrcount=$(($svrcount+1))
             # Run Perfect Privacy API to get full server list from Perfect Privacy VPN
-            PPLINES="curl --silent --retry 3 https://www.perfect-privacy.com/api/serverlocations.json | jq -r 'path(.[] | select(.country ==\"$PPRandomCountry\"))[0]' > /jffs/scripts/pp.txt"
+            PPLINES="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://www.perfect-privacy.com/api/serverlocations.json | jq -r 'path(.[] | select(.country ==\"$PPRandomCountry\"))[0]' > /jffs/scripts/pp.txt"
             PPLINES="$(eval $PPLINES 2>/dev/null)"; if echo $PPLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/pp.txt | wc -l) >/dev/null 2>&1 #Check to see how many linesare in this file
 
@@ -1862,7 +1913,7 @@ vpnreset() {
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/pp.txt)
               RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
               nvram set vpn_client"$i"_desc="Perfect Privacy - $RNDVPNCITY"
@@ -1887,7 +1938,7 @@ vpnreset() {
           do
             svrcount=$(($svrcount+1))
             # Run WeVPN API to get full server list from WeVPN
-            WELINES="curl --silent --retry 3 https://client.wevpn.com/api/v3/locations | jq --raw-output '.data[] | select(.country.name == \"$WeVPNRandomCountry\" ) | .hostname' > /jffs/scripts/wevpn.txt"
+            WELINES="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://client.wevpn.com/api/v3/locations | jq --raw-output '.data[] | select(.country.name == \"$WeVPNRandomCountry\" ) | .hostname' > /jffs/scripts/wevpn.txt"
             WELINES="$(eval $WELINES 2>/dev/null)"; if echo $WELINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/wevpn.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines are in this file
 
@@ -1925,7 +1976,7 @@ vpnreset() {
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNHOST=$(sed -n "${R_LINE}p" /jffs/scripts/wevpn.txt)
               RNDVPNIP=$(ping -q -c1 -n $RNDVPNHOST | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNHOST"
               nvram set vpn_client"$i"_desc="WeVPN - $RNDVPNCITY"
@@ -1965,7 +2016,7 @@ vpnreset() {
               RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/AirVPN.txt)
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNIP"
               nvram set vpn_client"$i"_desc="AirVPN - $RNDVPNCITY"
@@ -1988,12 +2039,12 @@ vpnreset() {
         while [ $svrcount -ne 15 ]
           do
             svrcount=$(($svrcount+1))
-            AIRVPNLINES="curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name==\"$AirVPNRandomCountry\").ip_v4_in3' > /jffs/scripts/AirVPN.txt"
+            AIRVPNLINES="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name==\"$AirVPNRandomCountry\").ip_v4_in3' > /jffs/scripts/AirVPN.txt"
             AIRVPNLINES="$(eval $AIRVPNLINES 2>/dev/null)"; if echo $AIRVPNLINES | grep -qoE '\berror.*\b'; then printf "${CRed}\r [Error Occurred]"; sleep 1; fi
             LINES=$(cat /jffs/scripts/AirVPN.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
             if [ $LINES -ge 1 ]; then
-              curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name=="'"$AirVPNRandomCountry"'").ip_v4_in4' >> /jffs/scripts/AirVPN.txt
+              curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.country_name=="'"$AirVPNRandomCountry"'").ip_v4_in4' >> /jffs/scripts/AirVPN.txt
               printf "${CGreen}\r [AirVPN Server List Successfully Downloaded]                          "
               echo ""
               sleep 1
@@ -2033,7 +2084,7 @@ vpnreset() {
               RANDOM=$(awk 'BEGIN {srand(); print int(32768 * rand())}')
               R_LINE=$(( RANDOM % LINES + 1 ))
               RNDVPNIP=$(sed -n "${R_LINE}p" /jffs/scripts/AirVPN.txt)
-              RNDVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
+              RNDVPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RNDVPNIP | jq --raw-output .city"
               RNDVPNCITY="$(eval $RNDVPNCITY)"; if echo $RNDVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RNDVPNCITY="$RNDVPNIP"; fi
               nvram set vpn_client"$i"_addr="$RNDVPNIP"
               nvram set vpn_client"$i"_desc="AirVPN - $RNDVPNCITY"
@@ -2049,8 +2100,8 @@ vpnreset() {
     if [ $RecommendedServer == "1" ]; then
       if [ $UseNordVPN == "1" ]; then
         UpdateVPNMGR=0  #Override vpnmgr if we're getting NordVPN Recommended Servers
-        NordCountryID=$(curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/countries" | jq --raw-output '.[] | select(.name == "'"$NordVPNRandomCountry"'") | [.name,.id] | "\(.[1])"')
-        curl --silent --retry 3 "https://api.nordvpn.com/v1/servers/recommendations?filters\[country_id\]=$NordCountryID&limit=5" | jq --raw-output '.[].station' > /jffs/scripts/NordVPNRS.txt  #Extract all the closest recommended NordVPN servers to a text file
+        NordCountryID=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://api.nordvpn.com/v1/servers/countries" | jq --raw-output '.[] | select(.name == "'"$NordVPNRandomCountry"'") | [.name,.id] | "\(.[1])"')
+        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://api.nordvpn.com/v1/servers/recommendations?filters\[country_id\]=$NordCountryID&limit=5" | jq --raw-output '.[].station' > /jffs/scripts/NordVPNRS.txt  #Extract all the closest recommended NordVPN servers to a text file
         LINES=$(cat /jffs/scripts/NordVPNRS.txt | wc -l) >/dev/null 2>&1 #Check to see how many lines/server IPs are in this file
 
         if [ $LINES -eq 0 ]; then  #If there are no lines, error out
@@ -2072,9 +2123,9 @@ vpnreset() {
           do
             i=$(($i+1))
             RECVPNIP=$(sed -n "${i}p" /jffs/scripts/NordVPNRS.txt)
-            RECVPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RECVPNIP | jq --raw-output .city"
+            RECVPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RECVPNIP | jq --raw-output .city"
             RECVPNCITY="$(eval $RECVPNCITY)"; if echo $RECVPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY="$RECVPNIP"; fi
-            RECVPNHOST=$(curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RECVPNIP"'") | .domain' | cut -d '.' -f1)
+            RECVPNHOST=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$RECVPNIP"'") | .domain' | cut -d '.' -f1)
             nvram set vpn_client"$i"_addr="$RECVPNIP"
             nvram set vpn_client"$i"_desc="NordVPN - $RECVPNCITY - $RECVPNHOST"
             echo -e "${CCyan}  VPN$i Slot - Recommended IP: $RECVPNIP - City: $RECVPNCITY - Host: $RECVPNHOST${CClear}"
@@ -2086,16 +2137,16 @@ vpnreset() {
       elif [ $UseAirVPN == "1" ]; then
 
         UpdateVPNMGR=0 #Override vpnmgr if we're getting NordVPN Recommended Servers
-        AirVPNCountryID=$(curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.countries[] | select(.country_name=="'"$AirVPNRandomCountry"'").country_code')
+        AirVPNCountryID=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://airvpn.org/api/status/ | jq --raw-output '.countries[] | select(.country_name=="'"$AirVPNRandomCountry"'").country_code')
 
         AirTemp1=$AirVPNCountryID"3.vpn.airdns.org"
         AirTemp2=$AirVPNCountryID"4.vpn.airdns.org"
         RECVPNIP1=$(ping -q -c1 -n $AirTemp1 | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
         RECVPNIP2=$(ping -q -c1 -n $AirTemp2 | head -n1 | sed "s/.*(\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\)).*/\1/g") > /dev/null 2>&1
 
-        RECVPNCITY1="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RECVPNIP1 | jq --raw-output .city"
+        RECVPNCITY1="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RECVPNIP1 | jq --raw-output .city"
         RECVPNCITY1="$(eval $RECVPNCITY1)"; if echo $RECVPNCITY1 | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY1="$RECVPNIP1"; fi
-        RECVPNCITY2="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$RECVPNIP2 | jq --raw-output .city"
+        RECVPNCITY2="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$RECVPNIP2 | jq --raw-output .city"
         RECVPNCITY2="$(eval $RECVPNCITY2)"; if echo $RECVPNCITY2 | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then RECVPNCITY2="$RECVPNIP2"; fi
 
         printf "${CGreen}\r                                                               "
@@ -2371,6 +2422,8 @@ vpnreset() {
 
     i=$INTERVAL # Skip the timer interval
 
+    ResolverTimer=1 # Give the resolver a break the first go-around to let it settle
+
     # Returning from a WAN Down situation or scheduled reset, restart VPNMON-R2 with -monitor switch, or return
     if [ "$RESETSWITCH" == "1" ]
       then
@@ -2405,7 +2458,7 @@ checkvpn() {
     while [ $CNT -lt $TRIES ]; do # Loop through number of tries
       ping -I $TUN -q -c 1 -W 2 $PINGHOST > /dev/null 2>&1 # First try pings
       RC=$?
-      ICANHAZIP=$(curl --silent --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com) # Grab the public IP of the VPN Connection
+      ICANHAZIP=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $TUN --request GET --url https://ipv4.icanhazip.com) # Grab the public IP of the VPN Connection
       IC=$?
       if [ $RC -eq 0 ] && [ $IC -eq 0 ]; then  # If both ping/curl come back successful, then proceed
         STATUS=1
@@ -2416,7 +2469,7 @@ checkvpn() {
 
         if [ "$VPNIP" == "Unassigned" ]; then # The first time through, use API lookup to get exit VPN city and display
           VPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
-          VPNCITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$ICANHAZIP | jq --raw-output .city"
+          VPNCITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$ICANHAZIP | jq --raw-output .city"
           VPNCITY="$(eval $VPNCITY)"; if echo $VPNCITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then VPNCITY="$ICANHAZIP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update VPN city to $VPNCITY" >> $LOGFILE
         fi
@@ -2499,8 +2552,8 @@ wancheck() {
 
         # Get the public IP of the WAN, determine the city from it, and display it on screen
         if [ "$WAN0IP" == "Unassigned" ]; then
-          WAN0IP=$(curl --silent --fail --interface $WAN0IFNAME --request GET --url https://ipv4.icanhazip.com)
-          WAN0CITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
+          WAN0IP=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $WAN0IFNAME --request GET --url https://ipv4.icanhazip.com)
+          WAN0CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN0IP | jq --raw-output .city"
           WAN0CITY="$(eval $WAN0CITY)"; if echo $WAN0CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN0CITY="$WAN0IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN0 city to $WAN0CITY" >> $LOGFILE
         fi
@@ -2537,8 +2590,8 @@ wancheck() {
 
         # Get the public IP of the WAN, determine the city from it, and display it on screen
         if [ "$WAN1IP" == "Unassigned" ]; then
-          WAN1IP=$(curl --silent --fail --interface $WAN1IFNAME --request GET --url https://ipv4.icanhazip.com)
-          WAN1CITY="curl --silent --retry 3 --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
+          WAN1IP=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $WAN1IFNAME --request GET --url https://ipv4.icanhazip.com)
+          WAN1CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
           WAN1CITY="$(eval $WAN1CITY)"; if echo $WAN1CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
           echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WAN1CITY" >> $LOGFILE
         fi
@@ -3929,6 +3982,7 @@ vconfig () {
                 echo 'EXTINTERVAL='$EXTINTERVAL
                 echo 'AUTOSTART='$AUTOSTART
                 echo 'UpdateUnbound='$UpdateUnbound
+                echo 'UnboundReset='$UnboundReset
               } > $CFGPATH
             echo -e "${CCyan} Applying config changes to VPNMON-R2..."
             echo -e "$(date) - VPNMON-R2 - Successfully wrote a new config file" >> $LOGFILE
@@ -3963,6 +4017,13 @@ vconfig () {
               if [ "$UpdateUnbound" == "0" ]; then
                 printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n";
               else printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
+            echo -en " ${InvDkGray}${CWhite} 18 ${CClear}$ODISABLED: Enable Unbound VPN Reset?     :"$ODISABLED2
+              if [ "$UpdateUnbound" == "1" ] && [ "$UnboundReset" == "0" ]; then
+                printf "No"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n";
+              elif [ "$UpdateUnbound" == "0" ]; then
+                printf "No"; ODISABLED="${CDkGray}"; ODISABLED2="${CDkGray}"; printf "%s\n"; UnboundReset=0;
+              elif [ "$UpdateUnbound" == "1" ] && [ "$UnboundReset" == "1" ]; then
+                printf "Yes"; ODISABLED="${CCyan}"; ODISABLED2="${CGreen}"; printf "%s\n"; fi
             echo -e " ${InvDkGray}${CWhite}  | ${CClear}"
             echo -e " ${InvDkGray}${CWhite}  p ${CClear}${CCyan}: <-- Previous Page"
             echo -e "${CGreen} ----------------------------------------------------------------"
@@ -4089,11 +4150,14 @@ vconfig () {
                        echo ""
                        echo -e "${CRed} [Unbound was not found on this system. Exiting]...${CClear}"
                        UpdateUnbound=0
+                       UnboundReset=0
                        sleep 3
 
                      else
 
                        if [ "$UpdateUnbound" == "0" ]; then
+
+                         UnboundReset=0
 
                          # Delete all additions made to files to enable Unbound over VPN functionality
                          echo ""
@@ -4123,6 +4187,8 @@ vconfig () {
                          fi
 
                        elif [ "$UpdateUnbound" == "1" ]; then
+
+                         UnboundReset=0
 
                          # Modify or create post-mount
                          if [ -f /jffs/scripts/post-mount ]; then
@@ -4161,7 +4227,7 @@ vconfig () {
                           fi
 
                          else
-                           curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/nat-start" -o "/jffs/scripts/nat-start" && chmod 755 "/jffs/scripts/nat-start"
+                           curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/nat-start" -o "/jffs/scripts/nat-start" && chmod 755 "/jffs/scripts/nat-start"
                          fi
 
                          # Modify or create openvpn-event
@@ -4173,12 +4239,12 @@ vconfig () {
                            fi
 
                          else
-                           curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/openvpn-event" -o "/jffs/scripts/openvpn-event" && chmod 755 "/jffs/scripts/openvpn-event"
+                           curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/openvpn-event" -o "/jffs/scripts/openvpn-event" && chmod 755 "/jffs/scripts/openvpn-event"
                          fi
 
                          # Download and create the unbound_DNS_via_OVPN.sh file - many thanks to @Martineau and @Swinson
                          if [ ! -f /jffs/addons/unbound/unbound_DNS_via_OVPN.sh ]; then
-                           curl --silent --retry 3 "https://raw.githubusercontent.com/MartineauUK/Unbound-Asuswrt-Merlin/dev/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
+                           curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/MartineauUK/Unbound-Asuswrt-Merlin/dev/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
                            # backup - curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/main/Unbound/unbound_DNS_via_OVPN.sh" -o "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh" && chmod 755 "/jffs/addons/unbound/unbound_DNS_via_OVPN.sh"
                          fi
 
@@ -4191,6 +4257,25 @@ vconfig () {
                          sleep 2
                        fi
                      fi
+                  ;;
+
+                  18)  # -----------------------------------------------------------------------------------------
+                    echo ""
+                    echo -e "${CCyan} 18. Would you like VPNMON-R2 to reset your VPN connection if it finds"
+                    echo -e "${CCyan} that your Unbound public DNS Resolver IP is out-of-sync with your public"
+                    echo -e "${CCyan} WAN IP? Ideally, when Unbound over VPN is working correctly, these two"
+                    echo -e "${CCyan} IP addresses should be the same. If they are not, there's a likelihood"
+                    echo -e "${CCyan} that they are out of sync, necessitating a VPN reset to correct this."
+                    echo -e "${CYellow} (No=0, Yes=1) (Default = 0)${CClear}"
+                    read -p ' Reset Unbound Out-of-Sync?: ' UnboundReset1
+                    if [ "$UnboundReset1" == "" ] || [ -z "$UnboundReset1" ]; then UnboundReset=0; else UnboundReset="$UnboundReset1"; fi # Using default value on enter keypress
+
+                    if [ "$UpdateUnbound" == "0" ]; then
+                      echo ""
+                      echo -e "${CRed} 'Enable Unbound Update' must first be enabled before you can use this option."
+                      UnboundReset=0
+                      sleep 3
+                    fi
                   ;;
 
                   [Pp])
@@ -4273,6 +4358,7 @@ vconfig () {
       echo 'EXTINTERVAL=900'
       echo 'AUTOSTART=0'
       echo 'UpdateUnbound=0'
+      echo 'UnboundReset=0'
     } > $CFGPATH
 
     #Re-run vpnmon-r2 -config to restart setup process
@@ -4299,8 +4385,9 @@ vupdate () {
       echo -e "${CCyan} This will overwrite your local copy with the current build.${CClear}"
       if promptyn " (y/n): "; then
         echo ""
+        echo ""
         echo -e "${CCyan} Downloading VPNMON-R2 ${CYellow}v$DLVersion${CClear}"
-        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-$DLVersion.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-$DLVersion.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"
         echo ""
         echo -e "${CCyan} Download successful!${CClear}"
         echo -e "$(date) - VPNMON-R2 - Successfully downloaded VPNMON-R2 v$DLVersion" >> $LOGFILE
@@ -4322,8 +4409,9 @@ vupdate () {
       echo -e "${CCyan} There is a new version out there! Would you like to update?${CClear}"
       if promptyn " (y/n): "; then
         echo ""
+        echo ""
         echo -e "${CCyan} Downloading VPNMON-R2 ${CYellow}v$DLVersion${CClear}"
-        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-$DLVersion.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors "https://raw.githubusercontent.com/ViktorJp/VPNMON-R2/master/vpnmon-r2-$DLVersion.sh" -o "/jffs/scripts/vpnmon-r2.sh" && chmod a+rx "/jffs/scripts/vpnmon-r2.sh"
         echo ""
         echo -e "${CCyan} Download successful!${CClear}"
         echo -e "$(date) - VPNMON-R2 - Successfully updated VPNMON-R2 v$Version to v$DLVersion" >> $LOGFILE
@@ -5285,18 +5373,12 @@ while true; do
         LOAD_START_TIME=$(date +%s)
         printf "\r${InvYellow} ${CClear}${CYellow} [Checking NordVPN Server Load]..."
 
-        #NORDHOST=$(curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == "'"$VPNIP"'") | .domain') >/dev/null 2>&1
-        #NORDHOST=$($timeoutcmd$timeoutsec nvram get vpn_client"$CURRCLNT"_desc | sed 's: ::g' | cut -d '-' -f3) >/dev/null 2>&1
-
         loadcount=0
         while [ $loadcount -ne 10 ]
           do
             loadcount=$(($loadcount+1))
-            VPNLOAD="curl --silent --retry 3 https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == \"$VPNIP\") | .load' 2>&1"
+            VPNLOAD="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://api.nordvpn.com/server | jq --raw-output '.[] | select(.ip_address == \"$VPNIP\") | .load' 2>&1"
             VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/10]           "; sleep 1; fi
-
-            #VPNLOAD="curl --silent --retry 3 https://api.nordvpn.com/server/stats/$NORDHOST | jq .percent 2>&1"
-            #VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/10]           "; sleep 1; fi
 
             if [ -z $VPNLOAD ]; then break; fi
             if [ $VPNLOAD -gt 0 ]; then break; fi
@@ -5324,7 +5406,7 @@ while true; do
         while [ $loadcount -ne 10 ]
           do
             loadcount=$(($loadcount+1))
-            VPNLOAD="curl --silent --retry 3 https://api.surfshark.com/v3/server/clusters | jq --raw-output '.[] | select(.connectionName == \"$VPNIP\") | .load' >/dev/null 2>&1"
+            VPNLOAD="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://api.surfshark.com/v3/server/clusters | jq --raw-output '.[] | select(.connectionName == \"$VPNIP\") | .load' >/dev/null 2>&1"
             VPNLOAD="$(eval $VPNLOAD 2>/dev/null)"; if echo $VPNLOAD | grep -qoE '\berror.*\b'; then VPNLOAD=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/10]           "; sleep 1; fi
 
             if [ -z $VPNLOAD ]; then break; fi
@@ -5353,7 +5435,7 @@ while true; do
         while [ $loadcount -ne 10 ]
           do
             loadcount=$(($loadcount+1))
-            PPcurl="curl --silent --retry 3 https://www.perfect-privacy.com/api/traffic.json >/dev/null 2>&1"
+            PPcurl="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://www.perfect-privacy.com/api/traffic.json >/dev/null 2>&1"
             PPcurl="$(eval $PPcurl 2>/dev/null)"; if echo $PPcurl | grep -qoE '\berror.*\b'; then PPcurl=0; printf "${CRed}\r [API Error Occurred... retrying $loadcount/10]           "; sleep 1; fi
             PP_in=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_in"') 2>&1
             PP_out=$(echo $PPcurl | jq -r '."'"$VPNIP"'" | ."bandwidth_out"') 2>&1
@@ -5386,8 +5468,8 @@ while true; do
         LOAD_START_TIME=$(date +%s)
         printf "\r${InvYellow} ${CClear}${CYellow} [Checking AirVPN Server Load]..."
 
-        AirVPNLOAD3=$(curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.ip_v4_in3=="'"$VPNIP"'").currentload' 2>&1)
-        AirVPNLOAD4=$(curl --silent --retry 3 https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.ip_v4_in4=="'"$VPNIP"'").currentload' 2>&1)
+        AirVPNLOAD3=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.ip_v4_in3=="'"$VPNIP"'").currentload' 2>&1)
+        AirVPNLOAD4=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors https://airvpn.org/api/status/ | jq --raw-output '.servers[] | select(.ip_v4_in4=="'"$VPNIP"'").currentload' 2>&1)
 
         if [ ! -z "$AirVPNLOAD3" ]; then
           VPNLOAD=$AirVPNLOAD3
