@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.58 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.59 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.58"                                      # Current version of VPNMON-R2
+Version="2.59"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -648,6 +648,7 @@ checkwan () {
           if [ "$RESETSWITCH" == "1" ] || [ -f "$LOCKFILE" ]
             then
               echo ""
+              echo ""
               echo -e "${CRed} ERROR: WAN DOWN... VPN Reset is terminating."
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: WAN CONNECTIVITY ISSUE DETECTED. VPN RESET TERMINATED." >> $LOGFILE
               RESETSWITCH=0
@@ -703,6 +704,7 @@ checkwan () {
           echo ""
           SPIN=60
           spinner
+          echo ""
           echo -e "$(date +%s)" > $RSTFILE
           START=$(cat $RSTFILE)
           echo ""
@@ -743,6 +745,7 @@ if [ $STATUS -eq 0 ]; then
     PINGLOW=0 # Reset ping time history variables
     PINGHIGH=0
     ICANHAZIP=""
+    ResolverTimer=1
     oldrxbytes=0 # Reset Stats
     oldtxbytes=0
     newrxbytes=0
@@ -767,6 +770,7 @@ if [ $VPNCLCNT -gt 1 ]; then
     PINGLOW=0 # Reset ping time history variables
     PINGHIGH=0
     ICANHAZIP=""
+    ResolverTimer=1
     oldrxbytes=0 # Reset Stats
     oldtxbytes=0
     newrxbytes=0
@@ -814,6 +818,7 @@ if [ $NordVPNLoadReset -le $VPNLOAD ] || [ $SurfSharkLoadReset -le $VPNLOAD ] ||
   PINGLOW=0 # Reset ping time history variables
   PINGHIGH=0
   ICANHAZIP=""
+  ResolverTimer=1
   oldrxbytes=0 # Reset Stats
   oldtxbytes=0
   newrxbytes=0
@@ -838,6 +843,7 @@ if [ "${AVGPING%.*}" -gt "$MINPING" ] && [ "$IGNOREHIGHPING" == "0" ]; then
   PINGLOW=0 # Reset ping time history variables
   PINGHIGH=0
   ICANHAZIP=""
+  ResolverTimer=1
   oldrxbytes=0 # Reset Stats
   oldtxbytes=0
   newrxbytes=0
@@ -872,6 +878,7 @@ if [ "$USELOWESTSLOT" == "1" ]; then
       PINGLOW=0 # Reset ping time history variables
       PINGHIGH=0
       ICANHAZIP=""
+      ResolverTimer=1
       oldrxbytes=0 # Reset Stats
       oldtxbytes=0
       newrxbytes=0
@@ -901,6 +908,7 @@ if [ "$FORCEDRESET" == "1" ]; then
       PINGLOW=0 # Reset ping time history variables
       PINGHIGH=0
       ICANHAZIP=""
+      ResolverTimer=1
       oldrxbytes=0 # Reset Stats
       oldtxbytes=0
       newrxbytes=0
@@ -938,6 +946,7 @@ if [ "$EXTERNALRESET" == "1" ]; then
       PINGLOW=0 # Reset ping time history variables
       PINGHIGH=0
       ICANHAZIP=""
+      ResolverTimer=1
       oldrxbytes=0 # Reset Stats
       oldtxbytes=0
       newrxbytes=0
@@ -1006,6 +1015,7 @@ if [ "$UpdateUnbound" == "1" ] && [ "$UnboundReset" == "1" ] && [ "$ICANHAZIP" !
               PINGLOW=0 # Reset ping time history variables
               PINGHIGH=0
               ICANHAZIP=""
+              ResolverTimer=1
               oldrxbytes=0 # Reset Stats
               oldtxbytes=0
               newrxbytes=0
@@ -5044,7 +5054,7 @@ vsetup () {
           if [ -z $LASTSLOT ]; then LASTSLOT=$N; fi
 
           # Give the resolver a break the first go-around to let it settle
-          ResolverTimer=1 
+          ResolverTimer=1
 
           { echo 'NORMAL'
             echo $LASTSLOT
