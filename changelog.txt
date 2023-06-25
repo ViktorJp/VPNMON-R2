@@ -1,3 +1,9 @@
+v2.59  - (June 24, 2023)
+       - FIXED: Couple of items relating to ensuring Unbound resolver DNS IP would be correctly
+         reflected on screen if any of the other VPN reset events were triggered. This could at
+         times cause a reset looping issue.
+       - FIXED: Optimizations and bugfixes
+
 v2.58  - (May 24, 2023)
        - ADDED: Building on the Unbound functionality, I've implemented another reset condition, in
          particular, if the Unbound public DNS Resolver IP is not the same at your public VPN IP.
