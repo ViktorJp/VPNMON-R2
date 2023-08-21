@@ -1,3 +1,12 @@
+v2.60  - (TBA)
+       - FIXED: Added some more context in the logs when WAN0 and WAN1 receive a new city name.
+       - ADDED: Thanks to @salvo for suggesting a different approach at displaying and measuring
+         the pings for the current VPN slot and the disconnected slots. I used this same logic
+         any time a ping measurement is done (which is now pinging 3x and getting the average),
+         which should make these values a little more accurate. Please note, the connected VPN
+         slot continues to measure a ping across the tunnel. The disconnected slots measure a
+         ping across the WAN to the specified VPN server.
+
 v2.59  - (June 24, 2023)
        - FIXED: Couple of items relating to ensuring Unbound resolver DNS IP would be correctly
          reflected on screen if any of the other VPN reset events were triggered. This could at
