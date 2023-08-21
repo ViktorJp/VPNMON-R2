@@ -5,7 +5,8 @@ v2.60  - (TBA)
          any time a ping measurement is done (which is now pinging 3x and getting the average),
          which should make these values a little more accurate. Please note, the connected VPN
          slot continues to measure a ping across the tunnel. The disconnected slots measure a
-         ping across the WAN to the specified VPN server.
+         ping across the WAN to the specified VPN server. As expected, this method does delay
+         the draw of the values across the screen, but annoyance is minimal. ;)
 
 v2.59  - (June 24, 2023)
        - FIXED: Couple of items relating to ensuring Unbound resolver DNS IP would be correctly
