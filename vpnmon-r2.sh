@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.59 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.62 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.59"                                      # Current version of VPNMON-R2
+Version="2.62"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -699,10 +699,10 @@ checkwan () {
           logo
           echo -e "${CRed} ---------------------> ERROR: WAN DOWN <---------------------"
           echo ""
-          echo -e "${CGreen} WAN Link/Modem Detected... waiting 60 seconds to reconnect"
+          echo -e "${CGreen} WAN Link/Modem Detected... waiting 300 seconds to reconnect"
           echo -e "${CGreen} and for general connectivity to stabilize."
           echo ""
-          SPIN=60
+          SPIN=300
           spinner
           echo ""
           echo -e "$(date +%s)" > $RSTFILE
@@ -2283,7 +2283,8 @@ vpnreset() {
         do
           i=$(($i+1))
           OFFLINEVPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client"$i"_addr)
-          DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
+          #DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
+          DISCHOSTPING=$(ping -I $WANIFNAME -c 3 $OFFLINEVPNIP | awk -F'[/=]' 'END{print $5}') > /dev/null 2>&1 # Get ping stats
           testping=${DISCHOSTPING%.*}
           if [ -z "$DISCHOSTPING" ]; then DISCHOSTPING=99; testping=99; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
@@ -2479,7 +2480,8 @@ checkvpn() {
       if [ $RC -eq 0 ] && [ $IC -eq 0 ]; then  # If both ping/curl come back successful, then proceed
         STATUS=1
         VPNCLCNT=$((VPNCLCNT+1))
-        AVGPING=$(ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
+        #AVGPING=$(ping -I $TUN -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
+        AVGPING=$(ping -I $TUN -c 3 $PINGHOST | awk -F'[/=]' 'END{print $5}') > /dev/null 2>&1 # Get ping stats
 
         if [ -z "$AVGPING" ]; then AVGPING=1; fi # On that rare occasion where it's unable to get the Ping time, assign 1
 
@@ -2490,7 +2492,8 @@ checkvpn() {
           echo -e "$(date) - VPNMON-R2 - API call made to update VPN city to $VPNCITY" >> $LOGFILE
         fi
 
-        CONNHOSTPING=$(ping -I $WANIFNAME -c 1 $VPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
+        #CONNHOSTPING=$(ping -I $WANIFNAME -c 1 $VPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
+        CONNHOSTPING=$(ping -I $WANIFNAME -c 3 $VPNIP | awk -F'[/=]' 'END{print $5}') > /dev/null 2>&1
         testping=${CONNHOSTPING%.*}
 
         echo -e "${InvGreen} ${CClear}${CGreen}==VPN$1 Tunnel Active | ||${CWhite}${InvGreen} $AVGPING ms ${CClear}${CGreen}|| | ${CClear}${CGreen}Exit: ${CWhite}${InvDkGray}$VPNCITY${CClear}"
@@ -2513,7 +2516,8 @@ checkvpn() {
     done
   else
     OFFLINEVPNIP=$($timeoutcmd$timeoutsec nvram get vpn_client$1_addr)
-    DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
+    #DISCHOSTPING=$(ping -I $WANIFNAME -c 1 $OFFLINEVPNIP | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1 # Get ping stats
+    DISCHOSTPING=$(ping -I $WANIFNAME -c 3 $OFFLINEVPNIP | awk -F'[/=]' 'END{print $5}') > /dev/null 2>&1 # Get ping stats
     testping=${DISCHOSTPING%.*}
     if [ -z "$DISCHOSTPING" ]; then # On that rare occasion where it's unable to get the Ping time, assign 99
       DISCHOSTPING=99
@@ -2558,7 +2562,8 @@ wancheck() {
 
         # Ping through the WAN interface
         if [ "$WANIFNAME" == "$WAN0IFNAME" ] || [ "$DUALWANMODE" == "lb" ]; then
-          WAN0PING=$(ping -I $WAN0IFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+          #WAN0PING=$(ping -I $WAN0IFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+          WAN0PING=$(ping -I $WAN0IFNAME -c 3 $PINGHOST | awk -F'[/=]' 'END{print $5}') > /dev/null 2>&1
         else
           WAN0PING="DW-FO"
         fi
@@ -2597,7 +2602,8 @@ wancheck() {
 
         # Ping through the WAN interface
         if [ "$WANIFNAME" == "$WAN1IFNAME" ] || [ "$DUALWANMODE" == "lb" ]; then
-          WAN1PING=$(ping -I $WAN1IFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+          #WAN1PING=$(ping -I $WAN1IFNAME -c 1 $PINGHOST | awk -F'time=| ms' 'NF==3{print $(NF-1)}' | sort -rn) > /dev/null 2>&1
+          WAN1PING=$(ping -I $WAN1IFNAME -c 3 $PINGHOST | awk -F'[/=]' 'END{print $5}') > /dev/null 2>&1
         else
           WAN1PING="DW-FO"
         fi
@@ -2609,7 +2615,7 @@ wancheck() {
           WAN1IP=$(curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --fail --interface $WAN1IFNAME --request GET --url https://ipv4.icanhazip.com)
           WAN1CITY="curl --silent --retry 3 --connect-timeout 3 --max-time 6 --retry-delay 1 --retry-all-errors --request GET --url http://ip-api.com/json/$WAN1IP | jq --raw-output .city"
           WAN1CITY="$(eval $WAN1CITY)"; if echo $WAN1CITY | grep -qoE '\b(error.*:.*True.*|Undefined)\b'; then WAN1CITY="$WAN1IP"; fi
-          echo -e "$(date) - VPNMON-R2 - API call made to update WAN city to $WAN1CITY" >> $LOGFILE
+          echo -e "$(date) - VPNMON-R2 - API call made to update WAN1 city to $WAN1CITY" >> $LOGFILE
         fi
         #WAN1CITY="Your City"
         if [ $WAN1PING == "DW-FO" ]; then
@@ -5188,11 +5194,11 @@ while true; do
   echo -e "${InvCyan} ${CClear}${CCyan} $(date)${CGreen} $dashes ${CGreen}Last Reset: ${CWhite}${InvDkGray}$LASTVPNRESET${CClear}"
 
   # Determine if a VPN Client is active, first by getting the VPN state from NVRAM
-  state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
-  state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
-  state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
-  state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
-  state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
+  state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state); if [ $state1 -eq -1 ]; then state1=0; fi
+  state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state); if [ $state2 -eq -1 ]; then state2=0; fi
+  state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state); if [ $state3 -eq -1 ]; then state3=0; fi
+  state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state); if [ $state4 -eq -1 ]; then state4=0; fi
+  state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state); if [ $state5 -eq -1 ]; then state5=0; fi
 
   # Determine the WAN states along with the Public IP of your VPN connection
   wstate0=$($timeoutcmd$timeoutsec nvram get wan0_state_t)
@@ -5404,7 +5410,7 @@ while true; do
             sleep 1
 
             if [ $loadcount -eq 10 ]; then
-              echo -e "\n${CRed} Error: Unable to reach NordVPN API! Load reading is not possible.\n${CClear}"
+              echo -e "\n${CRed}   Error: Unable to reach NordVPN API! Load reading not possible.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach NordVPN API! Load reading is not possible." >> $LOGFILE
               break
             fi
@@ -5433,7 +5439,7 @@ while true; do
             sleep 1
 
             if [ $loadcount -eq 10 ]; then
-              echo -e "\n${CRed} Error: Unable to reach SurfShark API! Load reading is not possible.\n${CClear}"
+              echo -e "\n${CRed}   Error: Unable to reach SurfShark API! Load reading not possible.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach SurfShark API! Load reading is not possible." >> $LOGFILE
               break
             fi
@@ -5470,7 +5476,7 @@ while true; do
             sleep 1
 
             if [ $loadcount -eq 10 ]; then
-              echo -e "\n${CRed} Error: Unable to reach PerfectPrivacy API! Load reading is not possible.\n${CClear}"
+              echo -e "\n${CRed}   Error: Unable to reach PerfectPrivacy API! Load reading not possible.\n${CClear}"
               echo -e "$(date) - VPNMON-R2 ----------> ERROR: Unable to reach PerfectPrivacy API! Load reading is not possible." >> $LOGFILE
               break
             fi
