@@ -1,0 +1,9 @@
+I have reposted this great tool here for safekeeping after @eibgrad stopped participating in the forums, and stopped updating
+his scripts. The DNS monitor tool is an invaluable script to help diagnose current DNS traffic behavior on your Merlin Asus
+router, especially when getting VPNMON-R2 configured using Unbound over VPN.
+
+v1.4.3 (Oct 7, 2023)
+  - Modified a few egrep commands, and changed to grep -E as this command may have been controverted.
+
+v1.4.2
+  - Original Script as left by @eibgrad
