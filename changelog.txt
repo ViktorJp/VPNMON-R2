@@ -1,3 +1,10 @@
+v2.63  - (TBA)
+       - FIXED: Thanks to @TITAN and @visorgtw for reporting back about unknown operand errors
+         visible on the display when only a single VPN slot was being used. This was due to some
+         erroneous code that was not taking into consideration that some of these values may have
+         been null. Much appreciation for @Martinski and @Somewhereovertherainbow for their help
+         and advice on creating a more optimized way of catching this!
+
 v2.62  - (October 2, 2023)
        - ADDED: Thanks to @salvo for suggesting a different approach at displaying and measuring
          the pings for the current VPN slot and the disconnected slots. I used this same logic
