@@ -1,4 +1,4 @@
-v2.63  - (TBA)
+v2.63  - (November 4, 2023)
        - FIXED: Thanks to @TITAN and @visorgtw for reporting back about unknown operand errors
          visible on the display when only a single VPN slot was being used. This was due to some
          erroneous code that was not taking into consideration that some of these values may have
