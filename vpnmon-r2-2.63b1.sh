@@ -1073,12 +1073,12 @@ vpnresetlowestping() {
       i=0
       while [ $i -ne $N ]
         do
-          state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
-          state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
-          state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
-          state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
-          state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
-
+          state1="$(_VPN_GetClientState_ 1)"
+          state2="$(_VPN_GetClientState_ 2)"
+          state3="$(_VPN_GetClientState_ 3)"
+          state4="$(_VPN_GetClientState_ 4)"
+          state5="$(_VPN_GetClientState_ 5)"
+          
           printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
           sleep 1
           i=$(($i+1))
@@ -1254,12 +1254,12 @@ vpnreset() {
       i=0
       while [ $i -ne $N ]
         do
-          state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
-          state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
-          state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
-          state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
-          state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
-
+          state1="$(_VPN_GetClientState_ 1)"
+          state2="$(_VPN_GetClientState_ 2)"
+          state3="$(_VPN_GetClientState_ 3)"
+          state4="$(_VPN_GetClientState_ 4)"
+          state5="$(_VPN_GetClientState_ 5)"
+          
           printf "${CGreen}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5     "
           sleep 1
           i=$(($i+1))
@@ -2546,6 +2546,22 @@ checkvpn() {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
+# VPN_GetClientState was created by @Martinski in many thanks to trying to eliminate unknown operand errors due to null
+# vpn_clientX_state values
+
+_VPN_GetClientState_()
+{
+    if [ $# -lt 1 ] || [ -z "$1" ] || ! echo "$1" | grep -qE "^[1-5]$"
+    then echo "**ERROR**" ; return 1 ; fi
+
+    local nvramVal="$($timeoutcmd$timeoutsec nvram get "vpn_client${1}_state")"
+    if [ -z "$nvramVal" ] || ! echo "$nvramVal" | grep -qE "^[0-9]$"
+    then echo "0" ; else echo "$nvramVal" ; fi
+    return 0
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
 # wancheck is a function that checks each wan connection to see if its active, and performs a ping and a city lookup...
 wancheck() {
 
@@ -2738,11 +2754,11 @@ lockcheck () {
         i=0
         while [ $i -ne $N ]
           do
-            state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
-            state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
-            state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
-            state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
-            state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
+            state1="$(_VPN_GetClientState_ 1)"
+						state2="$(_VPN_GetClientState_ 2)"
+						state3="$(_VPN_GetClientState_ 3)"
+						state4="$(_VPN_GetClientState_ 4)"
+						state5="$(_VPN_GetClientState_ 5)"
 
             printf "${CCyan}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5 "
             sleep 1
@@ -2842,11 +2858,11 @@ lockcheck () {
         i=0
         while [ $i -ne $N ]
           do
-            state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state)
-            state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state)
-            state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state)
-            state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state)
-            state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state)
+            state1="$(_VPN_GetClientState_ 1)"
+						state2="$(_VPN_GetClientState_ 2)"
+						state3="$(_VPN_GetClientState_ 3)"
+						state4="$(_VPN_GetClientState_ 4)"
+						state5="$(_VPN_GetClientState_ 5)"
 
             printf "${CCyan}\r [Confirming VPN Clients Disconnected]... 1:$state1 2:$state2 3:$state3 4:$state4 5:$state5 "
             sleep 1
@@ -5197,11 +5213,11 @@ while true; do
   echo -e "${InvCyan} ${CClear}${CCyan} $(date)${CGreen} $dashes ${CGreen}Last Reset: ${CWhite}${InvDkGray}$LASTVPNRESET${CClear}"
 
   # Determine if a VPN Client is active, first by getting the VPN state from NVRAM
-  state1=$($timeoutcmd$timeoutsec nvram get vpn_client1_state); if [ $state1 -eq -1 ]; then state1=0; fi
-  state2=$($timeoutcmd$timeoutsec nvram get vpn_client2_state); if [ $state2 -eq -1 ]; then state2=0; fi
-  state3=$($timeoutcmd$timeoutsec nvram get vpn_client3_state); if [ $state3 -eq -1 ]; then state3=0; fi
-  state4=$($timeoutcmd$timeoutsec nvram get vpn_client4_state); if [ $state4 -eq -1 ]; then state4=0; fi
-  state5=$($timeoutcmd$timeoutsec nvram get vpn_client5_state); if [ $state5 -eq -1 ]; then state5=0; fi
+  state1="$(_VPN_GetClientState_ 1)"
+  state2="$(_VPN_GetClientState_ 2)"
+  state3="$(_VPN_GetClientState_ 3)"
+  state4="$(_VPN_GetClientState_ 4)"
+  state5="$(_VPN_GetClientState_ 5)"
 
   # Determine the WAN states along with the Public IP of your VPN connection
   wstate0=$($timeoutcmd$timeoutsec nvram get wan0_state_t)
