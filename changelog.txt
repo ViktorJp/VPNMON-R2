@@ -1,3 +1,7 @@
+vX.XX  - (TBA)
+       - FIXED: Thanks to @salvo for identifying that the post-mount entry was not getting
+         deleted after a VPNMON-R2 uninstall. Fixed!
+
 v2.63  - (November 4, 2023)
        - FIXED: Thanks to @TITAN and @Ripshod for reporting back about unknown operand errors
          visible on the display when multiple VPN slots were not being used. This was due to
