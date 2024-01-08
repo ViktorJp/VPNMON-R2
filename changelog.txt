@@ -1,4 +1,4 @@
-vX.XX  - (TBA)
+v2.6X  - (TBA)
        - FIXED: Thanks to @salvo for identifying that the post-mount entry was not getting
          deleted after a VPNMON-R2 uninstall. Fixed!
 
