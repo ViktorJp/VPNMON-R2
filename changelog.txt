@@ -1,4 +1,14 @@
-v2.6X  - (TBA)
+v2.64  - (TBA)
+       - MAJOR: I have made the difficult decision to sunset VPNMON-R2. After this version
+         is made live, you will be prompted to consider upgrading to VPNMON-R3 when the 
+         script starts up. From the Setup Menu, you will see indicators that an in-place
+         upgrade to R3 is available. The upgrade allows you to install VPNMON-R3 and keep 
+         VPNMON-R2 in place, or, you can install VPNMON-R3, and uninstall VPNMON-R2. You can
+         continue running R2 as long as you want, but development/support will be shutting 
+         down in favor of R3. As of this version, new installs of VPNMON-R2 v2.64 won't be
+         possible, and will recommend installation of VPNMON-R3. Thank you for all your
+         support and encouragement throughout R2's run. It has been a wild ride! I hope R3
+         serves your needs and exceeds your expectations!
        - FIXED: Thanks to @salvo for identifying that the post-mount entry was not getting
          deleted after a VPNMON-R2 uninstall. Fixed!
 
