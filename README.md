@@ -1,8 +1,8 @@
 # VPNMON-R2
 VPNMON-R2 v2.64 - Asus-Merlin VPN Monitor by Viktor Jaep, 2022-2023
 
-NOTICE: This script has been discontinued as of January 25, 2024... please visit SNBForums.com to upgrade to VPNMON-R3.
-Link: https://www.snbforums.com/threads/vpnmon-r3-v1-10-january-23-2024-monitor-wan-dw-vpn-health-reset-multiple-vpn-connections.87801/
+**NOTICE: This script has been discontinued as of January 25, 2024... please visit SNBForums.com to upgrade to VPNMON-R3.
+Link: https://www.snbforums.com/threads/vpnmon-r3-v1-10-january-23-2024-monitor-wan-dw-vpn-health-reset-multiple-vpn-connections.87801/**
 
 **Executive Summary**: VPNMON-R2 is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy VPN services.  It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to function perfectly in a standalone environment with your own personal VPN service. This script will check the health of (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice through the active connection.  If it finds that connection has been lost, it will execute a series of commands that will kill all VPN clients, will optionally whitelist all NordVPN/PerfectPrivacy VPN servers in the Skynet Firewall, and randomly picks one of your (up to) 5 VPN Clients to connect to. One of VPNMON-R2's unique features is called "SuperRandom", where it will randomly assign VPN endpoints for a random county (or your choice) to your VPN slots, and randomly connect to one of these. It will now also test your WAN connection, and put itself into standby until the WAN is restored before reconnecting your VPN connections.
 
