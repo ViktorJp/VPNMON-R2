@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# VPNMON-R2 v2.63 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
+# VPNMON-R2 v2.64 (VPNMON-R2.SH) is an all-in-one script that is optimized for NordVPN, SurfShark VPN and Perfect Privacy
 # VPN services. It can also compliment @JackYaz's VPNMGR program to maintain a NordVPN/PIA/WeVPN setup, and is able to
 # function perfectly in a standalone environment with your own personal VPN service. This script will check the health of
 # (up to) 5 VPN connections on a regular interval to see if one is connected, and sends a ping to a host of your choice
@@ -43,7 +43,7 @@
 # -------------------------------------------------------------------------------------------------------------------------
 # System Variables (Do not change beyond this point or this may change the programs ability to function correctly)
 # -------------------------------------------------------------------------------------------------------------------------
-Version="2.63"                                      # Current version of VPNMON-R2
+Version="2.64"                                      # Current version of VPNMON-R2
 Beta=0                                              # Beta Testmode on/off
 DLVersion="0.0"                                     # Current version of VPNMON-R2 from source repository
 LOCKFILE="/jffs/scripts/VRSTLock.txt"               # Predefined lockfile that VPNMON-R2 creates when it resets the VPN so
@@ -228,7 +228,7 @@ promptyNo () {   # Enter defaults No
 
 promptyn () {   # No defaults, just y or n
   while true; do
-    read -p " [y/n]? " -n 1 -r yn
+    read -p "$1" -n 1 -r yn
       case "${yn}" in
         [Yy]* ) return 0 ;;
         [Nn]* ) return 1 ;;
@@ -304,6 +304,42 @@ progressbar() {
   fi
 }
 
+progressbarnotification() 
+{
+
+  insertspc=" "
+  bypasswancheck=0
+
+  if [ $1 -eq -1 ]; then
+    printf "\r  $barspaces\r"
+  else
+    if [ ! -z $7 ] && [ $1 -ge $7 ]; then
+      barch=$(($7*barlen/$2))
+      barsp=$((barlen-barch))
+      progr=$((100*$1/$2))
+    else
+      barch=$(($1*barlen/$2))
+      barsp=$((barlen-barch))
+      progr=$((100*$1/$2))
+    fi
+
+    if [ ! -z $6 ]; then AltNum=$6; else AltNum=$1; fi
+
+    if [ "$5" == "Standard" ]; then
+      printf "  ${CWhite}${InvDkGray}Executing VPNMON-R2 in $AltNum/30...${CClear} [${CGreen}s${CClear}=Setup] [${CGreen}e${CClear}=Exit] [Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
+    fi
+  fi
+  
+  # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
+  key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
+
+  if [ $key_press ]; then
+      case $key_press in
+          [Ss]) vsetup;;
+          [Ee]) timer=30;;
+      esac
+  fi
+}
 # -------------------------------------------------------------------------------------------------------------------------
 
 # bossmode is a function that immediately switches your screen to a word processing screen in case your boss comes around
@@ -575,10 +611,10 @@ updatecheck () {
       if [ "$Beta" == "1" ]; then   # Check if Dev/Beta Mode is enabled and disable notification message
         UpdateNotify=0
       elif [ "$DLVersion" != "$Version" ]; then
-        UpdateNotify="Update available: v$Version -> v$DLVersion"
+        UpdateNotify="Update available: v$Version -> v$DLVersion | VPNMON-R3 - Upgrade now!"
         echo -e "$(date) - VPNMON-R2 - A new update (v$DLVersion) is available to download" >> $LOGFILE
       else
-        UpdateNotify=0
+        UpdateNotify="VPNMON-R3 available - Upgrade now!"
       fi
   fi
 }
@@ -4420,9 +4456,127 @@ vupdate () {
   echo -e "${CCyan} Current Version: ${CYellow}$Version${CClear}"
   echo -e "${CCyan} Updated Version: ${CYellow}$DLVersion${CClear}"
   echo ""
-  if [ "$Version" == "$DLVersion" ]
-    then
-      echo -e "${CCyan} You are on the latest version! Would you like to download anyways?${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}New VPNMON-R3 is available!${CClear}"
+  echo ""
+  printf " Upgrade to VPNMON-R3?"
+  if promptyn " (y/n): "; then
+    clear
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Upgrade Utility                                                             ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} This utility allows you to upgrade to VPNMON-R3 and uninstall VPNMON-R2, or keep both."
+    echo -e "${InvGreen} ${CClear} NOTE: Please know that VPNMON-R2 development is ceasing, and product support will be"
+    echo -e "${InvGreen} ${CClear} sunset in the very near future."
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} Please choose from one of the following options below:"
+    echo -e "${InvGreen} ${CClear}"    
+    echo -e "${InvGreen} ${CClear}   (1) - Upgrade to VPNMON-R3, and uninstall VPNMON-R2"
+    echo -e "${InvGreen} ${CClear}   (2) - Upgrade to VPNMON-R3, and keep VPNMON-R2"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+    echo ""
+    printf "Selection? (1/2/e=Exit): "
+    read -r UpgradeSelection
+    case "$UpgradeSelection" in
+      1)
+        echo -e "\n${CClear}Please type 'Y' to validate you wish to proceed.${CClear}"
+        if promptyn "(y/n): "; then
+          echo -e "\n"
+          echo -e "${CClear}Uninstalling VPNMON-R2 components...${CClear}"
+          
+          if [ "$UpdateUnbound" == "1" ]; then
+            # Delete all additions made to files to enable Unbound over VPN functionality
+            echo ""
+            echo -e "\n${CClear}Unbinding Unbound from VPN..."
+            # Disable vpn functionality with Unbound
+            sh /jffs/addons/unbound/unbound_manager.sh vpn=disable >/dev/null 2>&1
+            # Remove Unbound failsafe in post-mount
+            if [ -f /jffs/scripts/post-mount ]; then
+              sed -i -e '/vpn=disable/d' /jffs/scripts/post-mount >/dev/null 2>&1
+            fi
+            # Remove Unbound VPN helper script in openvpn-event
+            if [ -f /jffs/scripts/openvpn-event ]; then
+              sed -i -e '/unbound_DNS_via_OVPN.sh/d' /jffs/scripts/openvpn-event >/dev/null 2>&1
+            fi
+            # Remove RPDB Rules added to nat-start
+            if [ -f /jffs/scripts/nat-start ]; then
+              sed -i -e '/Added by vpnmon-r2/d' /jffs/scripts/nat-start >/dev/null 2>&1
+            fi
+            # Remove the unbound_DNS_via_OVPN.sh file
+            if [ -f /jffs/addons/unbound/unbound_DNS_via_OVPN.sh ]; then
+              rm /jffs/addons/unbound/unbound_DNS_via_OVPN.sh
+            fi
+          fi
+          
+          echo ""
+          echo -e "\n${CClear}Removing VPNMON-R2 Files..."
+          # Remove R2 Files
+          rm -r /jffs/addons/vpnmon-r2.d
+          rm /jffs/scripts/vpnmon-r2.sh
+          if [ -f /jffs/scripts/post-mount ]; then
+            sed -i -e '/vpnmon-r2.sh/d' /jffs/scripts/post-mount >/dev/null 2>&1
+          fi
+          echo ""
+          echo -e "\n${CClear}VPNMON-R2 has been uninstalled...${CClear}"
+          echo ""
+          
+        else
+          echo ""
+          echo -e "\n${CClear}Exiting...${CClear}"
+          sleep 1
+          return
+        fi
+        
+        # Download VPNMON-R3
+        echo -e "\n${CClear}Downloading VPNMON-R3"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
+        echo ""
+        echo -e "Download successful!${CClear}"
+        echo ""
+        read -rsp $'Press any key to launch VPNMON-R3...\n' -n1 key
+          exec /jffs/scripts/vpnmon-r3.sh -setup
+        exit 0      
+      ;;
+      
+      2)
+        if [ "$UpdateUnbound" == "1" ]; then 
+          echo -e "${CClear}NOTE: Please know that VPNMON-R2 has been configured to enable Unbound"
+          echo -e "${CClear}over DNS. Should you want to use this feature in VPNMON-R3, it is highly"
+          echo -e "${CClear}recommended to disable this feature in VPNMON-R2 first, as both scripts"
+          echo -e "${CClear}cannot have this feature enabled at the same time."
+          echo -e "\n"
+        fi
+        # Download VPNMON-R3
+        echo -e "\n${CClear}Downloading VPNMON-R3"
+        curl --silent --retry 3 --connect-timeout 3 --max-time 5 --retry-delay 1 --retry-all-errors --fail "https://raw.githubusercontent.com/ViktorJp/VPNMON-R3/main/vpnmon-r3.sh" -o "/jffs/scripts/vpnmon-r3.sh" && chmod 755 "/jffs/scripts/vpnmon-r3.sh"
+        echo ""
+        echo -e "Download successful!${CClear}"
+        echo ""
+        read -rsp $'Press any key to launch VPNMON-R3...\n' -n1 key
+          exec /jffs/scripts/vpnmon-r3.sh -setup
+        exit 0      
+      ;;
+      
+      [Ee])
+        echo ""
+        echo -e "${CClear}Exiting Update Utility..."
+        sleep 1
+        return
+      ;;
+      
+      *)
+        echo ""
+        echo -e "${CClear}Exiting Update Utility..."
+        sleep 1
+        return
+      ;;
+    esac
+  	
+  else
+  
+    if [ "$Version" == "$DLVersion" ]
+      then
+      echo -e "\n"
+      echo -e "${CCyan} You are on the latest R2 version! Would you like to download anyways?${CClear}"
       echo -e "${CCyan} This will overwrite your local copy with the current build.${CClear}"
       if promptyn " (y/n): "; then
         echo ""
@@ -4433,12 +4587,8 @@ vupdate () {
         echo -e "${CCyan} Download successful!${CClear}"
         echo -e "$(date) - VPNMON-R2 - Successfully downloaded VPNMON-R2 v$DLVersion" >> $LOGFILE
         echo ""
-        echo -e "${CYellow} Please exit, restart and configure new options using: 'vpnmon-r2 -config'.${CClear}"
-        echo -e "${CYellow} NOTE: New features may have been added that require your input to take${CClear}"
-        echo -e "${CYellow} advantage of its full functionality.${CClear}"
-        echo ""
-        read -rsp $' Press any key to continue...\n' -n1 key
-        return
+        read -rsp $'Press any key to restart VPNMON-R2...\n' -n1 key
+        exec /jffs/scripts/vpnmon-r2.sh -config
       else
         echo ""
         echo ""
@@ -4447,7 +4597,8 @@ vupdate () {
         return
       fi
     else
-      echo -e "${CCyan} There is a new version out there! Would you like to update?${CClear}"
+      echo -e "\n"
+      echo -e "${CCyan} There is a new R2 version out there! Would you like to update?${CClear}"
       if promptyn " (y/n): "; then
         echo ""
         echo ""
@@ -4457,12 +4608,8 @@ vupdate () {
         echo -e "${CCyan} Download successful!${CClear}"
         echo -e "$(date) - VPNMON-R2 - Successfully updated VPNMON-R2 v$Version to v$DLVersion" >> $LOGFILE
         echo ""
-        echo -e "${CYellow} Please exit, restart and configure new options using: 'vpnmon-r2 -config'.${CClear}"
-        echo -e "${CYellow} NOTE: New features may have been added that require your input to take${CClear}"
-        echo -e "${CYellow} advantage of its full functionality.${CClear}"
-        echo ""
-        read -rsp $' Press any key to continue...\n' -n1 key
-        return
+        read -rsp $'Press any key to restart VPNMON-R2...\n' -n1 key
+        exec /jffs/scripts/vpnmon-r2.sh -config
       else
         echo ""
         echo ""
@@ -4470,7 +4617,9 @@ vupdate () {
         sleep 1
         return
       fi
-  fi
+    fi
+fi
+     
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -4490,6 +4639,9 @@ vuninstall () {
         clear
         rm -r /jffs/addons/vpnmon-r2.d
         rm /jffs/scripts/vpnmon-r2.sh
+        if [ -f /jffs/scripts/post-mount ]; then
+          sed -i -e '/vpnmon-r2.sh/d' /jffs/scripts/post-mount >/dev/null 2>&1
+        fi
         echo ""
         echo -e "\n${CGreen} VPNMON-R2 has been uninstalled...${CClear}"
         echo ""
@@ -4538,7 +4690,7 @@ vsetup () {
     echo -e "${CGreen} ----------------------------------------------------------------"
     echo -e " ${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure VPNMON-R2"
     echo -e " ${InvDkGray}${CWhite} fr ${CClear}${CCyan}: Force Re-install Entware Dependencies"
-    echo -e " ${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
+    echo -e " ${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates ${CYellow} <- Upgrade to VPNMON-R3!"
     echo -e " ${InvDkGray}${CWhite} vl ${CClear}${CCyan}: View logs"
     echo -e " ${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
     echo -e " ${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit"
@@ -4747,7 +4899,20 @@ vsetup () {
 
   # Create the necessary folder/file structure for VPNMON-R2 under /jffs/addons
   if [ ! -d "/jffs/addons/vpnmon-r2.d" ]; then
-		mkdir -p "/jffs/addons/vpnmon-r2.d"
+		#mkdir -p "/jffs/addons/vpnmon-r2.d" # Prevent new installs from running R2, and direct to R3
+    clear
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R2 No Longer Supported                                                         ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} ${CWhite}NOTICE: VPNMON-R2 is being sunset.${CClear} This means all development and future support"
+    echo -e "${InvGreen} ${CClear} will soon become extremely limited as all efforts are being focused on VPNMON-R3."
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} New installations of VPNMON-R2 are no longer possible, and recommend looking"
+    echo -e "${InvGreen} ${CClear} into installing VPNMON-R3 instead directly from AMTM on your Asus-Merlin FW"
+    echo -e "${InvGreen} ${CClear} router, or please visit SNBForums.com for more info!"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+    echo ""
+    exit 0
   fi
 
   # Check for Updates
@@ -5103,6 +5268,30 @@ vsetup () {
               echo ""
               spinner
           fi
+
+        # Display VPNMON-R3 Notification
+        clear
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} VPNMON-R3 Upgrade Availability and VPNMON-R2 Sunset Notice                            ${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} ${CWhite}NOTICE: VPNMON-R2 is being sunset.${CClear} This means all development and future support"
+        echo -e "${InvGreen} ${CClear} will soon become extremely limited as all efforts are being focused on VPNMON-R3."
+        echo -e "${InvGreen} ${CClear} The new R3 release is now available, and encourage you to upgrade at your earliest"
+        echo -e "${InvGreen} ${CClear} convenience. For further information, please browse over to SNBForums.com, and"
+        echo -e "${InvGreen} ${CClear} reach out if you have any questions migrating to VPNMON-R3. Thank you!"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} Upgrade to VPNMON-R3 by using (S)etup -> (UP)date straight from VPNMON-R2!"
+        echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+        echo ""
+        
+        #display a standard timer
+        timer=0
+        while [ $timer -ne 30 ]
+        do
+          timer=$(($timer+1))
+          preparebar 46 "|"
+          progressbarnotification $timer 30 "" "s" "Standard"
+          #sleep 1
+        done
 
       else
         echo -e "${CRed} Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2 -setup'"
