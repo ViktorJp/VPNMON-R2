@@ -1,5 +1,5 @@
 # VPNMON-R2
-VPNMON-R2 v2.64 - Asus-Merlin VPN Monitor by Viktor Jaep, 2022-2023
+VPNMON-R2 v2.65 - Asus-Merlin VPN Monitor by Viktor Jaep, 2022-2023
 
 **NOTICE: This script has been discontinued as of January 25, 2024... please visit SNBForums.com to upgrade to VPNMON-R3.
 Link: https://www.snbforums.com/threads/vpnmon-r3-v1-10-january-23-2024-monitor-wan-dw-vpn-health-reset-multiple-vpn-connections.87801/**
