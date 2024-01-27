@@ -5168,7 +5168,7 @@ vsetup () {
         echo -e "${CRed} Error: VPNMON-R2 is not configured.  Please run 'vpnmon-r2 -setup' to complete setup${CClear}"
         echo ""
         echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPNMON-R2 is not configured. Please run the setup tool." >> $LOGFILE
-        kill 0
+      	exit 0
       fi
       logo
       echo -e "${CRed} VPNMON-R2 is executing VPN Reset via Commandline Switch...${CClear}"
@@ -5300,7 +5300,7 @@ vsetup () {
         echo -e "${CRed} to complete setup${CClear}"
         echo ""
         echo -e "$(date) - VPNMON-R2 ----------> ERROR: VPNMON-R2 is not configured. Please run the setup tool." >> $LOGFILE
-        kill 0
+      	exit 0
       fi
   fi
 
