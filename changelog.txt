@@ -1,3 +1,6 @@
+v2.65  - (January 27, 2024)
+       - FIXED: Minor change for AMTM compliance purposes. :)
+
 v2.64  - (January 25, 2024)
        - MAJOR: I have made the difficult decision to sunset VPNMON-R2. After this version
          is made live, you will be prompted to consider upgrading to VPNMON-R3 when the 
